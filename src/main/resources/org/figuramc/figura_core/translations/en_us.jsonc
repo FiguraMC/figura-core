@@ -1,0 +1,39 @@
+{
+
+  // Literal string translation primitive, for passthrough.
+  "figura_core.translation.literal": "%s",
+
+  // Avatar messages
+  "figura_core.avatar.unloaded": "This avatar has been unloaded.",
+
+  // Internal error. Always comes with a hardcoded english string, since users aren't supposed to see these anyway.
+  "figura_core.error.internal": "Internal error occurred in Figura. Please contact developers so we can add a better error message! Error:\n%s",
+
+  // Could not locate the Figura folder
+  // TODO include instructions (or a link to some instructions) for how to set up the Figura folder
+  "figura_core.error.could_not_locate_folder": "Could not locate the Figura folder. Please specify one",
+
+  // Importing errors
+  "figura_core.error.importing.invalid_figmodel": "Failed to parse model \"%s.figmodel\". Likely a bug in the exporter or importer, please report!",
+  "figura_core.error.importing.no_language_set": "To use scripts, you must set the \"language\" field in avatar.json. For example, \"language\": \"lua\"",
+  "figura_core.error.importing.no_avatar_json": "Module folder does not have an \"avatar.json\" file.",
+  "figura_core.error.importing.dependency_format": "The \"dependencies\" field in metadata json must be an object mapping strings to strings.",
+  "figura_core.error.importing.api_format": "The \"api\" field in metadata json must be an object mapping strings to function type strings.",
+  "figura_core.error.importing.conflicting_custom_item_textures": "The custom item pattern \"%s\" has multiple textures defined!",
+  "figura_core.error.importing.conflicting_custom_item_models": "The custom item pattern \"%s\" has multiple models defined!",
+
+  // Loading errors
+  "figura_core.error.loading.animation.invalid_return_count": "Molang expression in model %s, in animation %s, for part %s, at time %s should return 1 output, but it returns %s.",
+  "figura_core.error.loading.animation.invalid_molang": "Molang expression in model %s, in animation %s, for part %s, at time %s failed to compile:\n%s",
+  "figura_core.error.loading.texture.invalid_png": "Failed to parse texture \"%s\" - are you sure it's a valid PNG file?",
+
+  // Rendering errors
+  "figura_core.error.rendering.stack_overflow": "Stack overflow during model part rendering. Part tree is too deep, or recursive!",
+
+  // Script errors
+  "figura_core.error.script.unknown_language": "Unknown script language \"%s\". Currently, the only supported language is \"lua\".",
+  "figura_core.error.script.lua.no_main": "For a module with language = \"lua\", you must have a file \"scripts/main.lua\".",
+  "figura_core.error.script.lua.compile_error": "For a module with language = \"lua\", you must have a file \"scripts/main.lua\".",
+  "figura_core.error.script.lua.incorrect_callback_return": "Callback function %s expected to return %s, but it returned %s."
+
+}
