@@ -23,6 +23,7 @@ public interface PathProvider {
     default CompletableFuture<Path> getAvatarsFolder() { return locateFiguraFolder().thenApply(p -> p.resolve("avatars")); }
     default CompletableFuture<Path> getCEMFolder() { return locateFiguraFolder().thenApply(p -> p.resolve("cem")); }
     default CompletableFuture<Path> getCommonModulesFolder() { return locateFiguraFolder().thenApply(p -> p.resolve("common_modules")); }
+    default CompletableFuture<Path> getGuisFolder() { return locateFiguraFolder().thenApply(p -> p.resolve("guis")); }
 
     // Exception for the CompletableFuture to finish with if necessary
     class CouldNotLocateFolderError extends FiguraException {

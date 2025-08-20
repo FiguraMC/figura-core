@@ -94,7 +94,7 @@ public final class Avatar<K> {
         return true;
     }
 
-    Translatable<TranslatableItems.Items0> UNLOADED = Translatable.create("figura_core.avatar.unloaded");
+    private static final Translatable<TranslatableItems.Items0> UNLOADED = Translatable.create("figura_core.avatar.unloaded");
 
     public void unload() {
         this.error(new AvatarError(UNLOADED, TranslatableItems.Items0.INSTANCE));

@@ -68,7 +68,7 @@ public class LuaRuntime extends LuaState implements ScriptRuntimeComponent<LuaRu
         // Initialize as LuaState
         super(LuaState.builder()
                 .interruptHandler(() -> InterruptAction.CONTINUE)
-                .allocationTracker(new DelegateAllocationTracker<>(avatar.allocationTracker, AvatarError.class, LuaUncatchableError::new))
+                .allocationTracker(avatar.allocationTracker == null ? null : new DelegateAllocationTracker<>(avatar.allocationTracker, AvatarError.class, LuaUncatchableError::new))
         );
         // Save avatar, so we know who to blame if an error occurs
         this.avatar = avatar;

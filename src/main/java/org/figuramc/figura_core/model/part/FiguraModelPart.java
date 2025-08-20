@@ -17,10 +17,7 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.*;
 
 import java.lang.Math;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Corresponds to a Group in Blockbench.
@@ -108,13 +105,13 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
             uvModifier.set(tex.getUvValues());
         } else if (!children.isEmpty()) {
             // Otherwise, attempt to merge from children:
-            boolean sameRenderType = children.values().stream().map(FiguraModelPart::getRenderType).distinct().limit(2).count() <= 1;
+            boolean sameRenderType = children.values().stream().map(FiguraModelPart::getRenderType).filter(Objects::nonNull).distinct().limit(2).count() <= 1;
             if (sameRenderType) {
                 // If all children have the same render type, merge upwards,
                 // setting their render types to null and this render type to that one.
+                this.renderType = children.firstEntry().getValue().getRenderType();
                 for (FiguraModelPart child : children.values())
                     child.renderType = null;
-                this.renderType = children.firstEntry().getValue().getRenderType();
             }
         }
 

@@ -13,12 +13,8 @@ public sealed interface FiguraRenderType {
     /**
      * Basic rendering setup. Most commonly used.
      */
-    final class Basic implements FiguraRenderType {
-        public final @Nullable MinecraftTexture mainTex, emissiveTex;
-        public Basic(@Nullable MinecraftTexture mainTex, @Nullable MinecraftTexture emissiveTex) {
-            this.mainTex = mainTex;
-            this.emissiveTex = emissiveTex;
-        }
+    record Basic(@Nullable MinecraftTexture mainTex, @Nullable MinecraftTexture emissiveTex) implements FiguraRenderType {
+
     }
 
 //    /**
