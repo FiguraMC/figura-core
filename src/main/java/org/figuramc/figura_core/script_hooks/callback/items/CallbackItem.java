@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public sealed interface CallbackItem permits
         // Primitives
-        CallbackItem.Unit, CallbackItem.Bool, CallbackItem.F32, CallbackItem.F64,
+        CallbackItem.Unit, CallbackItem.Bool, CallbackItem.I32, CallbackItem.F32, CallbackItem.F64,
         // Figura types
         EntityView,
         // Tuples
@@ -24,6 +24,7 @@ public sealed interface CallbackItem permits
     // Simple constant-sized primitives
     final class Unit implements CallbackItem { public static final Unit INSTANCE = new Unit(); private Unit() {} }
     record Bool(boolean value) implements CallbackItem { }
+    record I32(int value) implements CallbackItem { }
     record F32(float value) implements CallbackItem { }
     record F64(double value) implements CallbackItem { }
 

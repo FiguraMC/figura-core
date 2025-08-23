@@ -1,9 +1,11 @@
 package org.figuramc.figura_core.script_languages.lua;
 
 import org.figuramc.figura_cobalt.LuaUncatchableError;
+import org.figuramc.figura_cobalt.cc.tweaked.cobalt.internal.unwind.SuspendedAction;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.*;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.compiler.CompileException;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.compiler.LoadState;
+import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.Dispatch;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.LuaClosure;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.LuaFunction;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.interrupt.InterruptAction;
@@ -15,16 +17,16 @@ import org.figuramc.figura_core.avatars.AvatarModules;
 import org.figuramc.figura_core.avatars.ScriptRuntimeComponent;
 import org.figuramc.figura_core.avatars.components.EntityRoot;
 import org.figuramc.figura_core.avatars.components.HudRoot;
+import org.figuramc.figura_core.avatars.components.ManagerAccess;
 import org.figuramc.figura_core.avatars.components.VanillaRendering;
 import org.figuramc.figura_core.script_hooks.callback.CallbackType;
 import org.figuramc.figura_core.script_languages.lua.callback_types.LuaCallback;
 import org.figuramc.figura_core.script_languages.lua.callback_types.convert.CallbackItemToLua;
 import org.figuramc.figura_core.script_languages.lua.callback_types.convert.LuaToCallbackItem;
-import org.figuramc.figura_core.script_languages.lua.other_apis.EventsTable;
-import org.figuramc.figura_core.script_languages.lua.other_apis.FiguraMath;
-import org.figuramc.figura_core.script_languages.lua.other_apis.VanillaTable;
+import org.figuramc.figura_core.script_languages.lua.other_apis.*;
 import org.figuramc.figura_core.script_languages.lua.type_apis.model_parts.FiguraPartAPI;
 import org.figuramc.figura_core.util.exception.FiguraException;
+import org.figuramc.figura_translations.Translatable;
 import org.figuramc.figura_translations.TranslatableItems;
 import org.figuramc.memory_tracker.DelegateAllocationTracker;
 import org.jetbrains.annotations.Nullable;
@@ -38,7 +40,7 @@ import java.util.Map;
 
 public class LuaRuntime extends LuaState implements ScriptRuntimeComponent<LuaRuntime> {
 
-    public static final Type<LuaRuntime> TYPE = new Type<>(LuaRuntime::create, VanillaRendering.TYPE, EntityRoot.TYPE, HudRoot.TYPE);
+    public static final Type<LuaRuntime> TYPE = new Type<>(LuaRuntime::create, VanillaRendering.TYPE, EntityRoot.TYPE, HudRoot.TYPE, ManagerAccess.TYPE);
 
     // Map each module index to its environment, so we can initialize them
     private final Map<Integer, LuaTable> moduleEnvironments = new IdentityHashMap<>();
@@ -48,7 +50,7 @@ public class LuaRuntime extends LuaState implements ScriptRuntimeComponent<LuaRu
     public final LuaToCallbackItem luaToCallbackItem;
     public final CallbackItemToLua callbackItemToLua;
     // The avatar this runtime is attached to. If an error occurs, this is who to blame.
-    public Avatar<?> avatar;
+    public Avatar<?> avatar; // Can also fetch its allocation tracker if needed!
 
     // Use this for the factory since it throws AvatarError
     public static LuaRuntime create(Avatar<?> avatar, AvatarModules modules) throws AvatarError {
@@ -77,6 +79,7 @@ public class LuaRuntime extends LuaState implements ScriptRuntimeComponent<LuaRu
         @Nullable VanillaRendering vanillaRendering = avatar.getComponent(VanillaRendering.TYPE);
         @Nullable EntityRoot entityRoot = avatar.getComponent(EntityRoot.TYPE);
         @Nullable HudRoot hudRoot = avatar.getComponent(HudRoot.TYPE);
+        @Nullable ManagerAccess managerAccess = avatar.getComponent(ManagerAccess.TYPE);
 
 
         // Add type metatables. They're shared across modules, in the true globals
@@ -90,11 +93,12 @@ public class LuaRuntime extends LuaState implements ScriptRuntimeComponent<LuaRu
         CoreLibraries.standardGlobals(this);
         Bit32Lib.add(this);
         FiguraMath.init(this);
-        EventsTable.createEventsTable(this, avatar.eventListeners);
+        globals().rawset("events", EventsTable.create(this, avatar.eventListeners));
+        globals().rawset("client", ClientTable.create(this));
 
-        // If we have vanilla rendering, add the vanilla table
-        if (vanillaRendering != null)
-            globals().rawset("vanilla", VanillaTable.create(this, vanillaRendering));
+        // Add tables for other components we have
+        if (vanillaRendering != null) globals().rawset("vanilla", VanillaTable.create(this, vanillaRendering));
+        if (managerAccess != null) globals().rawset("manager", ManagerTable.create(this, managerAccess));
 
         // Set up a separate env for each lua module:
         for (AvatarModules.LoadTimeModule module : modules.loadTimeModules()) {
@@ -126,7 +130,7 @@ public class LuaRuntime extends LuaState implements ScriptRuntimeComponent<LuaRu
             if (env == null) throw new AvatarError(FiguraException.INTERNAL_ERROR, new TranslatableItems.Items1<>("Attempt to initialize non-Lua module with Lua runtime?"));
             // Compile and run entrypoint, which is just "require 'main'"
             LuaClosure entrypoint = LoadState.load(this, new ByteArrayInputStream("return require 'main'".getBytes(StandardCharsets.UTF_8)), "=ENTRYPOINT", env);
-            LuaValue res = LuaThread.run(new LuaThread(this, entrypoint), Constants.NONE).first();
+            LuaValue res = this.runNoYield(entrypoint, Constants.NONE).first();
             // Fetch resulting table, and generate script callbacks for the module
             for (var entry : module.api.entrySet()) {
                 String funcName = entry.getKey();
@@ -155,7 +159,7 @@ public class LuaRuntime extends LuaState implements ScriptRuntimeComponent<LuaRu
             if (input == null) throw new LuaError("Figura is missing the builtin file \"" + name + ".lua\"", state.allocationTracker);
             LuaClosure c = LoadState.load(state, input, "=" + name.toUpperCase(), state.globals());
             // Execute the file
-            return LuaThread.run(new LuaThread(state, c), args);
+            return state.runNoYield(c, args);
         } catch (IOException e) {
             throw new LuaError("Figura is missing the builtin file \"" + name + ".lua\"", state.allocationTracker);
         } catch (CompileException e) {

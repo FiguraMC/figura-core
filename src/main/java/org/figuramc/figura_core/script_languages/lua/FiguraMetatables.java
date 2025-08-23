@@ -1,7 +1,9 @@
 package org.figuramc.figura_core.script_languages.lua;
 
 import org.figuramc.figura_cobalt.LuaUncatchableError;
+import org.figuramc.figura_cobalt.cc.tweaked.cobalt.internal.unwind.SuspendedAction;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.*;
+import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.Dispatch;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.LibFunction;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.LuaFunction;
 import org.figuramc.figura_core.script_languages.lua.generated.*;
@@ -39,7 +41,7 @@ public class FiguraMetatables {
 
     // Model parts
     public final LuaTable riggedHierarchy;
-    public final LuaTable modelPart;
+    public final LuaTable figuraPart;
     public final LuaTable figmodelModelPart;
 
     // Vanilla rendering
@@ -48,6 +50,10 @@ public class FiguraMetatables {
 
     // Animation stuff
     public final LuaTable animationInstance;
+
+    // Manager special
+    public final LuaTable avatarListEntry;
+
 
     public FiguraMetatables(LuaRuntime state) throws LuaError, LuaUncatchableError {
         // General
@@ -69,14 +75,17 @@ public class FiguraMetatables {
 
         // Model part
         riggedHierarchy = API__RiggedHierarchy.createMetatable(state);
-        modelPart = API__FiguraPart.createMetatable(state, riggedHierarchy);
-        figmodelModelPart = API__Figmodel.createMetatable(state, modelPart);
+        figuraPart = API__FiguraPart.createMetatable(state, riggedHierarchy);
+        figmodelModelPart = API__Figmodel.createMetatable(state, figuraPart);
 
         // Vanilla rendering
         vanillaPart = API__VanillaPart.createMetatable(state, riggedHierarchy);
 
         // Animations
         animationInstance = API__AnimationInstance.createMetatable(state);
+
+        // Manager special (TODO consider not even putting this in for Avatars without manager access?)
+        avatarListEntry = API__AvatarListEntry.createMetatable(state);
     }
 
     // Add all the type metatables, with PascalCase keys, to the given table
@@ -95,7 +104,7 @@ public class FiguraMetatables {
         table.rawset("Vec4", vec4);
 
         table.rawset("RiggedHierarchy", riggedHierarchy);
-        table.rawset("ModelPart", modelPart);
+        table.rawset("FiguraPart", figuraPart);
         table.rawset("Figmodel", figmodelModelPart);
 
         table.rawset("VanillaPart", vanillaPart);
@@ -148,32 +157,26 @@ public class FiguraMetatables {
             if (superclassIndex instanceof LuaFunction superIndexFunc) {
                 // If we also have a custom __index, we need to weave them together:
                 if (customIndexer != null) {
-                    thisMetatable.rawset(INDEX, LibFunction.createV((s, args) -> {
+                    thisMetatable.rawset(INDEX, LibFunction.createS((s, di, args) -> {
                         // First, try to fetch a method:
                         LuaValue k = args.arg(2);
-                        LuaValue method;
-                        try {
-                            method = OperationHelper.getTable(s, thisMetatable, k);
-                        } catch (UnwindThrowable ex) { throw new LuaError("Attempt to yield inside builtin metatable __index?", s.allocationTracker); }
+                        LuaValue method = SuspendedAction.run(di, () -> OperationHelper.getTable(s, thisMetatable, k)).first();
                         if (!method.isNil()) return method;
                         // If no method was found, try our indexer:
-                        LuaValue subclassIndexerResult = LuaThread.run(new LuaThread(s, customIndexer), args).first();
+                        LuaValue subclassIndexerResult = SuspendedAction.run(di, () -> Dispatch.invoke(s, customIndexer, args)).first();
                         if (!subclassIndexerResult.isNil()) return subclassIndexerResult;
                         // Finally, defer to superclass indexer.
-                        return LuaThread.run(new LuaThread(s, superIndexFunc), args);
+                        return SuspendedAction.run(di, () -> Dispatch.invoke(s, superIndexFunc, args));
                     }));
                 } else {
                     // We don't have a custom indexer, so just defer to the superclass's.
-                    thisMetatable.rawset(INDEX, LibFunction.createV((s, args) -> {
+                    thisMetatable.rawset(INDEX, LibFunction.createS((s, di, args) -> {
                         // First, try to fetch a method:
                         LuaValue k = args.arg(2);
-                        LuaValue method;
-                        try {
-                            method = OperationHelper.getTable(s, thisMetatable, k);
-                        } catch (UnwindThrowable ex) { throw new LuaError("Attempt to yield inside builtin metatable __index?", s.allocationTracker); }
+                        LuaValue method = SuspendedAction.run(di, () -> OperationHelper.getTable(s, thisMetatable, k)).first();
                         if (!method.isNil()) return method;
                         // If no method was found, fall back to the superclass's indexer.
-                        return LuaThread.run(new LuaThread(s, superIndexFunc), args);
+                        return SuspendedAction.run(di, () -> Dispatch.invoke(s, superIndexFunc, args));
                     }));
                 }
                 return;
@@ -186,16 +189,13 @@ public class FiguraMetatables {
         }
         // If we have a custom index function, wire it up:
         if (customIndexer != null) {
-            thisMetatable.rawset(INDEX, LibFunction.createV((s, args) -> {
+            thisMetatable.rawset(INDEX, LibFunction.createS((s, di, args) -> {
                 // First, try to fetch a method:
                 LuaValue k = args.arg(2);
-                LuaValue method;
-                try {
-                    method = OperationHelper.getTable(s, thisMetatable, k);
-                } catch (UnwindThrowable ex) { throw new LuaError("Attempt to yield inside builtin metatable __index?", s.allocationTracker); }
+                LuaValue method = SuspendedAction.run(di, () -> OperationHelper.getTable(s, thisMetatable, k)).first();
                 if (!method.isNil()) return method;
                 // If no method was found, fall back to the custom indexer.
-                return LuaThread.run(new LuaThread(s, customIndexer), args);
+                return SuspendedAction.run(di, () -> Dispatch.invoke(s, customIndexer, args));
             }));
         } else {
             thisMetatable.rawset(INDEX, thisMetatable);

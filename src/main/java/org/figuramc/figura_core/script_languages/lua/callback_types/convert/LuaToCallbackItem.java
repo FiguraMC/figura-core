@@ -38,6 +38,11 @@ public class LuaToCallbackItem implements CallbackType.ToItemVisitor<LuaValue, L
     }
 
     @Override
+    public CallbackItem.I32 visit(CallbackType.I32 __, LuaValue value) throws LuaError, LuaUncatchableError {
+        return new CallbackItem.I32(value.checkInteger(state));
+    }
+
+    @Override
     public CallbackItem.F32 visit(CallbackType.F32 __, LuaValue value) throws LuaError, LuaUncatchableError {
         return new CallbackItem.F32((float) value.checkDouble(state));
     }

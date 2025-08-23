@@ -1,9 +1,6 @@
 package org.figuramc.figura_core.script_languages.lua.callback_types.convert;
 
-import org.figuramc.figura_cobalt.org.squiddev.cobalt.Constants;
-import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaBoolean;
-import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaDouble;
-import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaValue;
+import org.figuramc.figura_cobalt.org.squiddev.cobalt.*;
 import org.figuramc.figura_core.script_hooks.callback.CallbackType;
 import org.figuramc.figura_core.script_hooks.callback.items.CallbackItem;
 import org.figuramc.figura_core.script_hooks.callback.items.EntityView;
@@ -35,6 +32,11 @@ public class CallbackItemToLua implements CallbackType.FromItemVisitor<LuaValue>
     @Override
     public LuaValue visit(CallbackType.Bool __, CallbackItem.Bool item) {
         return LuaBoolean.valueOf(item.value());
+    }
+
+    @Override
+    public LuaValue visit(CallbackType.I32 __, CallbackItem.I32 item) {
+        return LuaInteger.valueOf(item.value());
     }
 
     @Override

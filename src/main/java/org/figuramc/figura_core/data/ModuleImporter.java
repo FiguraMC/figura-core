@@ -11,6 +11,8 @@ import org.figuramc.figura_core.util.IOUtils;
 import org.figuramc.figura_core.util.JsonUtils;
 import org.figuramc.figura_core.util.ListUtils;
 import org.figuramc.figura_core.util.MapUtils;
+import org.figuramc.figura_core.util.data_structures.DataTree;
+import org.figuramc.figura_core.util.data_structures.Pair;
 import org.figuramc.figura_translations.Translatable;
 import org.figuramc.figura_translations.TranslatableItems;
 import org.jetbrains.annotations.Nullable;
@@ -35,6 +37,16 @@ public class ModuleImporter {
     private static final Translatable<TranslatableItems.Items1<String>> CONFLICTING_CUSTOM_ITEM_MODELS
             = Translatable.create("figura_core.error.importing.conflicting_custom_item_models", String.class);
 
+    private static final String METADATA_FILE_NAME = "avatar.json";
+
+    // If the path has metadata, parse it and return.
+    // If the path does not have metadata, return null.
+    // If it has improperly formatted metadata, throw ModuleImportingException.
+    public static @Nullable ModuleMaterials.MetadataMaterials checkMetadata(Path root) throws ModuleImportingException, IOException {
+        if (!Files.exists(root.resolve(METADATA_FILE_NAME)))
+            return null;
+        return readMetadata(root);
+    }
 
     public static ModuleMaterials importPath(Path root) throws ModuleImportingException, IOException {
 
@@ -50,22 +62,18 @@ public class ModuleImporter {
         } else scriptingLanguage = null;
 
         Path scriptsRoot = root.resolve("scripts");
-        TreeMap<String, byte[]> scripts;
+        DataTree<String, byte[]> scripts;
         if (scriptingLanguage == null) {
             // If no language is set but the module is trying to use scripts anyway, error nicely.
             if (Files.exists(scriptsRoot))
                 throw new ModuleImportingException(NO_LANGUAGE_SET, TranslatableItems.Items0.INSTANCE);
-            scripts = new TreeMap<>();
+            scripts = new DataTree<>();
         } else scripts = scriptingLanguage.findScripts(root);
 
         // Textures
         Path texturesRoot = root.resolve("textures");
-        var textures = IOUtils.recursiveProcess(
-                texturesRoot,
-                path -> new ArrayList<>(List.of(readTexture(path, texturesRoot))),
-                (_p, s) -> ListUtils.flatten(s.values()),
-                "png", false
-        );
+        ArrayList<ModuleMaterials.TextureMaterials> textures = new ArrayList<>();
+        IOUtils.recursiveProcess(texturesRoot, p -> readTexture(p, texturesRoot), "png", false, false).stream().map(Pair::b).forEach(textures::add);
 
         // Read custom items first, because they can potentially add new textures which are then used later
         var items = readCustomItems(root, textures);
@@ -80,7 +88,7 @@ public class ModuleImporter {
     }
 
     private static ModuleMaterials.MetadataMaterials readMetadata(Path root) throws ModuleImportingException, IOException {
-        Path metadataPath = root.resolve("avatar.json");
+        Path metadataPath = root.resolve(METADATA_FILE_NAME);
         if (!Files.exists(metadataPath)) throw new ModuleImportingException(NO_AVATAR_JSON, TranslatableItems.Items0.INSTANCE);
         String str = Files.readString(metadataPath);
         // If empty, return default materials.
@@ -140,9 +148,7 @@ public class ModuleImporter {
     }
 
     private static @Nullable ModuleMaterials.ModelPartMaterials readRecursiveModel(Path root, String name, ArrayList<ModuleMaterials.TextureMaterials> textures) throws ModuleImportingException, IOException {
-        Path modelPath = root.resolve(name);
-        if (!Files.exists(modelPath)) return null;
-        return IOUtils.recursiveProcess(modelPath,
+        return IOUtils.recursiveProcess(root.resolve(name),
                 figmodel -> readFigModel(root, figmodel, textures),
                 (folder, models) -> new ModuleMaterials.ModelPartMaterials(models),
                 "figmodel", true
@@ -152,6 +158,7 @@ public class ModuleImporter {
     private static TreeMap<String, ModuleMaterials.CustomItem> readCustomItems(Path root, ArrayList<ModuleMaterials.TextureMaterials> textures) throws ModuleImportingException, IOException {
         Map<String, MutablePair<ModuleMaterials.@Nullable CustomItemModel, Integer>> pairs = new TreeMap<>(); // Treemap for sorted keys, consistency
         // Recursive process, with no return value, just mutates the pairs.
+        // TODO should the folder structure matter for this at all?
         IOUtils.<Void, ModuleImportingException>recursiveProcess(root.resolve("items"),
                 path -> {
                     if (path.toFile().getName().endsWith(".png")) {

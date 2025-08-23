@@ -19,6 +19,7 @@ public interface GameDataProvider {
 
     /**
      * Fetch the entity with the given UUID, or null if no such entity exists.
+     * This should only be called on the main thread.
      * TODO do we care about old enough versions that UUIDs didn't exist yet? No way right?
      */
     @Nullable MinecraftEntity getEntity(UUID uuid);
@@ -27,6 +28,16 @@ public interface GameDataProvider {
      * Fetch the item with the given string id (namespace:item_name or just item_name for short)
      */
     @Nullable MinecraftItem getItem(String identifier);
+
+    // The following functions will be used by the "Client API" to have client information.
+    // They should be callable at any point, from any thread!
+
+    float[] getWindowSize(); // Get the size of the Minecraft window in PIXELS. (2 values)
+    float[] getScaledWindowSize(); // Get the size of the Minecraft window in GUI UNITS. (2 values)
+    float[] getMousePosition(); // Get the mouse position in PIXELS. (2 values)
+    float[] getScaledMousePosition(); // Get the mouse position in GUI UNITS. (2 values)
+
+    float getGuiScale(); // Get the GUI scale multiplier.
 
 
 }

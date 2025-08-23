@@ -269,11 +269,15 @@ public class LuaTypeProcessor extends AbstractProcessor {
             }
 
             // If we need to pass the state, pass it as the first param
-            output.append(passState ? "(LuaRuntime) s, \n" : "\n");
+            output.append(passState ? "(LuaRuntime) s" : "\n");
 
             List<? extends VariableElement> params = method.getParameters();
             for (int i = 0; i < params.size(); i++) {
-                if (i == 0 && passState) continue; // Skip first arg if passing state
+                if (i == 0 && passState) {
+                    // Skip first arg if passing state, but add the comma if needed
+                    if (params.size() > 1) output.append(", \n");
+                    continue;
+                }
                 VariableElement param = params.get(i);
                 // For each param, typecheck the corresponding arg.
                 switch (param.asType().getKind()) {
@@ -304,7 +308,8 @@ public class LuaTypeProcessor extends AbstractProcessor {
                 output.append(i == params.size() - 1 ? "\n" : ",\n");
             }
             // End method call
-            output.append(indent).append("    );\n");
+            if (!(passState && params.size() == 1)) output.append(indent).append("    );\n");
+            else output.append(");\n");
 
             // If return self, return the first param. Otherwise convert result back to Lua
             if (method.getAnnotation(LuaReturnSelf.class) != null) {
@@ -326,7 +331,7 @@ public class LuaTypeProcessor extends AbstractProcessor {
 
                     if (typeUtils.isSameType(elementUtils.getTypeElement("java.lang.String").asType(), method.getReturnType())) {
                         // If it's a string, convert to a LuaString.
-                        output.append(indent).append("    yield LuaString.valueOf(result, s.allocationTracker);\n");
+                        output.append(indent).append("    yield LuaString.valueOf(s.allocationTracker, result);\n");
                     } else {
                         // If it's not a built-in, assume it's a userdata type...
                         TypeMirror returnType = typeUtils.erasure(method.getReturnType());

@@ -35,6 +35,7 @@ public class FiguraConnectionPoint {
                 EntityUser.class, HudRoot.class, Molang.class,
                 Textures.class, VanillaRendering.class,
 
+                ManagerAccess.class,
                 LuaRuntime.class
         );
 

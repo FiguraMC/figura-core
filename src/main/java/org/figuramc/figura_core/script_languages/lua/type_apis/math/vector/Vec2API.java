@@ -7,6 +7,7 @@ import org.figuramc.figura_core.comptime.lua.annotations.LuaPassState;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaReturnSelf;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaTypeAPI;
 import org.figuramc.figura_core.script_languages.lua.LuaRuntime;
+import org.figuramc.memory_tracker.AllocationTracker;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
 import org.joml.Vector4d;
@@ -17,56 +18,86 @@ import static org.figuramc.figura_cobalt.org.squiddev.cobalt.Constants.TNUMBER;
 @LuaTypeAPI(typeName = "Vec2", wrappedClass = Vector2d.class)
 public class Vec2API {
 
-    // TODO make this use memory
-    public static LuaUserdata wrap(Vector2d vec, LuaRuntime state) {
-        return new LuaUserdata(vec, state.figuraMetatables.vec4);
+    public static LuaUserdata wrap(Vector2d vec, LuaRuntime state) throws LuaUncatchableError {
+        if (state.allocationTracker != null)
+            state.allocationTracker.track(vec, AllocationTracker.OBJECT_SIZE + AllocationTracker.DOUBLE_SIZE * 2);
+        return new LuaUserdata(vec, state.figuraMetatables.vec2);
     }
 
     // Mutating operations
+    @LuaExpose @LuaReturnSelf public static void set(Vector2d self) { self.zero(); }
     @LuaExpose @LuaReturnSelf public static void set(Vector2d self, Vector2d other) { self.set(other); }
     @LuaExpose @LuaReturnSelf public static void set(Vector2d self, double x, double y) { self.set(x, y); }
     @LuaExpose @LuaReturnSelf public static void setX(Vector2d self, double x) { self.x = x; }
     @LuaExpose @LuaReturnSelf public static void setY(Vector2d self, double y) { self.y = y; }
+    @LuaExpose @LuaReturnSelf public static void setAll(Vector2d self, double v) { self.set(v); }
 
     @LuaExpose @LuaReturnSelf public static void add(Vector2d self, Vector2d other) { self.add(other); }
     @LuaExpose @LuaReturnSelf public static void add(Vector2d self, double x, double y) { self.add(x, y); }
     @LuaExpose @LuaReturnSelf public static void addX(Vector2d self, double x) { self.x += x; }
     @LuaExpose @LuaReturnSelf public static void addY(Vector2d self, double y) { self.y += y; }
+    @LuaExpose @LuaReturnSelf public static void addAll(Vector2d self, double v) { self.add(v, v); }
 
     @LuaExpose @LuaReturnSelf public static void sub(Vector2d self, Vector2d other) { self.sub(other); }
     @LuaExpose @LuaReturnSelf public static void sub(Vector2d self, double x, double y) { self.sub(x, y); }
     @LuaExpose @LuaReturnSelf public static void subX(Vector2d self, double x) { self.x -= x; }
     @LuaExpose @LuaReturnSelf public static void subY(Vector2d self, double y) { self.y -= y; }
+    @LuaExpose @LuaReturnSelf public static void subAll(Vector2d self, double v) { self.sub(v, v); }
 
     @LuaExpose @LuaReturnSelf public static void mul(Vector2d self, Vector2d other) { self.mul(other); }
     @LuaExpose @LuaReturnSelf public static void mul(Vector2d self, double x, double y) { self.x *= x; self.y *= y; }
     @LuaExpose @LuaReturnSelf public static void mulX(Vector2d self, double x) { self.x *= x; }
     @LuaExpose @LuaReturnSelf public static void mulY(Vector2d self, double y) { self.y *= y; }
+    @LuaExpose @LuaReturnSelf public static void mulAll(Vector2d self, double v) { self.mul(v); }
 
-    @LuaExpose @LuaReturnSelf public static void div(Vector2d self, Vector2d other) {
-        self.set(OperationHelper.div(self.x, other.x), OperationHelper.div(self.y, other.y));
-    }
-    @LuaExpose @LuaReturnSelf public static void div(Vector2d self, double x, double y) {
-        self.set(OperationHelper.div(self.x, x), OperationHelper.div(self.y, y));
-    }
+    @LuaExpose @LuaReturnSelf public static void div(Vector2d self, Vector2d other) { self.set(OperationHelper.div(self.x, other.x), OperationHelper.div(self.y, other.y)); }
+    @LuaExpose @LuaReturnSelf public static void div(Vector2d self, double x, double y) { self.set(OperationHelper.div(self.x, x), OperationHelper.div(self.y, y)); }
     @LuaExpose @LuaReturnSelf public static void divX(Vector2d self, double x) { self.x = OperationHelper.div(self.x, x); }
     @LuaExpose @LuaReturnSelf public static void divY(Vector2d self, double y) { self.y = OperationHelper.div(self.x, y); }
+    @LuaExpose @LuaReturnSelf public static void divAll(Vector2d self, double v) { div(self, v, v); }
 
-    @LuaExpose @LuaReturnSelf public static void mod(Vector2d self, Vector2d other) {
-        self.set(OperationHelper.mod(self.x, other.x), OperationHelper.mod(self.y, other.y));
-    }
-    @LuaExpose @LuaReturnSelf public static void mod(Vector2d self, double x, double y) {
-        self.set(OperationHelper.mod(self.x, x), OperationHelper.mod(self.y, y));
-    }
+    @LuaExpose @LuaReturnSelf public static void mod(Vector2d self, Vector2d other) { self.set(OperationHelper.mod(self.x, other.x), OperationHelper.mod(self.y, other.y)); }
+    @LuaExpose @LuaReturnSelf public static void mod(Vector2d self, double x, double y) { self.set(OperationHelper.mod(self.x, x), OperationHelper.mod(self.y, y)); }
     @LuaExpose @LuaReturnSelf public static void modX(Vector2d self, double x) { self.x = OperationHelper.mod(self.x, x); }
     @LuaExpose @LuaReturnSelf public static void modY(Vector2d self, double y) { self.y = OperationHelper.mod(self.x, y); }
+    @LuaExpose @LuaReturnSelf public static void modAll(Vector2d self, double v) { mod(self, v, v); }
+
+    @LuaExpose @LuaReturnSelf public static void max(Vector2d self, Vector2d other) { self.max(other); }
+    @LuaExpose @LuaReturnSelf public static void max(Vector2d self, double x, double y) { self.set(Math.max(self.x, x),Math.max(self.y, y)); }
+    @LuaExpose @LuaReturnSelf public static void maxX(Vector2d self, double x) { if (self.x < x) self.x = x; }
+    @LuaExpose @LuaReturnSelf public static void maxY(Vector2d self, double y) { if (self.y < y) self.y = y; }
+    @LuaExpose @LuaReturnSelf public static void maxAll(Vector2d self, double v) { max(self, v, v); }
+
+    @LuaExpose @LuaReturnSelf public static void min(Vector2d self, Vector2d other) { self.min(other); }
+    @LuaExpose @LuaReturnSelf public static void min(Vector2d self, double x, double y) { self.set(Math.min(self.x, x),Math.min(self.y, y)); }
+    @LuaExpose @LuaReturnSelf public static void minX(Vector2d self, double x) { if (self.x > x) self.x = x; }
+    @LuaExpose @LuaReturnSelf public static void minY(Vector2d self, double y) { if (self.y > y) self.y = y; }
+    @LuaExpose @LuaReturnSelf public static void minAll(Vector2d self, double v) { min(self, v, v); }
+
+    // We'll say result is undefined if min > max
+    @LuaExpose @LuaReturnSelf public static void clamp(Vector2d self, Vector2d min, Vector2d max) { self.max(min); self.min(max); }
+    @LuaExpose @LuaReturnSelf public static void clamp(Vector2d self, double x1, double y1, double x2, double y2) { self.set(Math.clamp(self.x, x1, x2), Math.clamp(self.y, y1, y2)); }
+    @LuaExpose @LuaReturnSelf public static void clampX(Vector2d self, double x1, double x2) { if (self.x < x1) self.x = x1; else if (self.x > x2) self.x = x2; }
+    @LuaExpose @LuaReturnSelf public static void clampY(Vector2d self, double y1, double y2) { if (self.y < y1) self.y = y1; else if (self.y > y2) self.y = y2; }
+    @LuaExpose @LuaReturnSelf public static void clampAll(Vector2d self, double v1, double v2) { clamp(self, v1, v1, v2, v2); }
+
+    @LuaExpose @LuaReturnSelf public static void neg(Vector2d self) { self.negate(); }
+    @LuaExpose @LuaReturnSelf public static void negX(Vector2d self) { self.x = -self.x; }
+    @LuaExpose @LuaReturnSelf public static void negY(Vector2d self) { self.y = -self.y; }
+
+    @LuaExpose @LuaReturnSelf public static void abs(Vector2d self) { self.absolute(); }
+    @LuaExpose @LuaReturnSelf public static void absX(Vector2d self) { self.x = Math.abs(self.x); }
+    @LuaExpose @LuaReturnSelf public static void absY(Vector2d self) { self.y = Math.abs(self.y); }
+
+    @LuaExpose @LuaReturnSelf public static void deg(Vector2d self) { self.mul(180 / Math.PI); }
+    @LuaExpose @LuaReturnSelf public static void rad(Vector2d self) { self.mul(Math.PI / 180); }
 
     @LuaExpose @LuaReturnSelf public static void normalize(Vector2d self) { self.normalize(); }
-    @LuaExpose @LuaReturnSelf public static void clamp(Vector2d self, double min) {
+    @LuaExpose @LuaReturnSelf public static void clampLength(Vector2d self, double min) {
         double len2 = self.lengthSquared();
         if (len2 < min*min) self.normalize(min);
     }
-    @LuaExpose @LuaReturnSelf public static void clamp(Vector2d self, double min, double max) {
+    @LuaExpose @LuaReturnSelf public static void clampLength(Vector2d self, double min, double max) {
         double len2 = self.lengthSquared();
         if (len2 > max*max) self.normalize(max);
         else if (len2 < min*min) self.normalize(min);
@@ -74,71 +105,65 @@ public class Vec2API {
     @LuaExpose @LuaReturnSelf public static void floor(Vector2d self) { self.floor(); }
     @LuaExpose @LuaReturnSelf public static void ceil(Vector2d self) { self.ceil(); }
     @LuaExpose @LuaReturnSelf public static void round(Vector2d self) { self.round(); }
-
-    @LuaExpose @LuaReturnSelf public static void maxWith(Vector2d self, Vector2d other) { self.max(other); }
-    @LuaExpose @LuaReturnSelf public static void maxWith(Vector2d self, double x, double y) { self.set(Math.max(self.x, x), Math.max(self.y, y)); }
-    @LuaExpose @LuaReturnSelf public static void minWith(Vector2d self, Vector2d other) { self.min(other); }
-    @LuaExpose @LuaReturnSelf public static void minWith(Vector2d self, double x, double y) { self.set(Math.min(self.x, x), Math.min(self.y, y)); }
     @LuaExpose @LuaReturnSelf public static void lerp(Vector2d self, Vector2d other, double amount) { self.lerp(other, amount); }
 
-    // Non-mutating operations, returning a different type
+    // Non-mutating operations or operations returning a different type
     @LuaExpose public static double dot(Vector2d self, Vector2d other) { return self.dot(other); }
-    @LuaExpose public static double dot(Vector2d self, double x, double y) { return Math.fma(self.x, x, self.y * y); }
+    @LuaExpose public static double dot(Vector2d self, double x, double y) { return self.x * x + self.y * y; }
     @LuaExpose public static Vector2d copy(Vector2d self) { return new Vector2d(self); }
     @LuaExpose public static double len(Vector2d self) { return self.length(); }
     @LuaExpose public static double len2(Vector2d self) { return self.lengthSquared(); }
     @LuaExpose public static Varargs unpack(Vector2d self) { return ValueFactory.varargsOf(LuaDouble.valueOf(self.x), LuaDouble.valueOf(self.y)); }
-    @LuaExpose public static void abs(Vector2d self) { self.absolute(); }
-    @LuaExpose public static double max(Vector2d self) { return Math.max(self.x, self.y); }
-    @LuaExpose public static double min(Vector2d self) { return Math.min(self.x, self.y); }
+    @LuaExpose public static double maxElem(Vector2d self) { return Math.max(self.x, self.y); }
+    @LuaExpose public static double minElem(Vector2d self) { return Math.min(self.x, self.y); }
 
     // Binary operator overloading.
     // Needs extra logic since we want to allow Vector + Vector and Vector + number.
     @LuaExpose @LuaPassState public static Vector2d __add(LuaRuntime s, Vector2d self, LuaValue unknown) throws LuaError, LuaUncatchableError {
-        Vector2d other = unknown.optUserdata(s, Vector2d.class, null);
-        if (other != null) return new Vector2d(self).add(other);
+        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector2d other)
+            return new Vector2d(self).add(other);
         double num = unknown.checkDouble(s);
         return new Vector2d(self).add(num, num);
     }
     @LuaExpose @LuaPassState public static Vector2d __sub(LuaRuntime s, Vector2d self, LuaValue unknown) throws LuaError, LuaUncatchableError {
-        Vector2d other = unknown.optUserdata(s, Vector2d.class, null);
-        if (other != null) return new Vector2d(self).sub(other);
+        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector2d other)
+            return new Vector2d(self).sub(other);
         double num = unknown.checkDouble(s);
         return new Vector2d(self).sub(num, num);
     }
     @LuaExpose @LuaPassState public static Vector2d __mul(LuaRuntime s, Vector2d self, LuaValue unknown) throws LuaError, LuaUncatchableError {
-        Vector2d other = unknown.optUserdata(s, Vector2d.class, null);
-        if (other != null) return new Vector2d(self).mul(other);
+        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector2d other)
+            return new Vector2d(self).mul(other);
         double num = unknown.checkDouble(s);
         return new Vector2d(self).mul(num);
     }
     @LuaExpose @LuaPassState public static Vector2d __div(LuaRuntime s, Vector2d self, LuaValue unknown) throws LuaError, LuaUncatchableError {
-        Vector2d other = unknown.optUserdata(s, Vector2d.class, null);
-        if (other != null) return new Vector2d(OperationHelper.div(self.x, other.x), OperationHelper.div(self.y, other.y));
+        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector2d other)
+            return new Vector2d(OperationHelper.div(self.x, other.x), OperationHelper.div(self.y, other.y));
         double num = unknown.checkDouble(s);
         return new Vector2d(OperationHelper.div(self.x, num), OperationHelper.div(self.y, num));
     }
     @LuaExpose @LuaPassState public static Vector2d __mod(LuaRuntime s, Vector2d self, LuaValue unknown) throws LuaError, LuaUncatchableError {
-        Vector2d other = unknown.optUserdata(s, Vector2d.class, null);
-        if (other != null) return new Vector2d(OperationHelper.mod(self.x, other.x), OperationHelper.mod(self.y, other.y));
+        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector2d other)
+            return new Vector2d(OperationHelper.mod(self.x, other.x), OperationHelper.mod(self.y, other.y));
         double num = unknown.checkDouble(s);
         return new Vector2d(OperationHelper.mod(self.x, num), OperationHelper.mod(self.y, num));
     }
     @LuaExpose @LuaPassState public static boolean __eq(LuaRuntime s, Vector2d self, LuaValue unknown) throws LuaError, LuaUncatchableError {
-        Vector2d other = unknown.optUserdata(s, Vector2d.class, null);
-        if (other != null) return self.equals(other);
+        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector2d other)
+            return self.equals(other);
         double num = unknown.checkDouble(s);
         return self.equals(num, num);
     }
     @LuaExpose @LuaPassState public static boolean __lt(LuaRuntime s, Vector2d self, LuaValue unknown) throws LuaError, LuaUncatchableError {
-        Vector2d other = unknown.optUserdata(s, Vector2d.class, null);
-        if (other != null) return self.x < other.x && self.y < other.y;
+        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector2d other)
+            return self.x < other.x && self.y < other.y;
         double num = unknown.checkDouble(s);
         return self.x < num && self.y < num;
     }
     @LuaExpose @LuaPassState public static boolean __le(LuaRuntime s, Vector2d self, LuaValue unknown) throws LuaError, LuaUncatchableError {
-        Vector2d other = unknown.optUserdata(s, Vector2d.class, null);
-        if (other != null) return self.x <= other.x && self.y <= other.y;
+        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector2d other)
+            return self.x <= other.x && self.y <= other.y;
         double num = unknown.checkDouble(s);
         return self.x <= num && self.y <= num;
     }

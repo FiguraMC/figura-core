@@ -1,9 +1,11 @@
 package org.figuramc.figura_core.script_languages.lua;
 
 import org.figuramc.figura_cobalt.LuaUncatchableError;
+import org.figuramc.figura_cobalt.cc.tweaked.cobalt.internal.unwind.SuspendedAction;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.*;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.compiler.CompileException;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.compiler.LoadState;
+import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.Dispatch;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.LibFunction;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.LuaClosure;
 import org.figuramc.figura_core.avatars.Avatar;
@@ -42,9 +44,9 @@ public class FiguraRequire {
         state.registry().getSubTable(LOADED_KEY).rawset(index + 1, new LuaTable(state.allocationTracker));
 
         // Add all the scripts to the require table, and also add dependency modules, prefixed with "@".
-        for (var script : module.materials.scripts().entrySet()) {
-            String name = IOUtils.stripExtension(script.getKey(), "lua"); // Strip "lua" extension
-            byte[] code = script.getValue();
+        for (var script : module.materials.scripts().stream().map(p -> p.mapA(a -> String.join("/", a))).toList()) {
+            String name = IOUtils.stripExtension(script.a(), "lua"); // Strip "lua" extension, if any
+            byte[] code = script.b();
             try {
                 // Compile to a closure, and put it in the require() table.
                 // Use @ because it's a file name, and Cobalt does something with that internally.
@@ -79,7 +81,7 @@ public class FiguraRequire {
         }
 
         // Create require function (only captured variable is a single int, so we don't need to worry about tracing this lambda)
-        return LibFunction.createV((s, args) -> {
+        return LibFunction.createS((s, di, args) -> {
             // First arg is file name (without the .lua), or "@" + dependency module name
             LuaString fileName = args.first().checkLuaString(s);
             // Fetch tables
@@ -97,7 +99,7 @@ public class FiguraRequire {
             // Before running function, mark it as in-progress
             isLoaded.rawset(fileName, Constants.FALSE);
             // Run the function, passing the file name as the varargs.
-            LuaValue result = LuaThread.run(new LuaThread(s, toCall), fileName).first();
+            LuaValue result = SuspendedAction.run(di, () -> Dispatch.invoke(s, toCall, fileName)).first();
             // Mark it as complete, and store result in cache for future use.
             isLoaded.rawset(fileName, Constants.TRUE);
             requireTable.rawset(fileName, result);

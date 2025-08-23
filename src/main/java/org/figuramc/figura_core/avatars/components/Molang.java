@@ -6,12 +6,11 @@ import org.figuramc.figura_core.avatars.AvatarComponent;
 import org.figuramc.figura_core.avatars.AvatarError;
 import org.figuramc.figura_core.avatars.AvatarModules;
 import org.figuramc.figura_core.script_languages.molang.AllMolangQueries;
-import org.figuramc.figura_core.util.NullEmptyStack;
+import org.figuramc.figura_core.util.data_structures.NullEmptyStack;
 import org.figuramc.figura_core.util.functional.ThrowingSupplier;
 import org.figuramc.figura_molang.MolangInstance;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
 import java.util.Stack;
 
 /**

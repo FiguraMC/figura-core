@@ -13,17 +13,7 @@ public sealed interface FiguraRenderType {
     /**
      * Basic rendering setup. Most commonly used.
      */
-    record Basic(@Nullable MinecraftTexture mainTex, @Nullable MinecraftTexture emissiveTex) implements FiguraRenderType {
-
-    }
-
-//    /**
-//     * A rendering type that uses a custom shader.
-//     * Not all rendering backends need to support this.
-//     */
-//    record CustomShader(
-//            FiguraCustomShader customShader
-//    ) implements FiguraRenderType {}
+    record Basic(@Nullable MinecraftTexture mainTex, @Nullable MinecraftTexture emissiveTex) implements FiguraRenderType {}
 
     /**
      * One-off, non-customizable render types, with global INSTANCE objects.

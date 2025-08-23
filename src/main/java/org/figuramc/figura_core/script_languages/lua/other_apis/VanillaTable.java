@@ -22,7 +22,7 @@ public class VanillaTable {
             switch (args.count()) {
                 case 0 -> { return LuaBoolean.valueOf(component.hideAllModelParts); }
                 case 1 -> component.hideAllModelParts = args.first().checkBoolean(s);
-                default -> throw ErrorFactory.argCountError(s, "vanilla.cancelAllParts()", args.count(), 0, 1);
+                default -> throw ErrorFactory.argCountError(s, "vanilla.hideAllParts()", args.count(), 0, 1);
             }
             return Constants.NONE;
         }));

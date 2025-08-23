@@ -1,6 +1,7 @@
 package org.figuramc.figura_core.data;
 
 import org.figuramc.figura_core.script_hooks.callback.CallbackType;
+import org.figuramc.figura_core.util.data_structures.DataTree;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -35,8 +36,8 @@ import java.util.TreeMap;
  */
 public record ModuleMaterials(
         MetadataMaterials metadata,
-        TreeMap<String, byte[]> scripts,
-        List<TextureMaterials> textures, // Use a list because of texture indices for referral, and also not all textures have names!
+        DataTree<String, byte[]> scripts,
+        List<TextureMaterials> textures,// Use a list because of texture indices for referral, and also not all textures have names!
         TreeMap<String, ModelPartMaterials> worldRoots,
         @Nullable ModelPartMaterials entityRoot,
         @Nullable ModelPartMaterials hudRoot,

@@ -29,18 +29,18 @@ public class CustomItemModelPart extends FigmodelModelPart {
             // Map
             + AllocationTracker.OBJECT_SIZE;
 
-    public CustomItemModelPart(AvatarModules.LoadTimeModule module, String modelName, ModuleMaterials.FigmodelMaterials materials, LinkedHashMap<String, ModuleMaterials.ItemPartTransform> transforms, @Nullable AllocationTracker<AvatarError> allocationTracker, Textures texturesComponent, @Nullable Molang molangState, @Nullable VanillaRendering vanilla) throws AvatarError {
-        super(module, modelName, materials, allocationTracker, texturesComponent, molangState, vanilla);
+    public CustomItemModelPart(String name, AvatarModules.LoadTimeModule module, ModuleMaterials.FigmodelMaterials materials, LinkedHashMap<String, ModuleMaterials.ItemPartTransform> transforms, @Nullable AllocationTracker<AvatarError> allocationTracker, Textures texturesComponent, @Nullable Molang molangState, @Nullable VanillaRendering vanilla) throws AvatarError {
+        super(name, module, materials, allocationTracker, texturesComponent, molangState, vanilla);
         this.itemTransforms = new HashMap<>();
         int[] size = new int[] { SIZE_ESTIMATE };
-        ItemRenderContext.CONTEXTS_BY_NAME.forEach((name, context) -> {
-            @Nullable ModuleMaterials.ItemPartTransform transform = transforms.get(name);
+        ItemRenderContext.CONTEXTS_BY_NAME.forEach((contextName, context) -> {
+            @Nullable ModuleMaterials.ItemPartTransform transform = transforms.get(contextName);
             boolean flip = context.mirrorPlacement; // Save mirroring
             while (transform == null) { // If there's no transform, check fallback
                 if (context.fallback == null) return; // If no fallback, skip this entry
                 context = context.fallback;
-                name = context.name;
-                transform = transforms.get(name);
+                contextName = context.name;
+                transform = transforms.get(contextName);
             }
             // We now have a non-null transform and context, so add it to the map
             float mirror = flip ? -1.0f : 1.0f;

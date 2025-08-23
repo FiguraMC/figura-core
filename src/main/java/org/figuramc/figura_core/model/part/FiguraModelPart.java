@@ -32,10 +32,12 @@ import java.util.*;
 public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
 
     // Structure / modifications
+    public final String name;
     public final PartTransform transform; // The transform of this model part
 
 //    private  animators; // The animators which affect this model part
-    public final LinkedHashMap<String, FiguraModelPart> children; // The children of this model part in the hierarchy tree. Ordered, so we don't use a regular hashmap.
+    public final ArrayList<FiguraModelPart> children; // The children of this model part in the hierarchy tree, in iteration order
+    private final Map<String, FiguraModelPart> childrenSpeedupCache = new WeakHashMap<>(); // Speedup cache for looking for children by name
 
     // Rendering
     public final float[] vertices; // The vertices making up the cubes and meshes of the model part
@@ -44,23 +46,23 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
 
     // Callbacks which are run during various stages of the rendering process.
     // TODO finalize the arg/return types for this!
-    public final ArrayList<ScriptCallback<CallbackItem.F32, CallbackItem.Unit>>
-            preRenderCallbacks = new ArrayList<>(0), // Zero sized at first, since most parts will not have callbacks
-            midRenderCallbacks = new ArrayList<>(0),
-            postRenderCallbacks = new ArrayList<>(0);
+    private ArrayList<ScriptCallback<CallbackItem.F32, CallbackItem.Unit>>
+            preRenderCallbacks, midRenderCallbacks, postRenderCallbacks;
 
     // Alloc tracker state
     private final @Nullable AllocationTracker.State<AvatarError> allocState;
 
     // Construct a simple empty wrapper part around the given children
-    public FiguraModelPart(Map<String, FiguraModelPart> children, @Nullable AllocationTracker<AvatarError> allocationTracker) throws AvatarError {
+    public FiguraModelPart(String name, List<FiguraModelPart> children, @Nullable AllocationTracker<AvatarError> allocationTracker) throws AvatarError {
+        this.name = name;
         this.transform = new PartTransform(allocationTracker);
-        this.children = new LinkedHashMap<>(children);
+        this.children = new ArrayList<>(children);
         this.vertices = new float[0];
         if (allocationTracker != null) {
-            for (var key : children.keySet())
-                allocationTracker.track(key);
-            allocState = allocationTracker.track(this, SIZE_ESTIMATE);
+            if (!name.isEmpty()) allocationTracker.track(name);
+            int size = SIZE_ESTIMATE;
+            size += children.size() * AllocationTracker.REFERENCE_SIZE;
+            allocState = allocationTracker.track(this, size);
         } else allocState = null;
     }
 
@@ -69,8 +71,61 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
             + AllocationTracker.REFERENCE_SIZE * 8
             + AllocationTracker.INT_SIZE;
 
+    // Copy constructor.
+    // Has many parameters for controlling what is deep-copied and what isn't.
+    public FiguraModelPart(
+            String newName,
+            FiguraModelPart part,
+            boolean deepCopyTransform,
+            boolean deepCopyChildren, // Whether to deep-copy the children. These args will be propagated to those children as they're deep-copied.
+            boolean deepCopyVertices,
+            boolean deepCopyCallbackLists, // Whether to deep-copy the callback lists
+            @Nullable AllocationTracker<AvatarError> allocationTracker
+    ) throws AvatarError {
+        this.name = newName;
+        // Transform:
+        this.transform = deepCopyTransform ? new PartTransform(part.transform, allocationTracker) : part.transform;
+        // Children (But not the child list!):
+        this.children = new ArrayList<>(part.children.size());
+        for (var child : part.children) {
+            FiguraModelPart maybeCopied = deepCopyChildren ? new FiguraModelPart(child.name, child, deepCopyTransform, true, deepCopyVertices, deepCopyCallbackLists, allocationTracker) : child;
+            this.children.add(maybeCopied);
+        }
+        // Vertices:
+        if (deepCopyVertices) {
+            this.vertices = new float[part.vertices.length];
+            if (allocationTracker != null) allocationTracker.track(vertices);
+            System.arraycopy(part.vertices, 0, this.vertices, 0, part.vertices.length);
+        } else this.vertices = part.vertices;
+        // Callback lists
+        if (deepCopyCallbackLists) {
+            this.preRenderCallbacks = part.preRenderCallbacks == null ? null : new ArrayList<>(part.preRenderCallbacks);
+            this.midRenderCallbacks = part.midRenderCallbacks == null ? null : new ArrayList<>(part.midRenderCallbacks);
+            this.postRenderCallbacks = part.postRenderCallbacks == null ? null : new ArrayList<>(part.postRenderCallbacks);
+        } else {
+            this.preRenderCallbacks = part.preRenderCallbacks;
+            this.midRenderCallbacks = part.midRenderCallbacks;
+            this.postRenderCallbacks = part.postRenderCallbacks;
+        }
+        // Copy other properties
+        this.renderType = part.renderType;
+        this.renderTypePriority = part.renderTypePriority;
+        // Track this
+        if (allocationTracker != null) {
+            int size = SIZE_ESTIMATE;
+            size += (
+                    (this.preRenderCallbacks == null ? 0 : preRenderCallbacks.size())
+                    + (this.midRenderCallbacks == null ? 0 : midRenderCallbacks.size())
+                    + (this.postRenderCallbacks == null ? 0 : postRenderCallbacks.size())
+                    + this.children.size()
+            ) * AllocationTracker.REFERENCE_SIZE;
+            allocState = allocationTracker.track(this, size);
+        } else allocState = null;
+    }
+
     // Vanilla parameter is used for mimics
-    public FiguraModelPart(AvatarModules.LoadTimeModule module, ModuleMaterials.ModelPartMaterials materials, @Nullable AllocationTracker<AvatarError> allocationTracker, Textures texturesComponent, Molang molang, @Nullable VanillaRendering vanillaComponent) throws AvatarError {
+    public FiguraModelPart(String name, AvatarModules.LoadTimeModule module, ModuleMaterials.ModelPartMaterials materials, @Nullable AllocationTracker<AvatarError> allocationTracker, Textures texturesComponent, Molang molang, @Nullable VanillaRendering vanillaComponent) throws AvatarError {
+        this.name = name;
         // If both zero, skip setting it
         transform = new PartTransform(allocationTracker);
         if (!materials.origin.equals(0,0,0) || !materials.rotation.equals(0,0,0)) {
@@ -90,10 +145,10 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
         }
 
         // Get children
-        children = MapUtils.mapValues(materials.children, (name, mat) -> switch (mat) {
-            case ModuleMaterials.FigmodelMaterials figmodelMaterials -> new FigmodelModelPart(module, name, figmodelMaterials, allocationTracker, texturesComponent, molang, vanillaComponent);
-            default -> new FiguraModelPart(module, mat, allocationTracker, texturesComponent, molang, vanillaComponent);
-        }, LinkedHashMap::new);
+        children = MapUtils.mapEntries(materials.children, (childName, mat) -> switch (mat) {
+            case ModuleMaterials.FigmodelMaterials figmodelMaterials -> new FigmodelModelPart(childName, module, figmodelMaterials, allocationTracker, texturesComponent, molang, vanillaComponent);
+            default -> new FiguraModelPart(childName, module, mat, allocationTracker, texturesComponent, molang, vanillaComponent);
+        });
 
         // Get the list of render types:
         Vector4f uvModifier = new Vector4f(0, 0, 1, 1);
@@ -105,13 +160,12 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
             uvModifier.set(tex.getUvValues());
         } else if (!children.isEmpty()) {
             // Otherwise, attempt to merge from children:
-            boolean sameRenderType = children.values().stream().map(FiguraModelPart::getRenderType).filter(Objects::nonNull).distinct().limit(2).count() <= 1;
+            boolean sameRenderType = children.stream().map(FiguraModelPart::getRenderType).filter(Objects::nonNull).distinct().limit(2).count() <= 1;
             if (sameRenderType) {
                 // If all children have the same render type, merge upwards,
                 // setting their render types to null and this render type to that one.
-                this.renderType = children.firstEntry().getValue().getRenderType();
-                for (FiguraModelPart child : children.values())
-                    child.renderType = null;
+                this.renderType = children.getFirst().getRenderType();
+                for (FiguraModelPart child : children) child.renderType = null;
             }
         }
 
@@ -126,20 +180,20 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
         if (allocationTracker != null) {
             // Track vertices
             if (vertices.length > 0) allocationTracker.track(vertices);
-            // Track string children names
-            for (var key : children.keySet())
-                allocationTracker.track(key);
             // Track this
-            allocState = allocationTracker.track(this, SIZE_ESTIMATE);
+            int size = SIZE_ESTIMATE;
+            size += children.size() * AllocationTracker.REFERENCE_SIZE;
+            allocState = allocationTracker.track(this, size);
         } else allocState = null;
     }
 
     // Construct by extruding a texture
-    public FiguraModelPart(AvatarTexture texture, @Nullable AllocationTracker<AvatarError> allocationTracker) throws AvatarError {
+    public FiguraModelPart(String name, AvatarTexture texture, @Nullable AllocationTracker<AvatarError> allocationTracker) throws AvatarError {
+        this.name = name;
         this.transform = new PartTransform(allocationTracker);
         this.renderType = new FiguraRenderType.Basic(texture.getHandle(), null);
         Vector4f uvModifier = texture.getUvValues();
-        this.children = new LinkedHashMap<>();
+        this.children = new ArrayList<>();
         List<Float> vertexData = new ArrayList<>();
         // Iterate in each direction!
         byte[] opacityStates = new byte[Math.max(texture.getWidth(), texture.getHeight()) + 2]; // +2 because of 1 pixel padding on each side
@@ -430,6 +484,18 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
         arr.add(skinningWeight0); arr.add(skinningWeight1); arr.add(skinningWeight2); arr.add(skinningWeight3);
     }
 
+    // Script-ish functions
+
+    public void addChild(FiguraModelPart child) throws AvatarError {
+        this.children.add(child);
+        if (this.allocState != null) this.allocState.changeSize(AllocationTracker.REFERENCE_SIZE);
+    }
+
+    public void removeChild(FiguraModelPart child) {
+        this.children.remove(child);
+        this.childrenSpeedupCache.remove(child.name);
+    }
+
     public void setRenderType(@Nullable FiguraRenderType renderType) {
         this.renderType = renderType;
     }
@@ -445,7 +511,15 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
 
     @Override
     public @Nullable FiguraModelPart getChildByName(String name) {
-        return children.get(name);
+        FiguraModelPart cached = childrenSpeedupCache.get(name);
+        if (cached != null) return cached;
+        for (FiguraModelPart part : children) {
+            if (part.name.equals(name)) {
+                cached = part; break;
+            }
+        }
+        if (cached != null) childrenSpeedupCache.put(name, cached);
+        return cached;
     }
 
 

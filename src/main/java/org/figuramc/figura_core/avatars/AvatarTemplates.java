@@ -34,7 +34,7 @@ public class AvatarTemplates {
         return new Avatar<>(
                 AvatarManagers.GUIS, AvatarManagers.GuiKind.MAIN_GUI,
                 modules, null,
-                List.of(HudRoot.TYPE, Molang.TYPE, Textures.TYPE)
+                List.of(HudRoot.TYPE, ManagerAccess.TYPE, Molang.TYPE, Textures.TYPE)
         );
     }
 

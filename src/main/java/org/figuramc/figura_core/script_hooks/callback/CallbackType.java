@@ -46,6 +46,11 @@ public sealed interface CallbackType<T extends CallbackItem> {
         @Override public <Outside, E1 extends Throwable, E2 extends Throwable> CallbackItem.Bool toItem(ToItemVisitor<Outside, E1, E2> visitor, Outside outside) throws E1, E2 { return visitor.visit(this, outside); }
         @Override public <Outside> Outside fromItem(FromItemVisitor<Outside> visitor, CallbackItem.Bool item) { return visitor.visit(this, item); }
     }
+    final class I32 implements CallbackType<CallbackItem.I32> {
+        public static final I32 INSTANCE = new I32(); private I32() {}
+        @Override public <Outside, E1 extends Throwable, E2 extends Throwable> CallbackItem.I32 toItem(ToItemVisitor<Outside, E1, E2> visitor, Outside outside) throws E1, E2 { return visitor.visit(this, outside); }
+        @Override public <Outside> Outside fromItem(FromItemVisitor<Outside> visitor, CallbackItem.I32 item) { return visitor.visit(this, item); }
+    }
     final class F32 implements CallbackType<CallbackItem.F32> {
         public static final F32 INSTANCE = new F32(); private F32() {}
         @Override public <Outside, E1 extends Throwable, E2 extends Throwable> CallbackItem.F32 toItem(ToItemVisitor<Outside, E1, E2> visitor, Outside outside) throws E1, E2 { return visitor.visit(this, outside); }
@@ -148,6 +153,7 @@ public sealed interface CallbackType<T extends CallbackItem> {
         CallbackItem.Unit visit(Unit __, Outside outside) throws E1, E2;
         CallbackItem visit(Any __, Outside outside) throws E1, E2;
         CallbackItem.Bool visit(Bool __, Outside outside) throws E1, E2;
+        CallbackItem.I32 visit(I32 __, Outside outside) throws E1, E2;
         CallbackItem.F32 visit(F32 __, Outside outside) throws E1, E2;
         CallbackItem.F64 visit(F64 __, Outside outside) throws E1, E2;
         StringView visit(Str __, Outside outside) throws E1, E2;
@@ -175,6 +181,7 @@ public sealed interface CallbackType<T extends CallbackItem> {
         Outside visit(Unit __, CallbackItem.Unit item);
         Outside visit(Any __, CallbackItem item);
         Outside visit(Bool __, CallbackItem.Bool item);
+        Outside visit(I32 __, CallbackItem.I32 item);
         Outside visit(F32 __, CallbackItem.F32 item);
         Outside visit(F64 __, CallbackItem.F64 item);
         Outside visit(Str __, StringView item);
@@ -194,6 +201,7 @@ public sealed interface CallbackType<T extends CallbackItem> {
         @Override public String visit(Unit __, CallbackItem.Unit ___) { return "()"; }
         @Override public String visit(Any __, CallbackItem ___) { return "any"; }
         @Override public String visit(Bool __, CallbackItem.Bool ___) { return "bool"; }
+        @Override public String visit(I32 __, CallbackItem.I32 ___) { return "i32"; }
         @Override public String visit(F32 __, CallbackItem.F32 ___) { return "f32"; }
         @Override public String visit(F64 __, CallbackItem.F64 ___) { return "f64"; }
         @Override public String visit(Str __, StringView ___) { return "string"; }
@@ -213,6 +221,7 @@ public sealed interface CallbackType<T extends CallbackItem> {
         @Override public Integer visit(Unit __, CallbackItem.Unit ___) { return 0; }
         @Override public Integer visit(Any __, CallbackItem ___) { return 0; }
         @Override public Integer visit(Bool __, CallbackItem.Bool ___) { return 0; }
+        @Override public Integer visit(I32 __, CallbackItem.I32 ___) { return 0; }
         @Override public Integer visit(F32 __, CallbackItem.F32 ___) { return 0; }
         @Override public Integer visit(F64 __, CallbackItem.F64 ___) { return 0; }
         @Override public Integer visit(Str __, StringView ___) { return 0; }

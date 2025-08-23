@@ -32,7 +32,6 @@ public class RiggedHierarchyAPI {
     @LuaExpose @LuaReturnSelf public static void origin(RiggedHierarchy<?> self, Vector3d origin) { origin(self, (float) origin.x, (float) origin.y, (float) origin.z); }
     @LuaExpose @LuaReturnSelf public static void origin(RiggedHierarchy<?> self, float x, float y, float z) { self.getTransform().setOrigin(x, y, z); }
 
-
     @LuaExpose @LuaReturnSelf public static Vector3d rot(RiggedHierarchy<?> self) { return rad(self).mul(180 / Math.PI); }
     @LuaExpose @LuaReturnSelf public static Vector3d totalRot(RiggedHierarchy<?> self) { return totalRad(self).mul(180 / Math.PI); }
     @LuaExpose @LuaReturnSelf public static void rot(RiggedHierarchy<?> self, Vector3d degrees) { rot(self, (float) degrees.x, (float) degrees.y, (float) degrees.z); }

@@ -1,4 +1,4 @@
-package org.figuramc.figura_core.util;
+package org.figuramc.figura_core.util.data_structures;
 
 import org.jetbrains.annotations.Nullable;
 

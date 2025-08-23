@@ -3,7 +3,7 @@ package org.figuramc.figura_core.model.part;
 import org.figuramc.figura_core.animation.Animator;
 import org.figuramc.figura_core.avatars.AvatarError;
 import org.figuramc.figura_core.avatars.components.VanillaRendering;
-import org.figuramc.figura_core.util.FiguraTransformStack;
+import org.figuramc.figura_core.util.data_structures.FiguraTransformStack;
 import org.figuramc.memory_tracker.AllocationTracker;
 import org.jetbrains.annotations.Nullable;
 import org.joml.*;
@@ -59,6 +59,31 @@ public class PartTransform {
             this.allocState = allocationTracker.track(this, SIZE_ESTIMATE);
         } else this.allocState = null;
     }
+
+    // Copy constructor.
+    public PartTransform(PartTransform transform, @Nullable AllocationTracker<AvatarError> allocationTracker) throws AvatarError {
+        this.origin.set(transform.origin);
+        this.rotation.set(transform.rotation);
+        this.scale.set(transform.scale);
+        this.visible = transform.visible;
+        this.color.set(transform.color);
+        this.mimicPart = transform.mimicPart;
+        this.animators = transform.animators == null ? null : new ArrayList<>(transform.animators);
+        this.totalOrigin.set(transform.totalOrigin);
+        this.totalRotation.set(transform.totalRotation);
+        this.totalScale.set(transform.totalScale);
+        this.totalPosition.set(transform.totalPosition);
+        this.totalMatrix.set(transform.totalMatrix);
+        this.totalNormalMatrix.set(transform.totalNormalMatrix);
+        this.flags = transform.flags;
+        // Track allocation estimate
+        if (allocationTracker != null) {
+            int size = SIZE_ESTIMATE;
+            if (animators != null) size += AllocationTracker.REFERENCE_SIZE * animators.size();
+            this.allocState = allocationTracker.track(this, size);
+        } else this.allocState = null;
+    }
+
 
 
     // Flag get/set

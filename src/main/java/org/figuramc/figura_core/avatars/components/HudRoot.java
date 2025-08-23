@@ -9,6 +9,7 @@ import org.figuramc.figura_core.model.renderers.Renderable;
 import org.figuramc.memory_tracker.AllocationTracker;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -27,20 +28,20 @@ public class HudRoot implements AvatarComponent<HudRoot> {
         Molang molang = avatar.assertComponent(Molang.TYPE);
         @Nullable VanillaRendering vanillaRendering = avatar.getComponent(VanillaRendering.TYPE);
 
-        // Wrap the entity roots of each module into a new wrapper part
+        // Wrap the hud roots of each module into a new wrapper part
         // Also store the roots by module for other accessors (like scripts)
-        LinkedHashMap<String, FiguraModelPart> roots = new LinkedHashMap<>();
+        List<FiguraModelPart> roots = new ArrayList<>();
         rootByModule = new FiguraModelPart[modules.loadTimeModules().size()];
         for (AvatarModules.LoadTimeModule mod : modules.loadTimeModules()) {
             if (mod.materials.hudRoot() == null) continue;
-            FiguraModelPart part = new FiguraModelPart(mod, mod.materials.hudRoot(), allocationTracker, texturesComponent, molang, vanillaRendering);
+            FiguraModelPart part = new FiguraModelPart("", mod, mod.materials.hudRoot(), allocationTracker, texturesComponent, molang, vanillaRendering);
             // Also store the parts in the module objects to be later accessed
             rootByModule[mod.index] = part;
-            roots.put(Integer.toString(mod.index), part);
+            roots.add(part);
         }
 
-        // Return a wrapper around each of them
-        this.root = new Renderable<>(new FiguraModelPart(roots, allocationTracker));
+        // Return a wrapper around all of them
+        this.root = new Renderable<>(new FiguraModelPart("", roots, allocationTracker));
     }
 
     @Override

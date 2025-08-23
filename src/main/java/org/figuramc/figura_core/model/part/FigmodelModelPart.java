@@ -26,9 +26,9 @@ public class FigmodelModelPart extends FiguraModelPart {
     // Map to textures; these may be the same object reference as other textures.
     private final Map<String, AvatarTexture> textures;
 
-    public FigmodelModelPart(AvatarModules.LoadTimeModule module, String modelName, ModuleMaterials.FigmodelMaterials materials, @Nullable AllocationTracker<AvatarError> allocationTracker, Textures texturesComponent, Molang molangState, @Nullable VanillaRendering vanillaComponent) throws AvatarError {
-        super(module, materials, allocationTracker, texturesComponent, molangState, vanillaComponent);
-        animations = MapUtils.mapValues(materials.animations, (animName, animMats) -> new AnimationInstance(new Animation(modelName, animName, animMats, molangState, allocationTracker), this, allocationTracker));
+    public FigmodelModelPart(String name, AvatarModules.LoadTimeModule module, ModuleMaterials.FigmodelMaterials materials, @Nullable AllocationTracker<AvatarError> allocationTracker, Textures texturesComponent, Molang molangState, @Nullable VanillaRendering vanillaComponent) throws AvatarError {
+        super(name, module, materials, allocationTracker, texturesComponent, molangState, vanillaComponent);
+        animations = MapUtils.mapValues(materials.animations, (animName, animMats) -> new AnimationInstance(new Animation(name, animName, animMats, molangState, allocationTracker), this, allocationTracker));
         textures = MapUtils.mapValues(materials.textures, texIndex -> texturesComponent.getTexture(module.index, texIndex));
 
         if (allocationTracker != null) {

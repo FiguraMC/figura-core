@@ -19,8 +19,7 @@ import java.util.Map;
  */
 public class EventsTable {
 
-    public static void createEventsTable(LuaRuntime state, Map<Event<?>, EventListener<?>> eventListeners) throws LuaError, LuaUncatchableError {
-
+    public static LuaTable create(LuaRuntime state, Map<Event<?>, EventListener<?>> eventListeners) throws LuaError, LuaUncatchableError {
         // Create tables and set up meta-stuff
         LuaTable events = new LuaTable(state.allocationTracker); // Dummy table, which has metatable __index and __newindex
         LuaTable byName = new LuaTable(state.allocationTracker); // Backing table used as __index and for __newindex registration
@@ -35,13 +34,11 @@ public class EventsTable {
             return Constants.NIL;
         }));
 
-        // Store in environment
-        state.globals().rawset("events", events);
-
         // Fill in the backing table with the built-in listeners provided
         for (var entry : eventListeners.entrySet()) {
             byName.rawset(entry.getKey().name, EventListenerAPI.wrap(entry.getValue(), state));
         }
+        return events;
     }
 
 }

@@ -1,6 +1,6 @@
 package org.figuramc.figura_core.script_hooks.callback;
 
-import org.figuramc.figura_core.util.PeekableIterator;
+import org.figuramc.figura_core.util.data_structures.PeekableIterator;
 
 import java.util.ArrayList;
 import java.util.List;

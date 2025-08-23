@@ -60,10 +60,9 @@ public class LuaCallback<I extends CallbackItem, O extends CallbackItem> impleme
             // Convert the arg into Lua Varargs to pass to our function.
             // We'll treat funcs with tuple/unit args specially, and make it simple to call it from Lua with just multiple args, not needing to wrap in a table.
             Varargs luaArgs = type.param() instanceof CallbackType.Tuple<I> tuple ? ValueFactory.varargsOf(tuple.fromItems(state.callbackItemToLua, arg, LuaValue[]::new)) : type.param().fromItem(state.callbackItemToLua, arg);
-
             // Run the function, getting a result:
             try {
-                Varargs luaResult = LuaThread.run(new LuaThread(state, wrapped), luaArgs);
+                Varargs luaResult = state.runNoYield(wrapped, luaArgs);
                 try {
                     // Attempt to convert the result back to an O, and return.
                     return type.returnType() instanceof CallbackType.Tuple<O> tuple ? tuple.toItems(state.luaToCallbackItem, luaResult.toArray()) : type.returnType().toItem(state.luaToCallbackItem, luaResult.first());
@@ -90,10 +89,10 @@ public class LuaCallback<I extends CallbackItem, O extends CallbackItem> impleme
     // Do NOT invoke this across different LuaState! Ensure it's the same first.
     // This is here for the fast track of invoking callbacks from within the same LuaState,
     // meaning no conversions are needed.
-    public LuaValue localCall(Varargs args) throws LuaError, LuaUncatchableError {
+    public Varargs localCall(Varargs args) throws LuaError, LuaUncatchableError {
         try {
             // TODO optionally type-check the args/return type for improved error messages, even if there's no conversions happening
-            return Dispatch.invoke(state, wrapped, args).first();
+            return Dispatch.invoke(state, wrapped, args);
         } catch (UnwindThrowable yielded) {
             throw new LuaError("Cannot yield() from within Figura callback!", state.allocationTracker);
         }

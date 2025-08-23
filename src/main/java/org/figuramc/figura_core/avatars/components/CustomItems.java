@@ -55,9 +55,9 @@ public class CustomItems implements AvatarComponent<CustomItems> {
                     matcher = new Matcher.ExactMatcher(item);
                 }
                 // Convert the materials to a CustomItemModelPart
-                Renderable<CustomItemModelPart> mainPart = entry.getValue().model() != null ? new Renderable<>(new CustomItemModelPart(mod, pattern, entry.getValue().model().model(), entry.getValue().model().transformsByContext(), avatar.allocationTracker, textures, molang, vanillaRendering)) : null;
+                Renderable<CustomItemModelPart> mainPart = entry.getValue().model() != null ? new Renderable<>(new CustomItemModelPart(pattern, mod, entry.getValue().model().model(), entry.getValue().model().transformsByContext(), avatar.allocationTracker, textures, molang, vanillaRendering)) : null;
                 // Convert the texture index to a FiguraModelPart
-                Renderable<FiguraModelPart> flatPart = entry.getValue().textureIndex() != -1 ? new Renderable<>(new FiguraModelPart(textures.getTexture(mod.index, entry.getValue().textureIndex()), avatar.allocationTracker)) : null;
+                Renderable<FiguraModelPart> flatPart = entry.getValue().textureIndex() != -1 ? new Renderable<>(new FiguraModelPart(pattern, textures.getTexture(mod.index, entry.getValue().textureIndex()), avatar.allocationTracker)) : null;
                 // Yield the entry
                 customItems.add(new PartEntry(matcher, mainPart, flatPart));
             }

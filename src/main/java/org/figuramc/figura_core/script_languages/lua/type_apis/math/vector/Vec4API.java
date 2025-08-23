@@ -7,6 +7,7 @@ import org.figuramc.figura_core.comptime.lua.annotations.LuaPassState;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaReturnSelf;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaTypeAPI;
 import org.figuramc.figura_core.script_languages.lua.LuaRuntime;
+import org.figuramc.memory_tracker.AllocationTracker;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
 import org.joml.Vector4d;
@@ -17,18 +18,21 @@ import static org.figuramc.figura_cobalt.org.squiddev.cobalt.Constants.TNUMBER;
 @LuaTypeAPI(typeName = "Vec4", wrappedClass = Vector4d.class)
 public class Vec4API {
 
-    // TODO make this use memory
-    public static LuaUserdata wrap(Vector4d vec, LuaRuntime state) {
+    public static LuaUserdata wrap(Vector4d vec, LuaRuntime state) throws LuaUncatchableError {
+        if (state.allocationTracker != null)
+            state.allocationTracker.track(vec, AllocationTracker.OBJECT_SIZE + AllocationTracker.DOUBLE_SIZE * 4);
         return new LuaUserdata(vec, state.figuraMetatables.vec4);
     }
 
     // Mutating operations
+    @LuaExpose @LuaReturnSelf public static void set(Vector4d self) { self.zero(); }
     @LuaExpose @LuaReturnSelf public static void set(Vector4d self, Vector4d other) { self.set(other); }
     @LuaExpose @LuaReturnSelf public static void set(Vector4d self, double x, double y, double z, double w) { self.set(x, y, z, w); }
     @LuaExpose @LuaReturnSelf public static void setX(Vector4d self, double x) { self.x = x; }
     @LuaExpose @LuaReturnSelf public static void setY(Vector4d self, double y) { self.y = y; }
     @LuaExpose @LuaReturnSelf public static void setZ(Vector4d self, double z) { self.z = z; }
     @LuaExpose @LuaReturnSelf public static void setW(Vector4d self, double w) { self.w = w; }
+    @LuaExpose @LuaReturnSelf public static void setAll(Vector4d self, double v) { self.set(v); }
 
     @LuaExpose @LuaReturnSelf public static void add(Vector4d self, Vector4d other) { self.add(other); }
     @LuaExpose @LuaReturnSelf public static void add(Vector4d self, double x, double y, double z, double w) { self.add(x, y, z, w); }
@@ -36,6 +40,7 @@ public class Vec4API {
     @LuaExpose @LuaReturnSelf public static void addY(Vector4d self, double y) { self.y += y; }
     @LuaExpose @LuaReturnSelf public static void addZ(Vector4d self, double z) { self.z += z; }
     @LuaExpose @LuaReturnSelf public static void addW(Vector4d self, double w) { self.w += w; }
+    @LuaExpose @LuaReturnSelf public static void addAll(Vector4d self, double v) { self.add(v, v, v, v); }
 
     @LuaExpose @LuaReturnSelf public static void sub(Vector4d self, Vector4d other) { self.sub(other); }
     @LuaExpose @LuaReturnSelf public static void sub(Vector4d self, double x, double y, double z, double w) { self.sub(x, y, z, w); }
@@ -43,6 +48,7 @@ public class Vec4API {
     @LuaExpose @LuaReturnSelf public static void subY(Vector4d self, double y) { self.y -= y; }
     @LuaExpose @LuaReturnSelf public static void subZ(Vector4d self, double z) { self.z -= z; }
     @LuaExpose @LuaReturnSelf public static void subW(Vector4d self, double w) { self.w -= w; }
+    @LuaExpose @LuaReturnSelf public static void subAll(Vector4d self, double v) { self.sub(v, v, v, v); }
 
     @LuaExpose @LuaReturnSelf public static void mul(Vector4d self, Vector4d other) { self.mul(other); }
     @LuaExpose @LuaReturnSelf public static void mul(Vector4d self, double x, double y, double z, double w) { self.x *= x; self.y *= y; self.z *= z; self.w *= w; }
@@ -50,35 +56,70 @@ public class Vec4API {
     @LuaExpose @LuaReturnSelf public static void mulY(Vector4d self, double y) { self.y *= y; }
     @LuaExpose @LuaReturnSelf public static void mulZ(Vector4d self, double z) { self.z *= z; }
     @LuaExpose @LuaReturnSelf public static void mulW(Vector4d self, double w) { self.w *= w; }
+    @LuaExpose @LuaReturnSelf public static void mulAll(Vector4d self, double v) { self.mul(v); }
 
-    @LuaExpose @LuaReturnSelf public static void div(Vector4d self, Vector4d other) {
-        self.set(OperationHelper.div(self.x, other.x), OperationHelper.div(self.y, other.y), OperationHelper.div(self.z, other.z), OperationHelper.div(self.w, other.w));
-    }
-    @LuaExpose @LuaReturnSelf public static void div(Vector4d self, double x, double y, double z, double w) {
-        self.set(OperationHelper.div(self.x, x), OperationHelper.div(self.y, y), OperationHelper.div(self.z, z), OperationHelper.div(self.w, w));
-    }
+    @LuaExpose @LuaReturnSelf public static void div(Vector4d self, Vector4d other) { self.set(OperationHelper.div(self.x, other.x), OperationHelper.div(self.y, other.y), OperationHelper.div(self.z, other.z), OperationHelper.div(self.w, other.w)); }
+    @LuaExpose @LuaReturnSelf public static void div(Vector4d self, double x, double y, double z, double w) { self.set(OperationHelper.div(self.x, x), OperationHelper.div(self.y, y), OperationHelper.div(self.z, z), OperationHelper.div(self.w, w)); }
     @LuaExpose @LuaReturnSelf public static void divX(Vector4d self, double x) { self.x = OperationHelper.div(self.x, x); }
     @LuaExpose @LuaReturnSelf public static void divY(Vector4d self, double y) { self.y = OperationHelper.div(self.x, y); }
     @LuaExpose @LuaReturnSelf public static void divZ(Vector4d self, double z) { self.z = OperationHelper.div(self.x, z); }
     @LuaExpose @LuaReturnSelf public static void divW(Vector4d self, double w) { self.w = OperationHelper.div(self.x, w); }
+    @LuaExpose @LuaReturnSelf public static void divAll(Vector4d self, double v) { div(self, v, v, v, v); }
 
-    @LuaExpose @LuaReturnSelf public static void mod(Vector4d self, Vector4d other) {
-        self.set(OperationHelper.mod(self.x, other.x), OperationHelper.mod(self.y, other.y), OperationHelper.mod(self.z, other.z), OperationHelper.mod(self.w, other.w));
-    }
-    @LuaExpose @LuaReturnSelf public static void mod(Vector4d self, double x, double y, double z, double w) {
-        self.set(OperationHelper.mod(self.x, x), OperationHelper.mod(self.y, y), OperationHelper.mod(self.z, z), OperationHelper.mod(self.w, w));
-    }
+    @LuaExpose @LuaReturnSelf public static void mod(Vector4d self, Vector4d other) { self.set(OperationHelper.mod(self.x, other.x), OperationHelper.mod(self.y, other.y), OperationHelper.mod(self.z, other.z), OperationHelper.mod(self.w, other.w)); }
+    @LuaExpose @LuaReturnSelf public static void mod(Vector4d self, double x, double y, double z, double w) { self.set(OperationHelper.mod(self.x, x), OperationHelper.mod(self.y, y), OperationHelper.mod(self.z, z), OperationHelper.mod(self.w, w)); }
     @LuaExpose @LuaReturnSelf public static void modX(Vector4d self, double x) { self.x = OperationHelper.mod(self.x, x); }
     @LuaExpose @LuaReturnSelf public static void modY(Vector4d self, double y) { self.y = OperationHelper.mod(self.x, y); }
     @LuaExpose @LuaReturnSelf public static void modZ(Vector4d self, double z) { self.z = OperationHelper.mod(self.x, z); }
     @LuaExpose @LuaReturnSelf public static void modW(Vector4d self, double w) { self.w = OperationHelper.mod(self.x, w); }
+    @LuaExpose @LuaReturnSelf public static void modAll(Vector4d self, double v) { mod(self, v, v, v, v); }
+
+    @LuaExpose @LuaReturnSelf public static void max(Vector4d self, Vector4d other) { self.max(other); }
+    @LuaExpose @LuaReturnSelf public static void max(Vector4d self, double x, double y, double z, double w) { self.set(Math.max(self.x, x),Math.max(self.y, y),Math.max(self.z, z),Math.max(self.w, w)); }
+    @LuaExpose @LuaReturnSelf public static void maxX(Vector4d self, double x) { if (self.x < x) self.x = x; }
+    @LuaExpose @LuaReturnSelf public static void maxY(Vector4d self, double y) { if (self.y < y) self.y = y; }
+    @LuaExpose @LuaReturnSelf public static void maxZ(Vector4d self, double z) { if (self.z < z) self.z = z; }
+    @LuaExpose @LuaReturnSelf public static void maxW(Vector4d self, double w) { if (self.w < w) self.w = w; }
+    @LuaExpose @LuaReturnSelf public static void maxAll(Vector4d self, double v) { max(self, v, v, v, v); }
+
+    @LuaExpose @LuaReturnSelf public static void min(Vector4d self, Vector4d other) { self.min(other); }
+    @LuaExpose @LuaReturnSelf public static void min(Vector4d self, double x, double y, double z, double w) { self.set(Math.min(self.x, x),Math.min(self.y, y),Math.min(self.z, z),Math.min(self.w, w)); }
+    @LuaExpose @LuaReturnSelf public static void minX(Vector4d self, double x) { if (self.x > x) self.x = x; }
+    @LuaExpose @LuaReturnSelf public static void minY(Vector4d self, double y) { if (self.y > y) self.y = y; }
+    @LuaExpose @LuaReturnSelf public static void minZ(Vector4d self, double z) { if (self.z > z) self.z = z; }
+    @LuaExpose @LuaReturnSelf public static void minW(Vector4d self, double w) { if (self.w > w) self.w = w; }
+    @LuaExpose @LuaReturnSelf public static void minAll(Vector4d self, double v) { min(self, v, v, v, v); }
+
+    // We'll say result is undefined if min > max
+    @LuaExpose @LuaReturnSelf public static void clamp(Vector4d self, Vector4d min, Vector4d max) { self.max(min); self.min(max); }
+    @LuaExpose @LuaReturnSelf public static void clamp(Vector4d self, double x1, double y1, double z1, double w1, double x2, double y2, double z2, double w2) { self.set(Math.clamp(self.x, x1, x2), Math.clamp(self.y, y1, y2), Math.clamp(self.z, z1, z2), Math.clamp(self.w, w1, w2)); }
+    @LuaExpose @LuaReturnSelf public static void clampX(Vector4d self, double x1, double x2) { if (self.x < x1) self.x = x1; else if (self.x > x2) self.x = x2; }
+    @LuaExpose @LuaReturnSelf public static void clampY(Vector4d self, double y1, double y2) { if (self.y < y1) self.y = y1; else if (self.y > y2) self.y = y2; }
+    @LuaExpose @LuaReturnSelf public static void clampZ(Vector4d self, double z1, double z2) { if (self.z < z1) self.z = z1; else if (self.z > z2) self.z = z2; }
+    @LuaExpose @LuaReturnSelf public static void clampW(Vector4d self, double w1, double w2) { if (self.w < w1) self.w = w1; else if (self.w > w2) self.w = w2; }
+    @LuaExpose @LuaReturnSelf public static void clampAll(Vector4d self, double v1, double v2) { clamp(self, v1, v1, v1, v1, v2, v2, v2, v2); }
+
+    @LuaExpose @LuaReturnSelf public static void neg(Vector4d self) { self.negate(); }
+    @LuaExpose @LuaReturnSelf public static void negX(Vector4d self) { self.x = -self.x; }
+    @LuaExpose @LuaReturnSelf public static void negY(Vector4d self) { self.y = -self.y; }
+    @LuaExpose @LuaReturnSelf public static void negZ(Vector4d self) { self.z = -self.z; }
+    @LuaExpose @LuaReturnSelf public static void negW(Vector4d self) { self.w = -self.w; }
+
+    @LuaExpose @LuaReturnSelf public static void abs(Vector4d self) { self.absolute(); }
+    @LuaExpose @LuaReturnSelf public static void absX(Vector4d self) { self.x = Math.abs(self.x); }
+    @LuaExpose @LuaReturnSelf public static void absY(Vector4d self) { self.y = Math.abs(self.y); }
+    @LuaExpose @LuaReturnSelf public static void absZ(Vector4d self) { self.z = Math.abs(self.z); }
+    @LuaExpose @LuaReturnSelf public static void absW(Vector4d self) { self.w = Math.abs(self.w); }
+
+    @LuaExpose @LuaReturnSelf public static void deg(Vector4d self) { self.mul(180 / Math.PI); }
+    @LuaExpose @LuaReturnSelf public static void rad(Vector4d self) { self.mul(Math.PI / 180); }
 
     @LuaExpose @LuaReturnSelf public static void normalize(Vector4d self) { self.normalize(); }
-    @LuaExpose @LuaReturnSelf public static void clamp(Vector4d self, double min) {
+    @LuaExpose @LuaReturnSelf public static void clampLength(Vector4d self, double min) {
         double len2 = self.lengthSquared();
         if (len2 < min*min) self.normalize(min);
     }
-    @LuaExpose @LuaReturnSelf public static void clamp(Vector4d self, double min, double max) {
+    @LuaExpose @LuaReturnSelf public static void clampLength(Vector4d self, double min, double max) {
         double len2 = self.lengthSquared();
         if (len2 > max*max) self.normalize(max);
         else if (len2 < min*min) self.normalize(min);
@@ -86,71 +127,65 @@ public class Vec4API {
     @LuaExpose @LuaReturnSelf public static void floor(Vector4d self) { self.floor(); }
     @LuaExpose @LuaReturnSelf public static void ceil(Vector4d self) { self.ceil(); }
     @LuaExpose @LuaReturnSelf public static void round(Vector4d self) { self.round(); }
-
-    @LuaExpose @LuaReturnSelf public static void maxWith(Vector4d self, Vector4d other) { self.max(other); }
-    @LuaExpose @LuaReturnSelf public static void maxWith(Vector4d self, double x, double y, double z, double w) { self.set(Math.max(self.x, x),Math.max(self.y, y),Math.max(self.z, z),Math.max(self.w, w)); }
-    @LuaExpose @LuaReturnSelf public static void minWith(Vector4d self, Vector4d other) { self.min(other); }
-    @LuaExpose @LuaReturnSelf public static void minWith(Vector4d self, double x, double y, double z, double w) { self.set(Math.min(self.x, x),Math.min(self.y, y),Math.min(self.z, z),Math.min(self.w, w)); }
     @LuaExpose @LuaReturnSelf public static void lerp(Vector4d self, Vector4d other, double amount) { self.lerp(other, amount); }
 
-    // Non-mutating operations, returning a different type
+    // Non-mutating operations or operations returning a different type
     @LuaExpose public static double dot(Vector4d self, Vector4d other) { return self.dot(other); }
     @LuaExpose public static double dot(Vector4d self, double x, double y, double z, double w) { return self.dot(x, y, z, w); }
     @LuaExpose public static Vector4d copy(Vector4d self) { return new Vector4d(self); }
     @LuaExpose public static double len(Vector4d self) { return self.length(); }
     @LuaExpose public static double len2(Vector4d self) { return self.lengthSquared(); }
     @LuaExpose public static Varargs unpack(Vector4d self) { return ValueFactory.varargsOf(LuaDouble.valueOf(self.x), LuaDouble.valueOf(self.y), LuaDouble.valueOf(self.z), LuaDouble.valueOf(self.w)); }
-    @LuaExpose public static void abs(Vector4d self) { self.absolute(); }
-    @LuaExpose public static double max(Vector4d self) { return self.x >= self.y && self.x >= self.z && self.x >= self.w ? self.x : (self.y >= self.z && self.y >= self.w ? self.y : Math.max(self.z, self.w)); }
-    @LuaExpose public static double min(Vector4d self) { return self.x <= self.y && self.x <= self.z && self.x <= self.w ? self.x : (self.y <= self.z && self.y <= self.w ? self.y : Math.min(self.z, self.w)); }
+    @LuaExpose public static double maxElem(Vector4d self) { return Math.max(Math.max(self.x, self.y), Math.max(self.z, self.w)); }
+    @LuaExpose public static double minElem(Vector4d self) { return Math.min(Math.min(self.x, self.y), Math.min(self.z, self.w)); }
 
     // Binary operator overloading.
     // Needs extra logic since we want to allow Vector + Vector and Vector + number.
     @LuaExpose @LuaPassState public static Vector4d __add(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaUncatchableError {
-        Vector4d other = unknown.optUserdata(s, Vector4d.class, null);
-        if (other != null) return new Vector4d(self).add(other);
+        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector4d other)
+            return new Vector4d(self).add(other);
         double num = unknown.checkDouble(s);
         return new Vector4d(self).add(num, num, num, num);
     }
     @LuaExpose @LuaPassState public static Vector4d __sub(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaUncatchableError {
-        Vector4d other = unknown.optUserdata(s, Vector4d.class, null);
-        if (other != null) return new Vector4d(self).sub(other);
+        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector4d other)
+            return new Vector4d(self).sub(other);
         double num = unknown.checkDouble(s);
         return new Vector4d(self).sub(num, num, num, num);
     }
     @LuaExpose @LuaPassState public static Vector4d __mul(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaUncatchableError {
-        Vector4d other = unknown.optUserdata(s, Vector4d.class, null);
-        if (other != null) return new Vector4d(self).mul(other);
+        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector4d other)
+            return new Vector4d(self).mul(other);
         double num = unknown.checkDouble(s);
         return new Vector4d(self).mul(num);
     }
     @LuaExpose @LuaPassState public static Vector4d __div(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaUncatchableError {
-        Vector4d other = unknown.optUserdata(s, Vector4d.class, null);
-        if (other != null) return new Vector4d(OperationHelper.div(self.x, other.x), OperationHelper.div(self.y, other.y), OperationHelper.div(self.z, other.z), OperationHelper.div(self.w, other.w));
+        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector4d other)
+            return new Vector4d(OperationHelper.div(self.x, other.x), OperationHelper.div(self.y, other.y), OperationHelper.div(self.z, other.z), OperationHelper.div(self.w, other.w));
         double num = unknown.checkDouble(s);
         return new Vector4d(OperationHelper.div(self.x, num), OperationHelper.div(self.y, num), OperationHelper.div(self.z, num), OperationHelper.div(self.w, num));
     }
     @LuaExpose @LuaPassState public static Vector4d __mod(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaUncatchableError {
-        Vector4d other = unknown.optUserdata(s, Vector4d.class, null);
-        if (other != null) return new Vector4d(OperationHelper.mod(self.x, other.x), OperationHelper.mod(self.y, other.y), OperationHelper.mod(self.z, other.z), OperationHelper.mod(self.w, other.w));
+        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector4d other)
+            return new Vector4d(OperationHelper.mod(self.x, other.x), OperationHelper.mod(self.y, other.y), OperationHelper.mod(self.z, other.z), OperationHelper.mod(self.w, other.w));
         double num = unknown.checkDouble(s);
         return new Vector4d(OperationHelper.mod(self.x, num), OperationHelper.mod(self.y, num), OperationHelper.mod(self.z, num), OperationHelper.mod(self.w, num));
     }
     @LuaExpose @LuaPassState public static boolean __eq(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaUncatchableError {
-        Vector4d other = unknown.optUserdata(s, Vector4d.class, null);
-        if (other != null) return self.equals(other);
+        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector4d other)
+            return self.equals(other);
         double num = unknown.checkDouble(s);
         return self.equals(num, num, num, num);
     }
     @LuaExpose @LuaPassState public static boolean __lt(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaUncatchableError {
-        Vector4d other = unknown.optUserdata(s, Vector4d.class, null);
-        if (other != null) return self.x < other.x && self.y < other.y && self.z < other.z && self.w < other.w;
+        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector4d other)
+            return self.x < other.x && self.y < other.y && self.z < other.z && self.w < other.w;
         double num = unknown.checkDouble(s);
         return self.x < num && self.y < num && self.z < num && self.w < num;
     }
     @LuaExpose @LuaPassState public static boolean __le(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaUncatchableError {
-        Vector4d other = unknown.optUserdata(s, Vector4d.class, null);
-        if (other != null) return self.x <= other.x && self.y <= other.y && self.z <= other.z && self.w <= other.w;
+        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector4d other)
+            return self.x <= other.x && self.y <= other.y && self.z <= other.z && self.w <= other.w;
         double num = unknown.checkDouble(s);
         return self.x <= num && self.y <= num && self.z <= num && self.w <= num;
     }
