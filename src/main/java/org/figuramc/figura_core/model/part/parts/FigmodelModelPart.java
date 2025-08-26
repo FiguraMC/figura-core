@@ -1,4 +1,4 @@
-package org.figuramc.figura_core.model.part;
+package org.figuramc.figura_core.model.part.parts;
 
 import org.figuramc.figura_core.animation.Animation;
 import org.figuramc.figura_core.animation.AnimationInstance;

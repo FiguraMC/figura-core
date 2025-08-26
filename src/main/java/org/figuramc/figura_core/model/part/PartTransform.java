@@ -197,10 +197,10 @@ public class PartTransform {
             Vector3fc scale = totalScale();
             Vector3fc position = totalPosition();
             totalMatrix
-                    .translation(origin.x() / 16f, origin.y() / 16f, origin.z() / 16f)
+                    .translation(origin)
                     .rotateZYX(rotation.z(), rotation.y(), rotation.x())
                     .scale(scale)
-                    .translate(position.x() / 16f, position.y() / 16f, position.z() / 16f);
+                    .translate(position);
             totalMatrix.normal(totalNormalMatrix);
             removeFlags(MATRIX_DIRTY);
         }

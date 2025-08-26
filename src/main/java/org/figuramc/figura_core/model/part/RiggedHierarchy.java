@@ -10,9 +10,8 @@ import org.jetbrains.annotations.Nullable;
  * - It must optionally be able to get its descendants by name (This is for binding animations to it)
  * @param <T> Must be this type itself!
  */
-public interface RiggedHierarchy<T extends RiggedHierarchy<T>> {
-    // The object has a transform
-    PartTransform getTransform();
+public interface RiggedHierarchy<T extends RiggedHierarchy<T>> extends Transformable {
+
     // Get child with given name, if any
     @Nullable T getChildByName(String name);
 

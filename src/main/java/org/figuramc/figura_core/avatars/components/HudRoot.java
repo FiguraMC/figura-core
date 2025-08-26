@@ -4,13 +4,12 @@ import org.figuramc.figura_core.avatars.Avatar;
 import org.figuramc.figura_core.avatars.AvatarComponent;
 import org.figuramc.figura_core.avatars.AvatarError;
 import org.figuramc.figura_core.avatars.AvatarModules;
-import org.figuramc.figura_core.model.part.FiguraModelPart;
+import org.figuramc.figura_core.model.part.parts.FiguraModelPart;
 import org.figuramc.figura_core.model.renderers.Renderable;
 import org.figuramc.memory_tracker.AllocationTracker;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 
 public class HudRoot implements AvatarComponent<HudRoot> {

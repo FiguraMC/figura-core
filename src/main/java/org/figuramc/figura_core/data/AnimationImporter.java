@@ -4,10 +4,12 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import org.figuramc.figura_core.util.JsonUtils;
+import org.figuramc.figura_core.util.ListUtils;
 import org.figuramc.figura_core.util.MapUtils;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.TreeMap;
 
@@ -28,11 +30,13 @@ public class AnimationImporter {
                 JsonUtils.getObjectOrEmpty(animation, "parts", () -> new RuntimeException("Animation parts must be object")).asMap(),
                 keyframeMatsElem -> {
                     JsonObject keyframeMats = keyframeMatsElem.getAsJsonObject();
-                    return new ModuleMaterials.TransformKeyframesMaterials(
-                            JsonUtils.getListOrEmpty(keyframeMats, "origin", k -> parseVectorKeyframe(k.getAsJsonObject(), snapping), () -> new RuntimeException("Animation origin must be array")),
-                            JsonUtils.getListOrEmpty(keyframeMats, "rotation", k -> parseVectorKeyframe(k.getAsJsonObject(), snapping), () -> new RuntimeException("Animation rotation must be array")),
-                            JsonUtils.getListOrEmpty(keyframeMats, "scale", k -> parseVectorKeyframe(k.getAsJsonObject(), snapping), () -> new RuntimeException("Animation scale must be array"))
-                    );
+                    var origin = JsonUtils.getListOrEmpty(keyframeMats, "origin", k -> parseVectorKeyframe(k.getAsJsonObject(), snapping), () -> new RuntimeException("Animation origin must be array"));
+                    var rotation = JsonUtils.getListOrEmpty(keyframeMats, "rotation", k -> parseVectorKeyframe(k.getAsJsonObject(), snapping), () -> new RuntimeException("Animation rotation must be array"));
+                    var scale = JsonUtils.getListOrEmpty(keyframeMats, "scale", k -> parseVectorKeyframe(k.getAsJsonObject(), snapping), () -> new RuntimeException("Animation scale must be array"));
+                    Collections.sort(origin);
+                    Collections.sort(rotation);
+                    Collections.sort(scale);
+                    return new ModuleMaterials.TransformKeyframesMaterials(origin, rotation, scale);
                 },
                 TreeMap::new
         );

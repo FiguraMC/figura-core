@@ -2,6 +2,7 @@ package org.figuramc.figura_core.data;
 
 import org.figuramc.figura_core.script_hooks.callback.CallbackType;
 import org.figuramc.figura_core.util.data_structures.DataTree;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -123,8 +124,12 @@ public record ModuleMaterials(
 
     // ANIMATIONS
     public record AnimationMaterials(float length, @Nullable Float snapping, float strength, LoopModeMaterials loopMode, TreeMap<String, TransformKeyframesMaterials> transformKeyframes, List<ScriptKeyframeMaterials> scriptKeyframes) {}
+    // Keyframe lists must be sorted
     public record TransformKeyframesMaterials(List<TransformKeyframeMaterials> origin, List<TransformKeyframeMaterials> rotation, List<TransformKeyframeMaterials> scale) {}
-    public record TransformKeyframeMaterials(float time, String x, String y, String z, InterpolationMaterials interpolation) {} // If snapping exists, time is an integer multiple of 1/snapping
+    // If snapping exists, time is an integer multiple of 1/snapping!
+    public record TransformKeyframeMaterials(float time, String x, String y, String z, InterpolationMaterials interpolation) implements Comparable<TransformKeyframeMaterials> {
+        @Override public int compareTo(@NotNull ModuleMaterials.TransformKeyframeMaterials o) { return Float.compare(time, o.time); }
+    }
     public record ScriptKeyframeMaterials(float time, String code) {} // If snapping exists, time is an integer multiple of 1/snapping
 
     // Loop mode enum

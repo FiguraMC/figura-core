@@ -1,4 +1,4 @@
-package org.figuramc.figura_core.model.part;
+package org.figuramc.figura_core.model.part.parts;
 
 import org.figuramc.figura_core.avatars.AvatarError;
 import org.figuramc.figura_core.avatars.AvatarModules;
@@ -6,6 +6,10 @@ import org.figuramc.figura_core.avatars.components.Molang;
 import org.figuramc.figura_core.avatars.components.Textures;
 import org.figuramc.figura_core.avatars.components.VanillaRendering;
 import org.figuramc.figura_core.data.ModuleMaterials;
+import org.figuramc.figura_core.model.part.PartTransform;
+import org.figuramc.figura_core.model.part.RiggedHierarchy;
+import org.figuramc.figura_core.model.part.tasks.RenderTask;
+import org.figuramc.figura_core.model.part.tasks.TextTask;
 import org.figuramc.figura_core.model.shader.FiguraRenderType;
 import org.figuramc.figura_core.model.texture.AvatarTexture;
 import org.figuramc.figura_core.script_hooks.callback.ScriptCallback;
@@ -38,6 +42,7 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
 //    private  animators; // The animators which affect this model part
     public final ArrayList<FiguraModelPart> children; // The children of this model part in the hierarchy tree, in iteration order
     private final Map<String, FiguraModelPart> childrenSpeedupCache = new WeakHashMap<>(); // Speedup cache for looking for children by name
+    public final ArrayList<RenderTask<?>> renderTasks; // Render tasks act similar to children in some ways, such as inheriting transforms, but they are not FiguraModelPart.
 
     // Rendering
     public final float[] vertices; // The vertices making up the cubes and meshes of the model part
@@ -57,6 +62,7 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
         this.name = name;
         this.transform = new PartTransform(allocationTracker);
         this.children = new ArrayList<>(children);
+        this.renderTasks = new ArrayList<>(0);
         this.vertices = new float[0];
         if (allocationTracker != null) {
             if (!name.isEmpty()) allocationTracker.track(name);
@@ -85,12 +91,14 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
         this.name = newName;
         // Transform:
         this.transform = deepCopyTransform ? new PartTransform(part.transform, allocationTracker) : part.transform;
-        // Children (But not the child list!):
+        // Children (But not the child list!)
+        // This includes render tasks.
         this.children = new ArrayList<>(part.children.size());
-        for (var child : part.children) {
-            FiguraModelPart maybeCopied = deepCopyChildren ? new FiguraModelPart(child.name, child, deepCopyTransform, true, deepCopyVertices, deepCopyCallbackLists, allocationTracker) : child;
-            this.children.add(maybeCopied);
-        }
+        this.renderTasks = new ArrayList<>(part.renderTasks.size());
+        for (var child : part.children)
+            this.children.add(deepCopyChildren ? new FiguraModelPart(child.name, child, deepCopyTransform, true, deepCopyVertices, deepCopyCallbackLists, allocationTracker) : child);
+        for (var task : part.renderTasks)
+            this.renderTasks.add(deepCopyChildren ? task.copy(allocationTracker) : task);
         // Vertices:
         if (deepCopyVertices) {
             this.vertices = new float[part.vertices.length];
@@ -149,6 +157,7 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
             case ModuleMaterials.FigmodelMaterials figmodelMaterials -> new FigmodelModelPart(childName, module, figmodelMaterials, allocationTracker, texturesComponent, molang, vanillaComponent);
             default -> new FiguraModelPart(childName, module, mat, allocationTracker, texturesComponent, molang, vanillaComponent);
         });
+        renderTasks = new ArrayList<>(0);
 
         // Get the list of render types:
         Vector4f uvModifier = new Vector4f(0, 0, 1, 1);
@@ -193,7 +202,8 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
         this.transform = new PartTransform(allocationTracker);
         this.renderType = new FiguraRenderType.Basic(texture.getHandle(), null);
         Vector4f uvModifier = texture.getUvValues();
-        this.children = new ArrayList<>();
+        this.children = new ArrayList<>(0);
+        this.renderTasks = new ArrayList<>(0);
         List<Float> vertexData = new ArrayList<>();
         // Iterate in each direction!
         byte[] opacityStates = new byte[Math.max(texture.getWidth(), texture.getHeight()) + 2]; // +2 because of 1 pixel padding on each side
@@ -322,16 +332,13 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
         Vector3f o = cubeData.origin();
         Vector3f r = cubeData.rotation();
 
-        // Scale down by 1/16 and rotate around its origin.
+        // Rotate around its origin:
         Matrix4f transform = new Matrix4f()
-                .scale(1.0f / 16)
                 .translate(o.x, o.y, o.z)
                 .rotate(new Quaternionf().rotationZYX(r.z * MathUtils.DEG_TO_RAD, r.y * MathUtils.DEG_TO_RAD, r.x * MathUtils.DEG_TO_RAD))
                 .translate(-o.x, -o.y, -o.z)
         ;
-
-        // Also scale normal matrix to compensate
-        Matrix3f normalMat = transform.normal(new Matrix3f()).scale(1.0f / 16);
+        Matrix3f normalMat = transform.normal(new Matrix3f());
 
         for (int i = 0; i < 6; i++) {
             @Nullable ModuleMaterials.CubeFace face = cubeData.faces()[i];
@@ -395,17 +402,15 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
 
     private static void addVertices(List<Float> arr, ModuleMaterials.MeshData meshData, Vector4f uvModifier) {
 
-        // Scale down by 1/16 and rotate around its origin:
+        // Rotate around its origin:
         Vector3f o = meshData.origin();
         Vector3f r = meshData.rotation();
         Matrix4f transform = new Matrix4f()
-                .scale(1.0f / 16)
                 .translate(o.x, o.y, o.z)
                 .rotate(new Quaternionf().rotationXYZ(r.x * MathUtils.DEG_TO_RAD, r.y * MathUtils.DEG_TO_RAD, r.z * MathUtils.DEG_TO_RAD)) // Meshes use XYZ rotation order! This is different from other part types!
                 // .translate(-o.x, -o.y, -o.z) // Meshes use their origins as translations, unlike cubes which use them only as pivot points, which is why this is commented out!
         ;
-        // Also scale normal matrix to compensate
-        Matrix3f normalMat = transform.normal(new Matrix3f()).scale(1.0f / 16);
+        Matrix3f normalMat = transform.normal(new Matrix3f());
 
         // Create the faces...
         List<ModuleMaterials.VertexData> vertices = meshData.vertices();
@@ -416,7 +421,7 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
             ModuleMaterials.VertexData v1 = vertices.get(face.x);
             ModuleMaterials.VertexData v2 = vertices.get(face.y);
             ModuleMaterials.VertexData v3 = vertices.get(face.z);
-            Vector3f normal = computeNormal(v1.pos(), v2.pos(), v3.pos()).mul(1.0f / 16); // Scale the normal by 1/16 as well
+            Vector3f normal = computeNormal(v1.pos(), v2.pos(), v3.pos());
             meshVert(arr, v1, normal, uvs.get(uv++), transform, normalMat, uvModifier);
             meshVert(arr, v2, normal, uvs.get(uv++), transform, normalMat, uvModifier);
             meshVert(arr, v3, normal, uvs.get(uv++), transform, normalMat, uvModifier);

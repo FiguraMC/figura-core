@@ -7,13 +7,14 @@ import org.figuramc.figura_core.comptime.lua.annotations.LuaExpose;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaPassState;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaReturnSelf;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaTypeAPI;
-import org.figuramc.figura_core.model.part.FigmodelModelPart;
-import org.figuramc.figura_core.model.part.FiguraModelPart;
+import org.figuramc.figura_core.model.part.parts.FigmodelModelPart;
+import org.figuramc.figura_core.model.part.parts.FiguraModelPart;
+import org.figuramc.figura_core.model.part.tasks.TextTask;
 import org.figuramc.figura_core.script_languages.lua.LuaRuntime;
+import org.figuramc.figura_core.text.FormattedText;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 
 @LuaTypeAPI(typeName = "FiguraPart", wrappedClass = FiguraModelPart.class, hasSuperclass = true)
@@ -26,6 +27,7 @@ public class FiguraPartAPI {
         };
     }
 
+    // Create new FiguraPart, optionally giving it a name
     @LuaExpose(name = "new") @LuaPassState
     public static FiguraModelPart _new(LuaRuntime s) throws LuaUncatchableError {
         try {
@@ -39,7 +41,7 @@ public class FiguraPartAPI {
         } catch (AvatarError err) { throw new LuaUncatchableError(err); }
     }
 
-
+    // Add/remove children from this part
     @LuaExpose @LuaReturnSelf
     public static void addChild(FiguraModelPart self, FiguraModelPart newChild) throws LuaUncatchableError {
         try { self.addChild(newChild); }
@@ -50,7 +52,7 @@ public class FiguraPartAPI {
         self.removeChild(childToRemove);
     }
 
-    // Get child by name, or nil if it doesn't exist (Child "getter")
+    // Get a child by name, or nil if it doesn't exist
     @LuaExpose
     public static @Nullable FiguraModelPart child(FiguraModelPart self, LuaString childName) {
         return self.getChildByName(childName.toJavaStringNoAlloc());
@@ -64,6 +66,17 @@ public class FiguraPartAPI {
         for (FiguraModelPart child : self.children)
             result.rawset(i++, wrap(child, s));
         return result;
+    }
+
+    // Create a new text task on this part with the given Text object and return it
+    @LuaExpose @LuaPassState
+    public static TextTask newText(LuaRuntime s, FiguraModelPart self, FormattedText text) throws LuaUncatchableError {
+        try {
+            TextTask task = new TextTask(text, s.avatar.allocationTracker);
+            self.renderTasks.add(task);
+            return task;
+        }
+        catch (AvatarError avatarError) { throw new LuaUncatchableError(avatarError); }
     }
 
     // Make a shallow copy of this part, with no parent. We use "shallow" to make it clear what's going on.

@@ -5,7 +5,7 @@ import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaUserdata;
 import org.figuramc.figura_core.animation.AnimationInstance;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaExpose;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaTypeAPI;
-import org.figuramc.figura_core.model.part.FigmodelModelPart;
+import org.figuramc.figura_core.model.part.parts.FigmodelModelPart;
 import org.figuramc.figura_core.script_languages.lua.LuaRuntime;
 import org.jetbrains.annotations.Nullable;
 

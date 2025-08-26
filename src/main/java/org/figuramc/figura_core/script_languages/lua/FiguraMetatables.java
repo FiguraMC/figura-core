@@ -40,9 +40,12 @@ public class FiguraMetatables {
     public final LuaTable vec4;
 
     // Model parts
-    public final LuaTable riggedHierarchy;
+    public final LuaTable transformable;
     public final LuaTable figuraPart;
     public final LuaTable figmodelModelPart;
+
+    // Tasks
+    public final LuaTable textTask;
 
     // Vanilla rendering
     public final LuaTable vanillaPart;
@@ -74,12 +77,15 @@ public class FiguraMetatables {
         vec4 = API__Vec4.createMetatable(state);
 
         // Model part
-        riggedHierarchy = API__RiggedHierarchy.createMetatable(state);
-        figuraPart = API__FiguraPart.createMetatable(state, riggedHierarchy);
+        transformable = API__Transformable.createMetatable(state);
+        figuraPart = API__FiguraPart.createMetatable(state, transformable);
         figmodelModelPart = API__Figmodel.createMetatable(state, figuraPart);
 
+        // Tasks
+        textTask = API__TextTask.createMetatable(state, transformable);
+
         // Vanilla rendering
-        vanillaPart = API__VanillaPart.createMetatable(state, riggedHierarchy);
+        vanillaPart = API__VanillaPart.createMetatable(state, transformable);
 
         // Animations
         animationInstance = API__AnimationInstance.createMetatable(state);
@@ -103,7 +109,7 @@ public class FiguraMetatables {
         table.rawset("Vec3", vec3);
         table.rawset("Vec4", vec4);
 
-        table.rawset("RiggedHierarchy", riggedHierarchy);
+        table.rawset("Transformable", transformable);
         table.rawset("FiguraPart", figuraPart);
         table.rawset("Figmodel", figmodelModelPart);
 

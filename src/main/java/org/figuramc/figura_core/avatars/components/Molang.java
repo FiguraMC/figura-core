@@ -8,9 +8,13 @@ import org.figuramc.figura_core.avatars.AvatarModules;
 import org.figuramc.figura_core.script_languages.molang.AllMolangQueries;
 import org.figuramc.figura_core.util.data_structures.NullEmptyStack;
 import org.figuramc.figura_core.util.functional.ThrowingSupplier;
+import org.figuramc.figura_molang.CompiledMolang;
 import org.figuramc.figura_molang.MolangInstance;
+import org.figuramc.figura_molang.compile.MolangCompileException;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Stack;
 
 /**
@@ -22,36 +26,37 @@ public class Molang implements AvatarComponent<Molang> {
     public static final Type<Molang> TYPE = new Type<>(Molang::new, EntityUser.TYPE); // Depends on entity user being updated before it
     public Type<Molang> getType() { return TYPE; }
 
+    // The molang instance
+    private final MolangInstance<Molang, AvatarError> molangInstance;
+
     // The entity which has the avatar equipped, if any
     private final @Nullable EntityUser entityUser;
-    // The stack of currently used animation instances. Normally only 1 slot is used, unless nested calls happen
-    private final Stack<@Nullable AnimationInstance> animInstances = new NullEmptyStack<>();
-
-    // The molang instance
-    public final MolangInstance<Molang, AvatarError> molangInstance;
 
     public Molang(Avatar<?> avatar, AvatarModules modules) throws AvatarError {
         this.entityUser = avatar.getComponent(EntityUser.TYPE);
-        this.molangInstance = new MolangInstance<>(this, avatar.allocationTracker, AllMolangQueries.getAllQueries());
+        this.molangInstance = new MolangInstance<>(this, avatar.allocationTracker, AllMolangQueries.getAvatarQueries());
     }
 
-    public void pushAnim(AnimationInstance instance) { this.animInstances.push(instance); }
-    public void popAnim() { this.animInstances.pop(); }
+    // Different compilation contexts and their context variables
+    private static final List<String> ANIMATION_CONTEXT_VARS = List.of("anim_time");
+    private static final List<String> TEXT_EXPRESSION_VARS = List.of("char_index");
 
-    // Run a task with the given animation instance
-    public <T, E extends Throwable> T withAnim(AnimationInstance instance, ThrowingSupplier<T, E> task) throws E {
-        animInstances.push(instance);
-        try {
-            return task.get();
-        } finally {
-            animInstances.pop();
-        }
+    public CompiledMolang<Molang> compileAnimExpr(String source) throws MolangCompileException, AvatarError {
+        return molangInstance.compile(source, ANIMATION_CONTEXT_VARS, Map.of());
     }
 
-    // Query methods
-    public float anim_time() {
-        AnimationInstance a = animInstances.peek(); if (a == null) return 0;
-        return a.getTime();
+    public CompiledMolang<Molang> compileTextExpr(String source, int startCharIndex, int charCount) throws MolangCompileException, AvatarError {
+        return molangInstance.compile(source, TEXT_EXPRESSION_VARS, Map.of(
+                "start_char_index", new float[] { startCharIndex },
+                "char_count", new float[] { charCount }
+        ));
+    }
+
+    // Some query methods
+
+    private static final long TIMER_START = System.nanoTime(); //
+    public static float time() {
+        return (float) (((double) (System.nanoTime() - TIMER_START) / 100_000L) / 10_000.0);
     }
 
 }

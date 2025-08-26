@@ -1,6 +1,6 @@
 package org.figuramc.figura_core.minecraft_interop.model_part_renderers;
 
-import org.figuramc.figura_core.model.part.FiguraModelPart;
+import org.figuramc.figura_core.model.part.parts.FiguraModelPart;
 
 /**
  * A rendering backend, which can create a FiguraModelPartRenderer, given a particular FiguraModelPart.

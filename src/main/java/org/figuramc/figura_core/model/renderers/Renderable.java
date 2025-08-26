@@ -2,7 +2,7 @@ package org.figuramc.figura_core.model.renderers;
 
 import org.figuramc.figura_core.minecraft_interop.FiguraConnectionPoint;
 import org.figuramc.figura_core.minecraft_interop.model_part_renderers.FiguraModelPartRenderer;
-import org.figuramc.figura_core.model.part.FiguraModelPart;
+import org.figuramc.figura_core.model.part.parts.FiguraModelPart;
 
 /**
  * A wrapper around a model part and a renderer for it

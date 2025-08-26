@@ -15,10 +15,7 @@ import org.figuramc.figura_core.avatars.Avatar;
 import org.figuramc.figura_core.avatars.AvatarError;
 import org.figuramc.figura_core.avatars.AvatarModules;
 import org.figuramc.figura_core.avatars.ScriptRuntimeComponent;
-import org.figuramc.figura_core.avatars.components.EntityRoot;
-import org.figuramc.figura_core.avatars.components.HudRoot;
-import org.figuramc.figura_core.avatars.components.ManagerAccess;
-import org.figuramc.figura_core.avatars.components.VanillaRendering;
+import org.figuramc.figura_core.avatars.components.*;
 import org.figuramc.figura_core.script_hooks.callback.CallbackType;
 import org.figuramc.figura_core.script_languages.lua.callback_types.LuaCallback;
 import org.figuramc.figura_core.script_languages.lua.callback_types.convert.CallbackItemToLua;
@@ -40,7 +37,7 @@ import java.util.Map;
 
 public class LuaRuntime extends LuaState implements ScriptRuntimeComponent<LuaRuntime> {
 
-    public static final Type<LuaRuntime> TYPE = new Type<>(LuaRuntime::create, VanillaRendering.TYPE, EntityRoot.TYPE, HudRoot.TYPE, ManagerAccess.TYPE);
+    public static final Type<LuaRuntime> TYPE = new Type<>(LuaRuntime::create, Molang.TYPE, VanillaRendering.TYPE, EntityRoot.TYPE, HudRoot.TYPE, ManagerAccess.TYPE);
 
     // Map each module index to its environment, so we can initialize them
     private final Map<Integer, LuaTable> moduleEnvironments = new IdentityHashMap<>();
@@ -76,11 +73,11 @@ public class LuaRuntime extends LuaState implements ScriptRuntimeComponent<LuaRu
         this.avatar = avatar;
 
         // Fetch other components we depend on
+        @Nullable Molang molang = avatar.getComponent(Molang.TYPE);
         @Nullable VanillaRendering vanillaRendering = avatar.getComponent(VanillaRendering.TYPE);
         @Nullable EntityRoot entityRoot = avatar.getComponent(EntityRoot.TYPE);
         @Nullable HudRoot hudRoot = avatar.getComponent(HudRoot.TYPE);
         @Nullable ManagerAccess managerAccess = avatar.getComponent(ManagerAccess.TYPE);
-
 
         // Add type metatables. They're shared across modules, in the true globals
         figuraMetatables = new FiguraMetatables(this);
@@ -95,6 +92,7 @@ public class LuaRuntime extends LuaState implements ScriptRuntimeComponent<LuaRu
         FiguraMath.init(this);
         globals().rawset("events", EventsTable.create(this, avatar.eventListeners));
         globals().rawset("client", ClientTable.create(this));
+        globals().rawset("text", TextTable.create(this, molang));
 
         // Add tables for other components we have
         if (vanillaRendering != null) globals().rawset("vanilla", VanillaTable.create(this, vanillaRendering));

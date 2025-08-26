@@ -1,4 +1,4 @@
-package org.figuramc.figura_core.model.part;
+package org.figuramc.figura_core.model.part.parts;
 
 import org.figuramc.figura_core.avatars.AvatarError;
 import org.figuramc.figura_core.avatars.AvatarModules;
@@ -45,7 +45,8 @@ public class CustomItemModelPart extends FigmodelModelPart {
             // We now have a non-null transform and context, so add it to the map
             float mirror = flip ? -1.0f : 1.0f;
             Matrix4f matrix = new Matrix4f()
-                    .translation(transform.translation().mul(1f/16, new Vector3f()).mul(mirror,1,1))
+                    .scaling(1f / 16)
+                    .translation(transform.translation().mul(mirror,1,1, new Vector3f()))
                     .rotateZYX(transform.rotation().mul(1, mirror, mirror))
                     .scale(transform.scale());
             itemTransforms.put(context, matrix);

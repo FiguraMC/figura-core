@@ -4,7 +4,6 @@ import org.figuramc.figura_core.avatars.AvatarError;
 import org.figuramc.figura_core.avatars.components.Molang;
 import org.figuramc.figura_core.data.ModuleMaterials;
 import org.figuramc.figura_molang.CompiledMolang;
-import org.figuramc.figura_molang.MolangInstance;
 import org.figuramc.figura_molang.compile.MolangCompileException;
 import org.figuramc.figura_translations.Translatable;
 import org.figuramc.figura_translations.TranslatableItems;
@@ -37,9 +36,9 @@ public class Vec3Keyframe implements Comparable<Vec3Keyframe> {
         Float y = tryParseFloat(materials.y());
         Float z = tryParseFloat(materials.z());
         this.xyz = new AnimVec3Supplier.ThreeFloats( // TODO add vector mode
-                x != null ? __ -> x : supplierFromMolang(modelName, animName, partName, time, molangState.molangInstance, materials.x()),
-                y != null ? __ -> y : supplierFromMolang(modelName, animName, partName, time, molangState.molangInstance, materials.y()),
-                z != null ? __ -> z : supplierFromMolang(modelName, animName, partName, time, molangState.molangInstance, materials.z())
+                x != null ? __ -> x : supplierFromMolang(modelName, animName, partName, time, molangState, materials.x()),
+                y != null ? __ -> y : supplierFromMolang(modelName, animName, partName, time, molangState, materials.y()),
+                z != null ? __ -> z : supplierFromMolang(modelName, animName, partName, time, molangState, materials.z())
         );
         this.interpolation = switch (materials.interpolation()) {
             case ModuleMaterials.InterpolationMaterials.Linear __ -> Interpolation.LINEAR;
@@ -66,24 +65,17 @@ public class Vec3Keyframe implements Comparable<Vec3Keyframe> {
         try { return Float.parseFloat(str); }
         catch (NumberFormatException e) { return null; }
     }
-    private static AnimFloatSupplier supplierFromMolang(@Nullable String modelName, String animName, String partName, float time, MolangInstance<Molang, AvatarError> molang, String code) throws AvatarError {
+    private static AnimFloatSupplier supplierFromMolang(@Nullable String modelName, String animName, String partName, float time, Molang molang, String code) throws AvatarError {
         try {
-            CompiledMolang<?> compiled = molang.compile(code);
+            CompiledMolang<?> compiled = molang.compileAnimExpr(code);
             if (compiled.returnCount != 1)
                 throw new AvatarError(INVALID_MOLANG_RETURN_COUNT, new TranslatableItems.Items5<>(modelName, animName, partName, time, compiled.returnCount));
-            return instance -> {
-                if (molang.actor == null)
-                    return compiled.evaluate().get(0);
-                molang.actor.pushAnim(instance);
-                float res = compiled.evaluate().get(0);
-                molang.actor.popAnim();
-                return res;
-            };
+            // ARGUMENTS: (anim_time)
+            return instance -> compiled.evaluate(instance.getTime()).get(0);
         } catch (MolangCompileException compileFail) {
             throw new AvatarError(INVALID_MOLANG, new TranslatableItems.Items5<>(modelName, animName, partName, time, compileFail.getMessage()));
         }
     }
-
 
     // Evaluate the keyframe into the vector, also return the vector for chaining
     public Vector3f evaluateInto(Vector3f output, AnimationInstance instance) {
@@ -211,14 +203,7 @@ public class Vec3Keyframe implements Comparable<Vec3Keyframe> {
         record VectorMode(CompiledMolang<Molang> molang) implements AnimVec3Supplier {
             @Override
             public void fillVec3(Vector3f vector3f, AnimationInstance instance) {
-                CompiledMolang.FloatArraySlice slice;
-                if (molang.instance.actor == null) {
-                    slice = molang.evaluate();
-                } else {
-                    molang.instance.actor.pushAnim(instance);
-                    slice = molang.evaluate();
-                    molang.instance.actor.popAnim();
-                }
+                CompiledMolang.FloatArraySlice slice = molang.evaluate(instance.getTime());
                 vector3f.set(slice.get(0), slice.get(1), slice.get(2));
             }
         }
