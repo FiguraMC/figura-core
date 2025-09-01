@@ -5,6 +5,8 @@ import org.figuramc.figura_core.util.functional.BiThrowingFunction;
 
 public record Pair<A, B>(A a, B b) {
 
+    public static <A, B> Pair<A, B> of(A a, B b) { return new Pair<>(a, b); }
+
     public <A2, E1 extends Throwable, E2 extends Throwable> Pair<A2, B> mapA(BiThrowingBiFunction<A, B, A2, E1, E2> func) throws E1, E2 { return new Pair<>(func.apply(a, b), b); }
     public <A2, E1 extends Throwable, E2 extends Throwable> Pair<A2, B> mapA(BiThrowingFunction<A, A2, E1, E2> func) throws E1, E2 { return new Pair<>(func.apply(a), b); }
 

@@ -54,7 +54,6 @@ public class LuaCallback<I extends CallbackItem, O extends CallbackItem> impleme
     // So if an error arises, we don't throw it back to the CALLER, we fault the Avatar who created this incorrect callback.
     @Override
     public O call(I arg) {
-        Objects.requireNonNull(state.avatar, "Attempt to call LuaCallback before its avatar was set! Internal Figura bug, please report");
         // If we're errored, don't call the function
         if (!state.avatar.isErrored()) {
             // Convert the arg into Lua Varargs to pass to our function.

@@ -10,7 +10,7 @@ import org.figuramc.figura_core.minecraft_interop.game_data.item.MinecraftItem;
 import org.figuramc.figura_core.minecraft_interop.game_data.item.MinecraftItemStack;
 import org.figuramc.figura_core.model.part.parts.CustomItemModelPart;
 import org.figuramc.figura_core.model.part.parts.FiguraModelPart;
-import org.figuramc.figura_core.model.renderers.Renderable;
+import org.figuramc.figura_core.model.rendering.RenderingRoot;
 import org.figuramc.memory_tracker.AllocationTracker;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -55,9 +55,19 @@ public class CustomItems implements AvatarComponent<CustomItems> {
                     matcher = new Matcher.ExactMatcher(item);
                 }
                 // Convert the materials to a CustomItemModelPart
-                Renderable<CustomItemModelPart> mainPart = entry.getValue().model() != null ? new Renderable<>(new CustomItemModelPart(pattern, mod, entry.getValue().model().model(), entry.getValue().model().transformsByContext(), avatar.allocationTracker, textures, molang, vanillaRendering)) : null;
-                // Convert the texture index to a FiguraModelPart
-                Renderable<FiguraModelPart> flatPart = entry.getValue().textureIndex() != -1 ? new Renderable<>(new FiguraModelPart(pattern, textures.getTexture(mod.index, entry.getValue().textureIndex()), avatar.allocationTracker)) : null;
+                RenderingRoot<CustomItemModelPart> mainPart;
+                RenderingRoot<FiguraModelPart> flatPart;
+                if (entry.getValue().model() != null) {
+                    // Create a custom item model part (which has additional transform data)
+                    CustomItemModelPart modelpart = new CustomItemModelPart(pattern, mod, entry.getValue().model().model(), entry.getValue().model().transformsByContext(), avatar.allocationTracker, textures, molang, vanillaRendering);
+                    mainPart = new RenderingRoot<>(modelpart, avatar.allocationTracker);
+                } else mainPart = null;
+                if (entry.getValue().textureIndex() != -1) {
+                    // Convert the texture index to a FiguraModelPart
+                    FiguraModelPart extruded = new FiguraModelPart(pattern, textures.getTexture(mod.index, entry.getValue().textureIndex()), avatar.allocationTracker);
+                    flatPart = new RenderingRoot<>(extruded, avatar.allocationTracker);
+                } else flatPart = null;
+
                 // Yield the entry
                 customItems.add(new PartEntry(matcher, mainPart, flatPart));
             }
@@ -79,7 +89,7 @@ public class CustomItems implements AvatarComponent<CustomItems> {
 
     }
 
-    public @Nullable Renderable<? extends FiguraModelPart> getModelPart(MinecraftItemStack stack, ItemRenderContext context) {
+    public @Nullable RenderingRoot<? extends FiguraModelPart> getModelPart(MinecraftItemStack stack, ItemRenderContext context) {
         // TODO: Once the API exists, try any custom callbacks before this for loop
         for (PartEntry entry : customItems) {
             if (!entry.matcher.matches(stack))
@@ -93,7 +103,7 @@ public class CustomItems implements AvatarComponent<CustomItems> {
         return null;
     }
 
-    private record PartEntry(Matcher matcher, @Nullable Renderable<CustomItemModelPart> mainPart, @Nullable Renderable<FiguraModelPart> flatPart) implements Comparable<PartEntry> {
+    private record PartEntry(Matcher matcher, @Nullable RenderingRoot<CustomItemModelPart> mainPart, @Nullable RenderingRoot<FiguraModelPart> flatPart) implements Comparable<PartEntry> {
         public static final int SIZE_ESTIMATE =
                 AllocationTracker.OBJECT_SIZE
                 + AllocationTracker.REFERENCE_SIZE * 3;

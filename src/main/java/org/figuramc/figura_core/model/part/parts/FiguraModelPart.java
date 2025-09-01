@@ -9,8 +9,8 @@ import org.figuramc.figura_core.data.ModuleMaterials;
 import org.figuramc.figura_core.model.part.PartTransform;
 import org.figuramc.figura_core.model.part.RiggedHierarchy;
 import org.figuramc.figura_core.model.part.tasks.RenderTask;
-import org.figuramc.figura_core.model.part.tasks.TextTask;
-import org.figuramc.figura_core.model.shader.FiguraRenderType;
+import org.figuramc.figura_core.model.rendering.FiguraRenderType;
+import org.figuramc.figura_core.model.rendering.vertex.PartVertexData;
 import org.figuramc.figura_core.model.texture.AvatarTexture;
 import org.figuramc.figura_core.script_hooks.callback.ScriptCallback;
 import org.figuramc.figura_core.script_hooks.callback.items.CallbackItem;
@@ -24,12 +24,11 @@ import java.lang.Math;
 import java.util.*;
 
 /**
- * Corresponds to a Group in Blockbench.
+ * Corresponds to a Group in Blockbench (or other structural elements, like directories and .figmodel files).
  * <p>
  * Unlike previously, Figura's scripting no longer allows manipulation of individual cubes and meshes, only groups.
  * Here's why:
  * - This is more in-line with Blockbench, as Blockbench only allows animations to affect groups
- * - Also more in-line with Minecraft's internals, because Vanilla model parts do not have individual cube transforms
  * - This can be more efficient rendering-wise, because most of the time individual cubes are not articulated, allowing
  *   for less unneeded computation. When they do need to be articulated, one can simply add a group for said cube.
  */
@@ -45,9 +44,10 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
     public final ArrayList<RenderTask<?>> renderTasks; // Render tasks act similar to children in some ways, such as inheriting transforms, but they are not FiguraModelPart.
 
     // Rendering
-    public final float[] vertices; // The vertices making up the cubes and meshes of the model part
-    private @Nullable FiguraRenderType renderType; // The rendering policy of this part. Null to inherit unconditionally.
-    public int renderTypePriority; // If the render type priority is higher than the parent's, renderType can replace the current render types.
+    public final @Nullable PartVertexData vertices; // Vertex data making up cubes/meshes of this part
+//    public final byte[] vertices; // The vertices making up the cubes and meshes of the model part
+    public @Nullable FiguraRenderType renderType; // The rendering policy of this part. Null to inherit unconditionally.
+    public int renderTypePriority; // If the render type priority is >= than the parent's, renderType can replace the current set of render types.
 
     // Callbacks which are run during various stages of the rendering process.
     // TODO finalize the arg/return types for this!
@@ -63,7 +63,7 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
         this.transform = new PartTransform(allocationTracker);
         this.children = new ArrayList<>(children);
         this.renderTasks = new ArrayList<>(0);
-        this.vertices = new float[0];
+        this.vertices = null;
         if (allocationTracker != null) {
             if (!name.isEmpty()) allocationTracker.track(name);
             int size = SIZE_ESTIMATE;
@@ -101,9 +101,7 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
             this.renderTasks.add(deepCopyChildren ? task.copy(allocationTracker) : task);
         // Vertices:
         if (deepCopyVertices) {
-            this.vertices = new float[part.vertices.length];
-            if (allocationTracker != null) allocationTracker.track(vertices);
-            System.arraycopy(part.vertices, 0, this.vertices, 0, part.vertices.length);
+            this.vertices = part.vertices == null ? null : new PartVertexData(part.vertices, allocationTracker);
         } else this.vertices = part.vertices;
         // Callback lists
         if (deepCopyCallbackLists) {
@@ -159,36 +157,33 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
         });
         renderTasks = new ArrayList<>(0);
 
-        // Get the list of render types:
+        // Get the render type:
         Vector4f uvModifier = new Vector4f(0, 0, 1, 1);
         if (materials.textureIndex != -1) {
             // If tex index is not -1, then generate a render type from the texture:
             AvatarTexture tex = texturesComponent.getTexture(module.index, materials.textureIndex);
-            renderType = new FiguraRenderType.Basic(tex.getHandle(), null);
+            renderType = new FiguraRenderType.Basic(tex.getHandle(), null, 0);
             // Also, set the UV modifier from the texture (for atlases)
             uvModifier.set(tex.getUvValues());
         } else if (!children.isEmpty()) {
             // Otherwise, attempt to merge from children:
-            boolean sameRenderType = children.stream().map(FiguraModelPart::getRenderType).filter(Objects::nonNull).distinct().limit(2).count() <= 1;
+            boolean sameRenderType = children.stream().map(p -> p.renderType).filter(Objects::nonNull).distinct().limit(2).count() <= 1;
             if (sameRenderType) {
                 // If all children have the same render type, merge upwards,
                 // setting their render types to null and this render type to that one.
-                this.renderType = children.getFirst().getRenderType();
+                this.renderType = children.getFirst().renderType;
                 for (FiguraModelPart child : children) child.renderType = null;
             }
         }
 
         // Get vertices
-        List<Float> vertexData = new ArrayList<>(); // TODO fix this and make it use unboxed floats
-        for (ModuleMaterials.CubeData cubeData : materials.cubes) addVertices(vertexData, cubeData, uvModifier);
-        for (ModuleMaterials.MeshData meshData : materials.meshes) addVertices(vertexData, meshData, uvModifier);
-        vertices = new float[vertexData.size()];
-        for (int i = 0; i < vertexData.size(); i++) vertices[i] = vertexData.get(i);
+        PartVertexData.Builder verticesBuilder = PartVertexData.builder(); // TODO fix this and make it use unboxed floats
+        for (ModuleMaterials.CubeData cubeData : materials.cubes) addVertices(verticesBuilder, cubeData, uvModifier);
+        for (ModuleMaterials.MeshData meshData : materials.meshes) addVertices(verticesBuilder, meshData, uvModifier);
+        vertices = verticesBuilder.build(allocationTracker);
 
         // Register to alloc tracker
         if (allocationTracker != null) {
-            // Track vertices
-            if (vertices.length > 0) allocationTracker.track(vertices);
             // Track this
             int size = SIZE_ESTIMATE;
             size += children.size() * AllocationTracker.REFERENCE_SIZE;
@@ -200,11 +195,11 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
     public FiguraModelPart(String name, AvatarTexture texture, @Nullable AllocationTracker<AvatarError> allocationTracker) throws AvatarError {
         this.name = name;
         this.transform = new PartTransform(allocationTracker);
-        this.renderType = new FiguraRenderType.Basic(texture.getHandle(), null);
+        this.renderType = new FiguraRenderType.Basic(texture.getHandle(), null, 0);
         Vector4f uvModifier = texture.getUvValues();
         this.children = new ArrayList<>(0);
         this.renderTasks = new ArrayList<>(0);
-        List<Float> vertexData = new ArrayList<>();
+        PartVertexData.Builder builder = PartVertexData.builder();
         // Iterate in each direction!
         byte[] opacityStates = new byte[Math.max(texture.getWidth(), texture.getHeight()) + 2]; // +2 because of 1 pixel padding on each side
         int w = texture.getWidth();
@@ -246,13 +241,13 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
                         // If we go from 1 to -1 or vice versa, we're ending a quad and starting a quad at once.
                         if (buildingState != 0) {
                             // We're ending a quad
-                            noSkinVert(vertexData, x, h - y, (buildingState - 1) / -2, (x + 0f) / w, (y + 0f) / h, -1f * buildingState, 0f, 0f, null, null, uvModifier);
-                            noSkinVert(vertexData, x, h - y, (buildingState + 1) / 2, (x + buildingState) / w, (y + 0f) / h, -1f * buildingState, 0f, 0f, null, null, uvModifier);
+                            noSkinVert(builder, x, h - y, (buildingState - 1) / -2, (x + 0f) / w, (y + 0f) / h, -1f * buildingState, 0f, 0f, null, null, uvModifier);
+                            noSkinVert(builder, x, h - y, (buildingState + 1) / 2, (x + buildingState) / w, (y + 0f) / h, -1f * buildingState, 0f, 0f, null, null, uvModifier);
                         }
                         if (newBuildingState != 0) {
                             // We're starting a quad
-                            noSkinVert(vertexData, x, h - y, (newBuildingState + 1) / 2, (x + newBuildingState) / w, (y + 0f) / h, -1f * newBuildingState, 0f, 0f, null, null, uvModifier);
-                            noSkinVert(vertexData, x, h - y, (newBuildingState - 1) / -2, (x + 0f) / w, (y + 0f) / h, -1f * newBuildingState, 0f, 0f, null, null, uvModifier);
+                            noSkinVert(builder, x, h - y, (newBuildingState + 1) / 2, (x + newBuildingState) / w, (y + 0f) / h, -1f * newBuildingState, 0f, 0f, null, null, uvModifier);
+                            noSkinVert(builder, x, h - y, (newBuildingState - 1) / -2, (x + 0f) / w, (y + 0f) / h, -1f * newBuildingState, 0f, 0f, null, null, uvModifier);
                         }
                     }
                     buildingState = newBuildingState;
@@ -275,13 +270,13 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
                         // We're either starting a quad, ending one, or both.
                         if (buildingState != 0) {
                             // We're ending a quad
-                            noSkinVert(vertexData, x, h - y, (buildingState + 1) / 2, (x + 0f) / w, (y + buildingState) / h, 0f, -1f * buildingState, 0f, null, null, uvModifier);
-                            noSkinVert(vertexData, x, h - y, (buildingState - 1) / -2, (x + 0f) / w, (y + 0f) / h, 0f, -1f * buildingState, 0f, null, null, uvModifier);
+                            noSkinVert(builder, x, h - y, (buildingState + 1) / 2, (x + 0f) / w, (y + buildingState) / h, 0f, -1f * buildingState, 0f, null, null, uvModifier);
+                            noSkinVert(builder, x, h - y, (buildingState - 1) / -2, (x + 0f) / w, (y + 0f) / h, 0f, -1f * buildingState, 0f, null, null, uvModifier);
                         }
                         if (newBuildingState != 0) {
                             // We're starting a quad
-                            noSkinVert(vertexData, x, h - y, (newBuildingState - 1) / -2, (x + 0f) / w, (y + 0f) / h, 0f, -1f * newBuildingState, 0f, null, null, uvModifier);
-                            noSkinVert(vertexData, x, h - y, (newBuildingState + 1) / 2, (x + 0f) / w, (y + newBuildingState) / h, 0f, -1f * newBuildingState, 0f, null, null, uvModifier);
+                            noSkinVert(builder, x, h - y, (newBuildingState - 1) / -2, (x + 0f) / w, (y + 0f) / h, 0f, -1f * newBuildingState, 0f, null, null, uvModifier);
+                            noSkinVert(builder, x, h - y, (newBuildingState + 1) / 2, (x + 0f) / w, (y + newBuildingState) / h, 0f, -1f * newBuildingState, 0f, null, null, uvModifier);
                         }
                     }
                     buildingState = newBuildingState;
@@ -293,18 +288,17 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
 
         // Put on the front and back panels
         // TODO: if this has issues with transparency or something, replace it with multiple quads that only cover the actual filled pixels
-        noSkinVert(vertexData, 0f, 0f, 1f, 0f, 1f, 0f, 0f, 1f, null, null, uvModifier);
-        noSkinVert(vertexData, w, 0f, 1f, 1f, 1f, 0f, 0f, 1f, null, null, uvModifier);
-        noSkinVert(vertexData, w, h, 1f, 1f, 0f, 0f, 0f, 1f, null, null, uvModifier);
-        noSkinVert(vertexData, 0f, h, 1f, 0f, 0f, 0f, 0f, 1f, null, null, uvModifier);
+        noSkinVert(builder, 0f, 0f, 1f, 0f, 1f, 0f, 0f, 1f, null, null, uvModifier);
+        noSkinVert(builder, w, 0f, 1f, 1f, 1f, 0f, 0f, 1f, null, null, uvModifier);
+        noSkinVert(builder, w, h, 1f, 1f, 0f, 0f, 0f, 1f, null, null, uvModifier);
+        noSkinVert(builder, 0f, h, 1f, 0f, 0f, 0f, 0f, 1f, null, null, uvModifier);
 
-        noSkinVert(vertexData, w, 0f, 0f, 1f, 1f, 0f, 0f, -1f, null, null, uvModifier);
-        noSkinVert(vertexData, 0f, 0f, 0f, 0f, 1f, 0f, 0f, -1f, null, null, uvModifier);
-        noSkinVert(vertexData, 0f, h, 0f, 0f, 0f, 0f, 0f, -1f, null, null, uvModifier);
-        noSkinVert(vertexData, w, h, 0f, 1f, 0f, 0f, 0f, -1f, null, null, uvModifier);
+        noSkinVert(builder, w, 0f, 0f, 1f, 1f, 0f, 0f, -1f, null, null, uvModifier);
+        noSkinVert(builder, 0f, 0f, 0f, 0f, 1f, 0f, 0f, -1f, null, null, uvModifier);
+        noSkinVert(builder, 0f, h, 0f, 0f, 0f, 0f, 0f, -1f, null, null, uvModifier);
+        noSkinVert(builder, w, h, 0f, 1f, 0f, 0f, 0f, -1f, null, null, uvModifier);
 
-        vertices = new float[vertexData.size()];
-        for (int i = 0; i < vertexData.size(); i++) vertices[i] = vertexData.get(i);
+        vertices = builder.build(allocationTracker);
 
         // Set up transform to be item-ish
         transform.setScale(1f/16);
@@ -312,7 +306,6 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
 
         // Track
         if (allocationTracker != null) {
-            allocationTracker.track(vertices);
             allocState = allocationTracker.track(this, SIZE_ESTIMATE);
         } else allocState = null;
     }
@@ -326,7 +319,7 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
         return (byte) (((texture.getPixel(x, y) >>> 24) + 253) / 254);
     }
 
-    private static void addVertices(List<Float> vertexData, ModuleMaterials.CubeData cubeData, Vector4f uvModifier) {
+    private static void addVertices(PartVertexData.Builder vertexData, ModuleMaterials.CubeData cubeData, Vector4f uvModifier) {
         Vector3f f = cubeData.from().sub(cubeData.inflate(), new Vector3f());
         Vector3f t = cubeData.to().add(cubeData.inflate(), new Vector3f());
         Vector3f o = cubeData.origin();
@@ -400,7 +393,7 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
         }
     }
 
-    private static void addVertices(List<Float> arr, ModuleMaterials.MeshData meshData, Vector4f uvModifier) {
+    private static void addVertices(PartVertexData.Builder builder, ModuleMaterials.MeshData meshData, Vector4f uvModifier) {
 
         // Rotate around its origin:
         Vector3f o = meshData.origin();
@@ -422,16 +415,16 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
             ModuleMaterials.VertexData v2 = vertices.get(face.y);
             ModuleMaterials.VertexData v3 = vertices.get(face.z);
             Vector3f normal = computeNormal(v1.pos(), v2.pos(), v3.pos());
-            meshVert(arr, v1, normal, uvs.get(uv++), transform, normalMat, uvModifier);
-            meshVert(arr, v2, normal, uvs.get(uv++), transform, normalMat, uvModifier);
-            meshVert(arr, v3, normal, uvs.get(uv++), transform, normalMat, uvModifier);
+            meshVert(builder, v1, normal, uvs.get(uv++), transform, normalMat, uvModifier);
+            meshVert(builder, v2, normal, uvs.get(uv++), transform, normalMat, uvModifier);
+            meshVert(builder, v3, normal, uvs.get(uv++), transform, normalMat, uvModifier);
             if (face.w != -1) {
                 // This is a quad, add the 4th vertex
                 ModuleMaterials.VertexData v4 = vertices.get(face.w);
-                meshVert(arr, v4, normal, uvs.get(uv++), transform, normalMat, uvModifier);
+                meshVert(builder, v4, normal, uvs.get(uv++), transform, normalMat, uvModifier);
             } else {
                 // This is a triangle but minecraft likes quads, so emit the 3rd vertex again
-                meshVert(arr, v3, normal, uvs.get(uv - 1), transform, normalMat, uvModifier);
+                meshVert(builder, v3, normal, uvs.get(uv - 1), transform, normalMat, uvModifier);
             }
         }
     }
@@ -440,10 +433,10 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
         return v2.sub(v1, new Vector3f()).cross(v3.sub(v1, new Vector3f())).normalize();
     }
 
-    private static void meshVert(List<Float> arr, ModuleMaterials.VertexData vertexData, Vector3f normalVec, Vector2f uv, Matrix4f transform, Matrix3f normalMat, Vector4f uvModifier) {
+    private static void meshVert(PartVertexData.Builder builder, ModuleMaterials.VertexData vertexData, Vector3f normalVec, Vector2f uv, Matrix4f transform, Matrix3f normalMat, Vector4f uvModifier) {
         Vector3f p = vertexData.pos();
         if (vertexData.skinningData() == null) {
-            emitVert(arr,
+            emitVert(builder,
                     p.x, p.y, p.z, uv.x, uv.y, normalVec.x, normalVec.y, normalVec.z,
                     0, -1, -1, -1,
                     1f, 0f, 0f, 0f,
@@ -452,7 +445,7 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
         } else {
             Vector4i so = vertexData.skinningData().offsets();
             Vector4f sw = vertexData.skinningData().weights();
-            emitVert(arr,
+            emitVert(builder,
                     p.x, p.y, p.z, uv.x, uv.y, normalVec.x, normalVec.y, normalVec.z,
                     so.x, so.y, so.z, so.w, sw.x, sw.y, sw.z, sw.w,
                     transform, normalMat, uvModifier
@@ -460,33 +453,32 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
         }
     }
 
-    private static void noSkinVert(List<Float> arr, float x, float y, float z, float u, float v, float nx, float ny, float nz, @Nullable Matrix4f transform, @Nullable Matrix3f normalMat, Vector4f uvModifier) {
-        emitVert(arr, x, y, z, u, v, nx, ny, nz, 0, -1, -1, -1, 1f, 0f, 0f, 0f, transform, normalMat, uvModifier);
+    private static void noSkinVert(PartVertexData.Builder builder, float x, float y, float z, float u, float v, float nx, float ny, float nz, @Nullable Matrix4f transform, @Nullable Matrix3f normalMat, Vector4f uvModifier) {
+        emitVert(builder, x, y, z, u, v, nx, ny, nz, 0, -1, -1, -1, 1f, 0f, 0f, 0f, transform, normalMat, uvModifier);
     }
 
     private static void emitVert(
-            List<Float> arr,
+            PartVertexData.Builder builder,
             float x, float y, float z,
             float u, float v,
             float nx, float ny, float nz,
-            int skinningOffset0, int skinningOffset1, int skinningOffset2, int skinningOffset3,
-            float skinningWeight0, float skinningWeight1, float skinningWeight2, float skinningWeight3,
+            int riggingOffset0, int riggingOffset1, int riggingOffset2, int riggingOffset3,
+            float riggingWeight0, float riggingWeight1, float riggingWeight2, float riggingWeight3,
             @Nullable Matrix4f transform, @Nullable Matrix3f normalMat, Vector4f uvModifier
     ) {
-        // Pos
+        // Calc pos and normal
         Vector3f pos = new Vector3f(x, y, z);
         if (transform != null) pos.mulPosition(transform);
-        arr.add(pos.x); arr.add(pos.y); arr.add(pos.z);
-        // Normal
         Vector3f norm = new Vector3f(nx, ny, nz);
         if (normalMat != null) norm.mul(normalMat);
         norm.normalize();
-        arr.add(norm.x); arr.add(norm.y); arr.add(norm.z);
-        // UV, modified by the modifier
-        arr.add(u * uvModifier.z + uvModifier.x); arr.add(v * uvModifier.w + uvModifier.y);
-        // Mesh skinning
-        arr.add((float) skinningOffset0); arr.add((float) skinningOffset1); arr.add((float) skinningOffset2); arr.add((float) skinningOffset3);
-        arr.add(skinningWeight0); arr.add(skinningWeight1); arr.add(skinningWeight2); arr.add(skinningWeight3);
+        // Build vertex
+        builder.position(pos.x, pos.y, pos.z)
+                .riggingWeights(riggingWeight0, riggingWeight1, riggingWeight2, riggingWeight3)
+                .riggingOffsets((byte) (riggingOffset0 & 0xFF), (byte) (riggingOffset1 & 0xFF), (byte) (riggingOffset2 & 0xFF), (byte) (riggingOffset3 & 0xFF))
+                .uv(u * uvModifier.z + uvModifier.x, v * uvModifier.w + uvModifier.y)
+                .normal(norm.x, norm.y, norm.z)
+                .endVertex();
     }
 
     // Script-ish functions
@@ -499,14 +491,6 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
     public void removeChild(FiguraModelPart child) {
         this.children.remove(child);
         this.childrenSpeedupCache.remove(child.name);
-    }
-
-    public void setRenderType(@Nullable FiguraRenderType renderType) {
-        this.renderType = renderType;
-    }
-
-    public @Nullable FiguraRenderType getRenderType() {
-        return this.renderType;
     }
 
     @Override

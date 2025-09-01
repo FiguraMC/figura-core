@@ -1,6 +1,7 @@
-package org.figuramc.figura_core.model.renderers;
+package org.figuramc.figura_core.model.rendering;
 
 import org.figuramc.figura_core.util.data_structures.FiguraTransformStack;
+import org.figuramc.memory_tracker.AllocationTracker;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
@@ -8,8 +9,8 @@ import org.joml.Vector4f;
 import java.nio.ByteBuffer;
 
 /**
- * Represents a "PartData" object in an optimized shader
- * (Currently unused)
+ * Represents a "PartData" object which will be collected by a tree-walking pass and used for rendering,
+ * either in a VBO-based renderer or a compatible renderer.
  */
 public class PartDataStruct {
 
@@ -17,14 +18,22 @@ public class PartDataStruct {
     private static final int MAT3_SIZE = 3 * 4 * Float.BYTES; // 3x4 for alignment in opengl
     private static final int VEC4_SIZE = 4 * Float.BYTES;
 
-    // Size of a PartDataStruct in bytes
-    public static final int SIZE =
+    // Size of a PartDataStruct in bytes (gpu)
+    public static final int GPU_SIZE =
             // Position mat, normal mat, color
             MAT4_SIZE + MAT3_SIZE + VEC4_SIZE;
 
-    private final Matrix4f transform = new Matrix4f();
-    private final Matrix3f normalMat = new Matrix3f();
-    private final Vector4f colorMultiplier = new Vector4f();
+    // Size of PartDataStruct instance in bytes (cpu)
+    public static final int CPU_SIZE =
+            AllocationTracker.OBJECT_SIZE
+            + AllocationTracker.REFERENCE_SIZE * 3
+            + AllocationTracker.MAT4F_SIZE
+            + AllocationTracker.MAT3F_SIZE
+            + AllocationTracker.VEC4F_SIZE;
+
+    public final Matrix4f transform = new Matrix4f();
+    public final Matrix3f normalMat = new Matrix3f();
+    public final Vector4f colorMultiplier = new Vector4f();
 
     public void fillFromStack(FiguraTransformStack stack, boolean visible) {
         if (visible) {
@@ -41,7 +50,7 @@ public class PartDataStruct {
 
     @SuppressWarnings("UnusedAssignment")
     public void write(ByteBuffer buffer, int partIndex) {
-        int index = partIndex * SIZE;
+        int index = partIndex * GPU_SIZE;
         transform.get(index, buffer); index += MAT4_SIZE;
         customGet3x4(normalMat, index, buffer); index += MAT3_SIZE; // 3x4 for alignment in opengl
         colorMultiplier.get(index, buffer); index += VEC4_SIZE;

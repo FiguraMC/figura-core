@@ -5,7 +5,7 @@ import org.figuramc.figura_core.avatars.AvatarComponent;
 import org.figuramc.figura_core.avatars.AvatarError;
 import org.figuramc.figura_core.avatars.AvatarModules;
 import org.figuramc.figura_core.model.part.parts.FiguraModelPart;
-import org.figuramc.figura_core.model.renderers.Renderable;
+import org.figuramc.figura_core.model.rendering.RenderingRoot;
 import org.figuramc.memory_tracker.AllocationTracker;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,7 +17,7 @@ public class HudRoot implements AvatarComponent<HudRoot> {
     public static final Type<HudRoot> TYPE = new Type<>(HudRoot::new, Textures.TYPE, Molang.TYPE, VanillaRendering.TYPE);
     public Type<HudRoot> getType() { return TYPE; }
 
-    public final Renderable<FiguraModelPart> root;
+    public final RenderingRoot<FiguraModelPart> root;
     public final @Nullable FiguraModelPart[] rootByModule;
 
     // Vanilla rendering parameter if possible, this will allow mimics to work
@@ -40,7 +40,8 @@ public class HudRoot implements AvatarComponent<HudRoot> {
         }
 
         // Return a wrapper around all of them
-        this.root = new Renderable<>(new FiguraModelPart("", roots, allocationTracker));
+        FiguraModelPart realRoot = new FiguraModelPart("", roots, allocationTracker);
+        this.root = new RenderingRoot<>(realRoot, allocationTracker);
     }
 
     @Override

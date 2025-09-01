@@ -2,13 +2,13 @@ package org.figuramc.figura_core.avatars;
 
 import org.figuramc.figura_core.manage.AvatarManager;
 import org.figuramc.figura_core.minecraft_interop.FiguraConnectionPoint;
-import org.figuramc.figura_core.minecraft_interop.model_part_renderers.FiguraModelPartRenderer;
 import org.figuramc.figura_core.minecraft_interop.vanilla_parts.VanillaModel;
 import org.figuramc.figura_core.script_hooks.Event;
 import org.figuramc.figura_core.script_hooks.EventListener;
 import org.figuramc.figura_core.script_hooks.callback.items.CallbackItem;
 import org.figuramc.figura_core.util.ListUtils;
 import org.figuramc.figura_core.util.enumlike.IdMap;
+import org.figuramc.figura_core.util.functional.ThrowingRunnable;
 import org.figuramc.figura_translations.Translatable;
 import org.figuramc.figura_translations.TranslatableItems;
 import org.figuramc.memory_tracker.AllocationTracker;
@@ -188,12 +188,11 @@ public final class Avatar<K> {
         }
     }
 
-    // Attempt to render the model part, and error the avatar if it fails.
-    // Ensure the Renderer is set up properly before calling this method.
-    public void tryRenderModelPart(FiguraModelPartRenderer partRenderer) {
+    // Attempt to run the given lambda (which renders the model part) and error the avatar appropriately if it fails.
+    public void tryRenderModelPart(ThrowingRunnable<Throwable> renderer) {
         if (isErrored()) return;
         try {
-            partRenderer.render();
+            renderer.run();
         } catch (StackOverflowError ex) {
             error(new AvatarError(STACK_OVERFLOW_DURING_RENDERING, TranslatableItems.Items0.INSTANCE));
         } catch (AvatarError avatarError) {
@@ -205,6 +204,5 @@ public final class Avatar<K> {
 
     private static final Translatable<TranslatableItems.Items0> STACK_OVERFLOW_DURING_RENDERING
             = Translatable.create("figura_core.error.rendering.stack_overflow");
-
 
 }

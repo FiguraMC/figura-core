@@ -3,7 +3,6 @@ package org.figuramc.figura_core.minecraft_interop;
 import org.figuramc.figura_core.avatars.AvatarComponent;
 import org.figuramc.figura_core.avatars.components.*;
 import org.figuramc.figura_core.minecraft_interop.game_data.GameDataProvider;
-import org.figuramc.figura_core.minecraft_interop.model_part_renderers.FiguraModelPartRendererFactory;
 import org.figuramc.figura_core.minecraft_interop.texture.MinecraftTextureProvider;
 import org.figuramc.figura_core.script_hooks.Event;
 import org.figuramc.figura_core.script_languages.lua.LuaRuntime;
@@ -18,7 +17,6 @@ import org.figuramc.figura_translations.FiguraTranslations;
 public class FiguraConnectionPoint {
 
     // Global instances of various singleton interfaces should be given implementations.
-    public static FiguraModelPartRendererFactory MODEL_PART_RENDERER_FACTORY = null;
     public static MinecraftTextureProvider TEXTURE_PROVIDER = null;
     public static GameDataProvider GAME_DATA_PROVIDER = null;
     public static ErrorReporter ERROR_REPORTER = null;

@@ -47,7 +47,7 @@ public class LuaRuntime extends LuaState implements ScriptRuntimeComponent<LuaRu
     public final LuaToCallbackItem luaToCallbackItem;
     public final CallbackItemToLua callbackItemToLua;
     // The avatar this runtime is attached to. If an error occurs, this is who to blame.
-    public Avatar<?> avatar; // Can also fetch its allocation tracker if needed!
+    public final Avatar<?> avatar; // Can also fetch its allocation tracker if needed!
 
     // Use this for the factory since it throws AvatarError
     public static LuaRuntime create(Avatar<?> avatar, AvatarModules modules) throws AvatarError {

@@ -41,7 +41,7 @@ public class CallbackAPI {
             result = callImpl((LuaRuntime) s, callback, args.subargs(2));
         }
         // If our avatar is errored, throw an escaper so we can get out of Lua
-        if (Objects.requireNonNull(((LuaRuntime) s).avatar).isErrored()) throw LuaEscaper.INSTANCE;
+        if (((LuaRuntime) s).avatar.isErrored()) throw LuaEscaper.INSTANCE;
         return result;
     }
 

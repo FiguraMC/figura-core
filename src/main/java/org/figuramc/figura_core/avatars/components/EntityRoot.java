@@ -5,7 +5,7 @@ import org.figuramc.figura_core.avatars.AvatarComponent;
 import org.figuramc.figura_core.avatars.AvatarError;
 import org.figuramc.figura_core.avatars.AvatarModules;
 import org.figuramc.figura_core.model.part.parts.FiguraModelPart;
-import org.figuramc.figura_core.model.renderers.Renderable;
+import org.figuramc.figura_core.model.rendering.RenderingRoot;
 import org.figuramc.memory_tracker.AllocationTracker;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,7 +17,7 @@ public class EntityRoot implements AvatarComponent<EntityRoot> {
     public static final Type<EntityRoot> TYPE = new Type<>(EntityRoot::new, Textures.TYPE, Molang.TYPE, VanillaRendering.TYPE);
     public Type<EntityRoot> getType() { return TYPE; }
 
-    public final Renderable<FiguraModelPart> root;
+    public final RenderingRoot<FiguraModelPart> root;
     public final @Nullable FiguraModelPart[] rootByModule;
 
     // Vanilla rendering parameter if possible, this will allow mimics to work
@@ -42,7 +42,7 @@ public class EntityRoot implements AvatarComponent<EntityRoot> {
         // Return a wrapper around all of them
         FiguraModelPart realRoot = new FiguraModelPart("", roots, allocationTracker);
         realRoot.getTransform().setScale(1f / 16); // Scale by 1/16 for entity!
-        this.root = new Renderable<>(realRoot);
+        this.root = new RenderingRoot<>(realRoot, allocationTracker);
     }
 
     @Override
