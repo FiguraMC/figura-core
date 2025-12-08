@@ -10,6 +10,7 @@ import org.figuramc.figura_core.comptime.lua.annotations.LuaExpose;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaPassState;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaReturnSelf;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaTypeAPI;
+import org.figuramc.figura_core.script_hooks.flags.QueuedSetters;
 import org.figuramc.figura_core.script_languages.lua.LuaRuntime;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3d;
@@ -21,22 +22,23 @@ public class VanillaPartAPI {
         return new LuaUserdata(part, state.figuraMetatables.vanillaPart);
     }
 
-    // Getter/setter for canceling vanilla operations
+    // Getter/setter for canceling vanilla operations.
+    // Setters are queued as normal
     @LuaExpose public static boolean cancelOrigin(VanillaRendering.ScriptVanillaPart self) { return self.cancelVanillaOrigin; }
-    @LuaExpose @LuaReturnSelf public static void cancelOrigin(VanillaRendering.ScriptVanillaPart self, boolean cancel) { self.cancelVanillaOrigin = cancel; }
+    @LuaExpose @LuaReturnSelf public static void cancelOrigin(VanillaRendering.ScriptVanillaPart self, boolean cancel) { QueuedSetters.handle(() -> self.cancelVanillaOrigin = cancel); }
     @LuaExpose public static boolean cancelRot(VanillaRendering.ScriptVanillaPart self) { return self.cancelVanillaRotation; }
-    @LuaExpose @LuaReturnSelf public static void cancelRot(VanillaRendering.ScriptVanillaPart self, boolean cancel) { self.cancelVanillaRotation = cancel; }
+    @LuaExpose @LuaReturnSelf public static void cancelRot(VanillaRendering.ScriptVanillaPart self, boolean cancel) { QueuedSetters.handle(() -> self.cancelVanillaRotation = cancel); }
     @LuaExpose public static boolean cancelScale(VanillaRendering.ScriptVanillaPart self) { return self.cancelVanillaScale; }
-    @LuaExpose @LuaReturnSelf public static void cancelScale(VanillaRendering.ScriptVanillaPart self, boolean cancel) { self.cancelVanillaScale = cancel; }
+    @LuaExpose @LuaReturnSelf public static void cancelScale(VanillaRendering.ScriptVanillaPart self, boolean cancel) { QueuedSetters.handle(() -> self.cancelVanillaScale = cancel); }
 
-    // Fetching stored values
+    // Getters for fetching stored values (only consistent in render thread context)
     @LuaExpose public static Vector3d storedOrigin(VanillaRendering.ScriptVanillaPart self) { return self.storedVanillaOrigin.get(new Vector3d()); }
     @LuaExpose public static Vector3d storedRot(VanillaRendering.ScriptVanillaPart self) { return storedRad(self).mul(180 / Math.PI); }
     @LuaExpose public static Vector3d storedRad(VanillaRendering.ScriptVanillaPart self) { return self.storedVanillaRotation.get(new Vector3d()); }
     @LuaExpose public static Vector3d storedScale(VanillaRendering.ScriptVanillaPart self) { return self.storedVanillaScale.get(new Vector3d()); }
     @LuaExpose public static Vector3d storedPos(VanillaRendering.ScriptVanillaPart self) { return self.storedVanillaPosition.get(new Vector3d()); }
 
-    // Children
+    // Child getter; since children can't be modified we don't need to worry about consistency with this one
     @LuaExpose @LuaPassState public static LuaTable children(LuaRuntime s, VanillaRendering.ScriptVanillaPart self) throws LuaError, LuaUncatchableError {
         LuaTable result = new LuaTable(s.allocationTracker);
         for (var entry : self.children.entrySet()) {

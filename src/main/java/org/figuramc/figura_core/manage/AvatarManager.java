@@ -20,14 +20,8 @@ public class AvatarManager<K> {
     private final ConcurrentHashMap<K, Avatar<K>> loadedAvatars = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<K, CompletableFuture<@Nullable Avatar<K>>> inProgressAvatars = new ConcurrentHashMap<>();
 
-    public void poll() {
-        AvatarManagers.AVATAR_LOCK.lock();
-        try { pollImpl(); } finally { AvatarManagers.AVATAR_LOCK.unlock(); }
-    }
-
     // See if any async tasks have completed; if they have, initialize them.
-    // This should be run on the main thread.
-    private void pollImpl() {
+    public void poll() {
         // Iterate over in-progress Avatars, see if any are complete.
         // If they are, move them to the map of loaded Avatars.
         for (var entry : inProgressAvatars.entrySet()) {
@@ -59,21 +53,12 @@ public class AvatarManager<K> {
                     continue;
                 }
 
-                // run onPoll event, to potentially cancel, or prepare readiness
-                if (result.onPoll()) {
-                    cancelInProgress(key);
-                    continue;
-                }
-
                 // If it's not ready yet, continue and wait until it is ready
                 if (!result.isReady()) continue;
 
-                // Now that the result is ready:
-                // - Remove from the in-progress map and add to the loaded map
-                // - Run its main-thread initialization
+                // Now that the result is ready, remove from the in-progress map and add to the loaded map
                 inProgressAvatars.remove(key);
                 loadedAvatars.put(key, result);
-                result.mainThreadInitialize();
             }
         }
     }
@@ -94,16 +79,12 @@ public class AvatarManager<K> {
      * Run the consumer on each loaded Avatar.
      */
     public <E extends Throwable> void forEach(ThrowingConsumer<? super Avatar<K>, E> consumer) throws E {
-        AvatarManagers.AVATAR_LOCK.lock();
-        try {
-            for (Avatar<K> avatar : loadedAvatars.values())
-                consumer.accept(avatar);
-        } finally { AvatarManagers.AVATAR_LOCK.unlock(); }
+        for (Avatar<K> avatar : loadedAvatars.values())
+            new AvatarView<>(avatar).use(consumer::accept);
     }
 
     /**
      * Get an Avatar if it's loaded. Return null if no Avatar exists for this key.
-     * Make sure you remember to close the view! The IDE should yell at you if you don't.
      */
     public @Nullable AvatarView<K> get(K key) {
         Avatar<K> avatar = loadedAvatars.get(key);

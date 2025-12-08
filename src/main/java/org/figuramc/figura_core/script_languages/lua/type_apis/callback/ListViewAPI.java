@@ -1,8 +1,10 @@
 package org.figuramc.figura_core.script_languages.lua.type_apis.callback;
 
 import org.figuramc.figura_cobalt.LuaUncatchableError;
+import org.figuramc.figura_cobalt.org.squiddev.cobalt.Constants;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaTable;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaUserdata;
+import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaValue;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaExpose;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaPassState;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaTypeAPI;
@@ -24,21 +26,26 @@ public class ListViewAPI {
         return new LuaListView<>(s, list, elemType);
     }
 
-    @LuaExpose public static void revoke(ListView<?> self) { self.revoke(); }
+    @LuaExpose public static void revoke(ListView<?> self) { self.close(); }
     @LuaExpose public static boolean isRevoked(ListView<?> self) { return self.isRevoked(); }
     @LuaExpose public static int length(ListView<?> self) { return self.length(); }
 
     @LuaExpose @LuaPassState
-    public static LuaTable copy(LuaRuntime s, ListView<?> self) throws LuaUncatchableError {
+    public static LuaValue copy(LuaRuntime s, ListView<?> self) throws LuaUncatchableError {
         return copyImpl(s, self);
     }
 
-    private static <T extends CallbackItem> LuaTable copyImpl(LuaRuntime state, ListView<T> view) throws LuaUncatchableError {
-        int len = view.length();
-        LuaTable tab = new LuaTable(len, 0, state.allocationTracker);
-        for (int i = 0; i < len; i++)
-            tab.rawset(i + 1, view.callbackType.fromItem(state.callbackItemToLua, view.get(i)));
-        return tab;
+    private static <T extends CallbackItem> LuaValue copyImpl(LuaRuntime state, ListView<T> view) throws LuaUncatchableError {
+        // Be sure to synchronize so it can't be revoked in the middle of copying
+        synchronized (view) {
+            if (view.isRevoked()) return Constants.NIL;
+            int len = view.length();
+            if (len == -1) return Constants.NIL;
+            LuaTable tab = new LuaTable(len, 0, state.allocationTracker);
+            for (int i = 0; i < len; i++)
+                tab.rawset(i + 1, view.callbackType.fromItem(state.callbackItemToLua, view.get(i)));
+            return tab;
+        }
     }
 
 }

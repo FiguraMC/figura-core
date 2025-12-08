@@ -2,7 +2,7 @@ package org.figuramc.figura_core.model.texture;
 
 import org.figuramc.figura_core.avatars.AvatarError;
 import org.figuramc.figura_core.avatars.components.Textures;
-import org.figuramc.figura_core.data.ModuleMaterials;
+import org.figuramc.figura_core.data.materials.ModuleMaterials;
 import org.figuramc.figura_core.minecraft_interop.texture.MinecraftTexture;
 import org.figuramc.figura_translations.Translatable;
 import org.figuramc.figura_translations.TranslatableItems;

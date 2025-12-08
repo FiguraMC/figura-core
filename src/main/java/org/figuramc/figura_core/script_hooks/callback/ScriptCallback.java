@@ -1,7 +1,8 @@
 package org.figuramc.figura_core.script_hooks.callback;
 
-import org.figuramc.figura_core.avatars.Avatar;
+import org.figuramc.figura_core.manage.AvatarView;
 import org.figuramc.figura_core.script_hooks.callback.items.CallbackItem;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A callback within a ScriptRuntime that can be sent outside of that runtime.
@@ -23,11 +24,11 @@ public interface ScriptCallback<I extends CallbackItem, O extends CallbackItem> 
     CallbackType.Func<I, O> type();
 
     /**
-     * Get the Avatar which owns this Callback.
+     * Get a view of the Avatar which owns this Callback.
      * After calling a callback, the avatar which owns it might be errored.
      * If so, the caller should possibly handle this?
      */
-    Avatar<?> getOwningAvatar();
+    AvatarView<?> getOwningAvatar();
 
     /**
      * Invoke the callback, applying translations, with the given arg. (Arg may be a tuple to simulate multiple args).
@@ -35,7 +36,8 @@ public interface ScriptCallback<I extends CallbackItem, O extends CallbackItem> 
      * This stage occurs AFTER the caller has already turned their items into CallbackItem. Any errors on the caller's
      * side would have already happened by this point. Any errors that occur inside the call are the fault of the CALLEE.
      * So these issues should be caught there, and they'll have their Avatar errored out.
+     * If the callee errored, this function will return null.
      */
-    O call(I arg);
+    @Nullable O call(I arg);
 
 }

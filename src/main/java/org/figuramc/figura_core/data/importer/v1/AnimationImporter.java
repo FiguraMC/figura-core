@@ -1,10 +1,10 @@
-package org.figuramc.figura_core.data;
+package org.figuramc.figura_core.data.importer.v1;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import org.figuramc.figura_core.data.materials.ModuleMaterials;
 import org.figuramc.figura_core.util.JsonUtils;
-import org.figuramc.figura_core.util.ListUtils;
 import org.figuramc.figura_core.util.MapUtils;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;

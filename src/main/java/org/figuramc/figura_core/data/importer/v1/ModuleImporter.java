@@ -1,9 +1,11 @@
-package org.figuramc.figura_core.data;
+package org.figuramc.figura_core.data.importer.v1;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
+import org.figuramc.figura_core.data.importer.ModuleImportingException;
+import org.figuramc.figura_core.data.materials.ModuleMaterials;
 import org.figuramc.figura_core.script_hooks.ScriptingLanguage;
 import org.figuramc.figura_core.script_hooks.callback.CallbackType;
 import org.figuramc.figura_core.script_hooks.callback.CallbackTypeParser;
@@ -12,6 +14,7 @@ import org.figuramc.figura_core.util.JsonUtils;
 import org.figuramc.figura_core.util.ListUtils;
 import org.figuramc.figura_core.util.MapUtils;
 import org.figuramc.figura_core.util.data_structures.DataTree;
+import org.figuramc.figura_core.util.data_structures.Mutable;
 import org.figuramc.figura_core.util.data_structures.Pair;
 import org.figuramc.figura_translations.Translatable;
 import org.figuramc.figura_translations.TranslatableItems;
@@ -75,16 +78,19 @@ public class ModuleImporter {
         ArrayList<ModuleMaterials.TextureMaterials> textures = new ArrayList<>();
         IOUtils.recursiveProcess(texturesRoot, p -> readTexture(p, texturesRoot), "png", false, false).stream().map(Pair::b).forEach(textures::add);
 
+        // Materials (custom are TODO)
+        ArrayList<ModuleMaterials.MaterialMaterials> materials = new ArrayList<>();
+
         // Read custom items first, because they can potentially add new textures which are then used later
-        var items = readCustomItems(root, textures);
+        var items = readCustomItems(root, textures, materials);
 
-        @Nullable ModuleMaterials.ModelPartMaterials entity = readRecursiveModel(root, "entity", textures);
-        @Nullable ModuleMaterials.ModelPartMaterials hud = readRecursiveModel(root, "hud", textures);
+        @Nullable ModuleMaterials.ModelPartMaterials entity = readRecursiveModel(root, "entity", textures, materials);
+        @Nullable ModuleMaterials.ModelPartMaterials hud = readRecursiveModel(root, "hud", textures, materials);
 
-        @Nullable ModuleMaterials.ModelPartMaterials worldOver = readRecursiveModel(root, "world", textures);
+        @Nullable ModuleMaterials.ModelPartMaterials worldOver = readRecursiveModel(root, "world", textures, materials);
         TreeMap<String, ModuleMaterials.ModelPartMaterials> world = worldOver != null ? new TreeMap<>(worldOver.children) : new TreeMap<>();
 
-        return new ModuleMaterials(metadata, scripts, textures, world, entity, hud, items);
+        return new ModuleMaterials(metadata, scripts, textures, materials, world, entity, hud, items);
     }
 
     private static ModuleMaterials.MetadataMaterials readMetadata(Path root) throws ModuleImportingException, IOException {
@@ -147,15 +153,15 @@ public class ModuleImporter {
         return new ModuleMaterials.TextureMaterials.OwnedTexture(name, path, data, noAtlas);
     }
 
-    private static @Nullable ModuleMaterials.ModelPartMaterials readRecursiveModel(Path root, String name, ArrayList<ModuleMaterials.TextureMaterials> textures) throws ModuleImportingException, IOException {
+    private static @Nullable ModuleMaterials.ModelPartMaterials readRecursiveModel(Path root, String name, ArrayList<ModuleMaterials.TextureMaterials> textures, ArrayList<ModuleMaterials.MaterialMaterials> materials) throws ModuleImportingException, IOException {
         return IOUtils.recursiveProcess(root.resolve(name),
-                figmodel -> readFigModel(root, figmodel, textures),
+                figmodel -> readFigModel(root, figmodel, textures, materials),
                 (folder, models) -> new ModuleMaterials.ModelPartMaterials(models),
                 "figmodel", true
         );
     }
 
-    private static TreeMap<String, ModuleMaterials.CustomItem> readCustomItems(Path root, ArrayList<ModuleMaterials.TextureMaterials> textures) throws ModuleImportingException, IOException {
+    private static TreeMap<String, ModuleMaterials.CustomItem> readCustomItems(Path root, ArrayList<ModuleMaterials.TextureMaterials> textures, ArrayList<ModuleMaterials.MaterialMaterials> materials) throws ModuleImportingException, IOException {
         Map<String, MutablePair<ModuleMaterials.@Nullable CustomItemModel, Integer>> pairs = new TreeMap<>(); // Treemap for sorted keys, consistency
         // Recursive process, with no return value, just mutates the pairs.
         // TODO should the folder structure matter for this at all?
@@ -182,7 +188,7 @@ public class ModuleImporter {
                         // If we already have a model for this pattern, error out!
                         if (pair.a != null) throw new ModuleImportingException(CONFLICTING_CUSTOM_ITEM_MODELS, new TranslatableItems.Items1<>(pattern));
                         // Parse the model and store in pair
-                        @Nullable ModuleMaterials.CustomItemModel model = readCustomItemModel(root, path, textures);
+                        @Nullable ModuleMaterials.CustomItemModel model = readCustomItemModel(root, path, textures, materials);
                         assert model != null;
                         pair.a = model;
                     }
@@ -192,17 +198,17 @@ public class ModuleImporter {
         return MapUtils.mapValues(pairs, pair -> new ModuleMaterials.CustomItem(pair.a, pair.b), TreeMap::new);
     }
 
-    private static @Nullable ModuleMaterials.ModelPartMaterials readFigModel(Path root, Path path, ArrayList<ModuleMaterials.TextureMaterials> textures) throws ModuleImportingException, IOException {
+    private static @Nullable ModuleMaterials.ModelPartMaterials readFigModel(Path root, Path path, ArrayList<ModuleMaterials.TextureMaterials> textures, ArrayList<ModuleMaterials.MaterialMaterials> materials) throws ModuleImportingException, IOException {
         if (!path.toString().endsWith(".figmodel")) return null;
         String fullName = IOUtils.stringRelativeTo(path, root);
         int lastSlash = fullName.lastIndexOf('/');
         String prefix = fullName.substring(0, lastSlash);
         String fileName = fullName.substring(lastSlash + 1, fullName.length() - ".figmodel".length());
         JsonObject json = JsonParser.parseString(Files.readString(path)).getAsJsonObject();
-        return FigModelImporter.parseFigModel(fileName, prefix, json, textures);
+        return FigModelImporter.parseFigModel(fileName, prefix, json, textures, materials);
     }
 
-    private static @Nullable ModuleMaterials.CustomItemModel readCustomItemModel(Path root, Path path, ArrayList<ModuleMaterials.TextureMaterials> textures) throws ModuleImportingException, IOException {
+    private static @Nullable ModuleMaterials.CustomItemModel readCustomItemModel(Path root, Path path, ArrayList<ModuleMaterials.TextureMaterials> textures, ArrayList<ModuleMaterials.MaterialMaterials> materials) throws ModuleImportingException, IOException {
         if (!path.toString().endsWith(".figmodel")) return null;
         String fullName = IOUtils.stringRelativeTo(path, root);
         int lastSlash = fullName.lastIndexOf('/');
@@ -210,7 +216,7 @@ public class ModuleImporter {
         String prefix = fullName.substring(0, lastSlash);
         String fileName = fullName.substring(lastSlash + 1, fullName.length() - ".figmodel".length());
         JsonObject json = JsonParser.parseString(Files.readString(path)).getAsJsonObject();
-        return FigModelImporter.parseCustomItemModel(fileName, prefix, json, textures);
+        return FigModelImporter.parseCustomItemModel(fileName, prefix, json, textures, materials);
     }
 
     private static class MutablePair<A, B> {

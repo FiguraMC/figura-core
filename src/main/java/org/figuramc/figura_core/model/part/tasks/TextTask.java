@@ -8,13 +8,6 @@ import org.jetbrains.annotations.Nullable;
 
 public final class TextTask extends RenderTask<TextTask> {
 
-//    /**
-//     * The render type is a little bit odd for Text Tasks, since by their nature they
-//     * have to render using the Font Texture. So any fields of the render type
-//     * involving a custom texture will not be considered.
-//     * If the render type is null, Figura will pick an appropriate one automatically.
-//     */
-//    public @Nullable FiguraRenderType renderType;
     public FormattedText formattedText;
 
     public TextTask(FormattedText text, @Nullable AllocationTracker<AvatarError> allocationTracker) throws AvatarError {

@@ -14,7 +14,7 @@ import java.util.List;
 
 public class HudRoot implements AvatarComponent<HudRoot> {
 
-    public static final Type<HudRoot> TYPE = new Type<>(HudRoot::new, Textures.TYPE, Molang.TYPE, VanillaRendering.TYPE);
+    public static final Type<HudRoot> TYPE = new Type<>(HudRoot::new, Textures.TYPE, Materials.TYPE, Molang.TYPE, VanillaRendering.TYPE);
     public Type<HudRoot> getType() { return TYPE; }
 
     public final RenderingRoot<FiguraModelPart> root;
@@ -24,6 +24,7 @@ public class HudRoot implements AvatarComponent<HudRoot> {
     public HudRoot(Avatar<?> avatar, AvatarModules modules) throws AvatarError {
         @Nullable AllocationTracker<AvatarError> allocationTracker = avatar.allocationTracker;
         Textures texturesComponent = avatar.assertComponent(Textures.TYPE);
+        Materials materialsComponent = avatar.assertComponent(Materials.TYPE);
         Molang molang = avatar.assertComponent(Molang.TYPE);
         @Nullable VanillaRendering vanillaRendering = avatar.getComponent(VanillaRendering.TYPE);
 
@@ -33,7 +34,7 @@ public class HudRoot implements AvatarComponent<HudRoot> {
         rootByModule = new FiguraModelPart[modules.loadTimeModules().size()];
         for (AvatarModules.LoadTimeModule mod : modules.loadTimeModules()) {
             if (mod.materials.hudRoot() == null) continue;
-            FiguraModelPart part = new FiguraModelPart("", mod, mod.materials.hudRoot(), allocationTracker, texturesComponent, molang, vanillaRendering);
+            FiguraModelPart part = new FiguraModelPart("", mod, mod.materials.hudRoot(), allocationTracker, texturesComponent, materialsComponent, molang, vanillaRendering);
             // Also store the parts in the module objects to be later accessed
             rootByModule[mod.index] = part;
             roots.add(part);

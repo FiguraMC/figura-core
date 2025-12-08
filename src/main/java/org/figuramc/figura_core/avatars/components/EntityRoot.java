@@ -14,7 +14,7 @@ import java.util.List;
 
 public class EntityRoot implements AvatarComponent<EntityRoot> {
 
-    public static final Type<EntityRoot> TYPE = new Type<>(EntityRoot::new, Textures.TYPE, Molang.TYPE, VanillaRendering.TYPE);
+    public static final Type<EntityRoot> TYPE = new Type<>(EntityRoot::new, Textures.TYPE, Materials.TYPE, Molang.TYPE, VanillaRendering.TYPE);
     public Type<EntityRoot> getType() { return TYPE; }
 
     public final RenderingRoot<FiguraModelPart> root;
@@ -24,6 +24,7 @@ public class EntityRoot implements AvatarComponent<EntityRoot> {
     public EntityRoot(Avatar<?> avatar, AvatarModules modules) throws AvatarError {
         @Nullable AllocationTracker<AvatarError> allocationTracker = avatar.allocationTracker;
         Textures texturesComponent = avatar.assertComponent(Textures.TYPE);
+        Materials materialsComponent = avatar.assertComponent(Materials.TYPE);
         Molang molang = avatar.assertComponent(Molang.TYPE);
         @Nullable VanillaRendering vanillaRendering = avatar.getComponent(VanillaRendering.TYPE);
 
@@ -33,7 +34,7 @@ public class EntityRoot implements AvatarComponent<EntityRoot> {
         rootByModule = new FiguraModelPart[modules.loadTimeModules().size()];
         for (AvatarModules.LoadTimeModule mod : modules.loadTimeModules()) {
             if (mod.materials.entityRoot() == null) continue;
-            FiguraModelPart part = new FiguraModelPart("", mod, mod.materials.entityRoot(), allocationTracker, texturesComponent, molang, vanillaRendering);
+            FiguraModelPart part = new FiguraModelPart("", mod, mod.materials.entityRoot(), allocationTracker, texturesComponent, materialsComponent, molang, vanillaRendering);
             // Also store the parts in the module objects to be later accessed
             rootByModule[mod.index] = part;
             roots.add(part);

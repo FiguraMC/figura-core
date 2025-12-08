@@ -26,10 +26,10 @@ public class FiguraMetatables {
     public final LuaTable eventListener; // EventListener
 
     // Callbacks and callback items
-    public final LuaTable callback; // ScriptCallback
     public final LuaTable callbackType; // CallbackType
     public final LuaTable stringView; // StringView
     public final LuaTable listView; // ListView
+    public final LuaTable funcView; // FuncView
 
     // Minecraft callback items
     public final LuaTable entityView;
@@ -43,6 +43,10 @@ public class FiguraMetatables {
     public final LuaTable transformable;
     public final LuaTable figuraPart;
     public final LuaTable figmodelModelPart;
+
+    // Textures
+    public final LuaTable texture;
+    public final LuaTable material;
 
     // Tasks
     public final LuaTable textTask;
@@ -63,10 +67,10 @@ public class FiguraMetatables {
         eventListener = API__EventListener.createMetatable(state);
 
         // Callbacks
-        callback = API__Callback.createMetatable(state);
         callbackType = API__CallbackType.createMetatable(state);
         stringView = API__StringView.createMetatable(state);
         listView = API__ListView.createMetatable(state);
+        funcView = API__FuncView.createMetatable(state);
 
         // Minecraft items
         entityView = API__Entity.createMetatable(state);
@@ -80,6 +84,10 @@ public class FiguraMetatables {
         transformable = API__Transformable.createMetatable(state);
         figuraPart = API__FiguraPart.createMetatable(state, transformable);
         figmodelModelPart = API__Figmodel.createMetatable(state, figuraPart);
+
+        // Texture
+        texture = API__Texture.createMetatable(state);
+        material = API__Material.createMetatable(state);
 
         // Tasks
         textTask = API__TextTask.createMetatable(state, transformable);
@@ -98,7 +106,7 @@ public class FiguraMetatables {
     public void addTypesTo(LuaTable table) throws LuaUncatchableError {
         table.rawset("EventListener", eventListener);
 
-        table.rawset("Callback", callback);
+        table.rawset("Callback", funcView);
         table.rawset("CallbackType", callbackType);
         table.rawset("StringView", stringView);
         table.rawset("ListView", listView);
@@ -112,6 +120,9 @@ public class FiguraMetatables {
         table.rawset("Transformable", transformable);
         table.rawset("FiguraPart", figuraPart);
         table.rawset("Figmodel", figmodelModelPart);
+
+        table.rawset("Texture", texture);
+        table.rawset("Material", material);
 
         table.rawset("VanillaPart", vanillaPart);
 

@@ -4,16 +4,14 @@ import org.figuramc.figura_core.avatars.Avatar;
 import org.figuramc.figura_core.avatars.AvatarComponent;
 import org.figuramc.figura_core.avatars.AvatarError;
 import org.figuramc.figura_core.avatars.AvatarModules;
-import org.figuramc.figura_core.data.ModuleMaterials;
+import org.figuramc.figura_core.data.materials.ModuleMaterials;
 import org.figuramc.figura_core.model.texture.AvatarTexture;
 import org.figuramc.figura_core.model.texture.FiguraTextureAtlas;
-import org.figuramc.memory_tracker.AllocationTracker;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 
 /**
  * A component which holds all the textures for an Avatar.

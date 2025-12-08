@@ -1,4 +1,4 @@
-package org.figuramc.figura_core.data;
+package org.figuramc.figura_core.data.importer;
 
 import org.figuramc.figura_core.util.exception.FiguraException;
 import org.figuramc.figura_translations.Translatable;

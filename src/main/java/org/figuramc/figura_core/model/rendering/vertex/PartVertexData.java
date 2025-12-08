@@ -15,14 +15,16 @@ import java.util.*;
  */
 public class PartVertexData {
 
-    // When a VertexElem no longer exists, we can drop any of its associated data as well, so this is a weak map.
-    // The byte[]s are densely packed with no padding.
     public final float[] positions; // 3 floats = 1 pos
     public final byte[] riggingWeights; // 4 Unsigned bytes to be normalized
     public final byte[] riggingOffsets; // 4 Unsigned non-normalized bytes, 0 to 255. 255 (-1) is a sentinel value, indicating no transform.
     public final float[] uvs; // 2 floats = 1 uv coord
     public final byte[] normals; // 3 Signed normalized bytes, -127 to 127
+    public final byte[] tangents; // 3 Signed normalized bytes, -127 to 127
+
     // Use the hashmap for other vertex elements
+    // When a VertexElem no longer exists, we can drop any of its associated data as well, so this is a weak map.
+    // The byte[]s are densely packed with no padding.
     public final WeakHashMap<FiguraVertexElem, byte[]> dataByElement = new WeakHashMap<>();
     public final int vertexCount;
 
@@ -33,12 +35,14 @@ public class PartVertexData {
         this.riggingOffsets = builder.riggingOffsets.toArray();
         this.uvs = builder.uvs.toArray();
         this.normals = builder.normals.toArray();
+        this.tangents = builder.tangents.toArray();
         if (allocationTracker != null) {
             allocationTracker.track(positions);
             allocationTracker.track(riggingWeights);
             allocationTracker.track(riggingOffsets);
             allocationTracker.track(uvs);
             allocationTracker.track(normals);
+            allocationTracker.track(tangents);
         }
         this.vertexCount = builder.vertexCount;
     }
@@ -54,6 +58,7 @@ public class PartVertexData {
         this.riggingOffsets = copyFrom.riggingOffsets.clone();
         this.uvs = copyFrom.uvs.clone();
         this.normals = copyFrom.normals.clone();
+        this.tangents = copyFrom.tangents.clone();
         this.vertexCount = copyFrom.vertexCount;
     }
 
@@ -67,6 +72,7 @@ public class PartVertexData {
         private final ByteArrayBuilder riggingOffsets = new ByteArrayBuilder();
         private final FloatArrayBuilder uvs = new FloatArrayBuilder();
         private final ByteArrayBuilder normals = new ByteArrayBuilder();
+        private final ByteArrayBuilder tangents = new ByteArrayBuilder();
         private byte doneThisVertex = 0;
         private int vertexCount;
 
@@ -75,7 +81,7 @@ public class PartVertexData {
         }
 
         public void endVertex() {
-            if (doneThisVertex != 31)
+            if (doneThisVertex != 63)
                 throw new IllegalStateException("Not all vertex elements were filled");
             doneThisVertex = 0;
             vertexCount++;
@@ -124,6 +130,15 @@ public class PartVertexData {
             normals.push(MathUtils.floatToSignedByte(x));
             normals.push(MathUtils.floatToSignedByte(y));
             normals.push(MathUtils.floatToSignedByte(z));
+            return this;
+        }
+
+        public Builder tangent(float x, float y, float z) {
+            if ((doneThisVertex & 32) != 0) throw new IllegalStateException("Attempt to set tangents twice in one vertex");
+            doneThisVertex |= 32;
+            tangents.push(MathUtils.floatToSignedByte(x));
+            tangents.push(MathUtils.floatToSignedByte(y));
+            tangents.push(MathUtils.floatToSignedByte(z));
             return this;
         }
 

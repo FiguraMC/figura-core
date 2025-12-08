@@ -3,15 +3,14 @@ package org.figuramc.figura_core.avatars.components;
 import org.figuramc.figura_core.avatars.Avatar;
 import org.figuramc.figura_core.avatars.AvatarComponent;
 import org.figuramc.figura_core.avatars.AvatarModules;
-import org.figuramc.figura_core.data.ModuleImporter;
-import org.figuramc.figura_core.data.ModuleImportingException;
-import org.figuramc.figura_core.data.ModuleMaterials;
+import org.figuramc.figura_core.data.importer.v1.ModuleImporter;
+import org.figuramc.figura_core.data.importer.ModuleImportingException;
+import org.figuramc.figura_core.data.materials.ModuleMaterials;
 import org.figuramc.figura_core.minecraft_interop.FiguraConnectionPoint;
 import org.figuramc.figura_core.util.IOUtils;
 import org.figuramc.figura_core.util.data_structures.DataTree;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 

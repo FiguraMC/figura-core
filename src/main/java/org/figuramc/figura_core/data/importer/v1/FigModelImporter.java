@@ -1,12 +1,16 @@
-package org.figuramc.figura_core.data;
+package org.figuramc.figura_core.data.importer.v1;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import org.figuramc.figura_core.data.importer.ModuleImportingException;
+import org.figuramc.figura_core.data.materials.ModuleMaterials;
 import org.figuramc.figura_core.util.IOUtils;
 import org.figuramc.figura_core.util.JsonUtils;
 import org.figuramc.figura_core.util.ListUtils;
 import org.figuramc.figura_core.util.MapUtils;
+import org.figuramc.figura_core.util.data_structures.Either;
+import org.figuramc.figura_core.util.data_structures.Mutable;
 import org.figuramc.figura_translations.Translatable;
 import org.figuramc.figura_translations.TranslatableItems;
 import org.jetbrains.annotations.Nullable;
@@ -28,14 +32,15 @@ public class FigModelImporter {
     private static final Translatable<TranslatableItems.Items1<String>> INVALID_FIGMODEL
             = Translatable.create("figura_core.error.importing.invalid_figmodel", String.class);
 
-    public static ModuleMaterials.FigmodelMaterials parseFigModel(String fileName, String prefix, JsonObject figmodel, ArrayList<ModuleMaterials.TextureMaterials> textures) throws ModuleImportingException {
+    public static ModuleMaterials.FigmodelMaterials parseFigModel(String fileName, String prefix, JsonObject figmodel, ArrayList<ModuleMaterials.TextureMaterials> textures, ArrayList<ModuleMaterials.MaterialMaterials> materials) throws ModuleImportingException {
         try {
             // Process textures and generate a model-local mapping
             ModelLocalTexture[] textureMapping = processTextures(JsonUtils.getObjectOrEmpty(figmodel, "textures", () -> new RuntimeException("textures must be object")), textures);
+            // TODO: custom shaders/materials included in the figmodel
             // Process animations
             LinkedHashMap<String, ModuleMaterials.AnimationMaterials> anims = processAnimations(JsonUtils.getObjectOrEmpty(figmodel, "animations", () -> new RuntimeException("animations must be object")));
             // Process root model parts
-            LinkedHashMap<String, ModuleMaterials.ModelPartMaterials> roots = MapUtils.mapValues(figmodel.getAsJsonObject("roots").asMap(), root -> processGroup(root.getAsJsonObject(), textureMapping), LinkedHashMap::new);
+            LinkedHashMap<String, ModuleMaterials.ModelPartMaterials> roots = MapUtils.mapValues(figmodel.getAsJsonObject("roots").asMap(), root -> processGroup(root.getAsJsonObject(), textureMapping, materials), LinkedHashMap::new);
 
             return new ModuleMaterials.FigmodelMaterials(
                     roots,
@@ -48,10 +53,10 @@ public class FigModelImporter {
     }
 
     // Parse a custom item model
-    public static ModuleMaterials.CustomItemModel parseCustomItemModel(String fileName, String prefix, JsonObject figmodel, ArrayList<ModuleMaterials.TextureMaterials> textures) throws ModuleImportingException {
+    public static ModuleMaterials.CustomItemModel parseCustomItemModel(String fileName, String prefix, JsonObject figmodel, ArrayList<ModuleMaterials.TextureMaterials> textures, ArrayList<ModuleMaterials.MaterialMaterials> materials) throws ModuleImportingException {
         try {
             // First parse the regular model:
-            ModuleMaterials.FigmodelMaterials mats = parseFigModel(fileName, prefix, figmodel, textures);
+            ModuleMaterials.FigmodelMaterials mats = parseFigModel(fileName, prefix, figmodel, textures, materials);
             // Also parse the transforms map
             LinkedHashMap<String, ModuleMaterials.ItemPartTransform> transforms = new LinkedHashMap<>();
             if (figmodel.has("item_display_data")) {
@@ -78,11 +83,17 @@ public class FigModelImporter {
     private static ModelLocalTexture[] processTextures(JsonObject modelTextures, List<ModuleMaterials.TextureMaterials> allTextures) {
         ModelLocalTexture[] mapping = new ModelLocalTexture[modelTextures.size()];
         int i = -1;
-        for (Map.Entry<String, JsonElement> entry : modelTextures.asMap().entrySet()) {
+        for (Map.Entry<String, JsonElement> entry : modelTextures.entrySet()) {
             i++;
             String name = IOUtils.stripExtension(entry.getKey(), "png");
             boolean noAtlas = name.endsWith(".noatlas");
             name = IOUtils.stripExtension(name, "noatlas");
+
+            // Find the emissive friend, if any. This is a double for loop with some duplicated work, so not ideal perf wise, but should be decent enough.
+            final String name2 = name;
+            int emissiveFriendIndex = ListUtils.findIndex(modelTextures.entrySet(), e -> IOUtils.stripExtension(IOUtils.stripExtension(e.getKey(), "png"), "noatlas").equals(name2 + "_e"));
+            int normalFriendIndex = ListUtils.findIndex(modelTextures.entrySet(), e -> IOUtils.stripExtension(IOUtils.stripExtension(e.getKey(), "png"), "noatlas").equals(name2 + "_n"));
+            int specularFriendIndex = ListUtils.findIndex(modelTextures.entrySet(), e -> IOUtils.stripExtension(IOUtils.stripExtension(e.getKey(), "png"), "noatlas").equals(name2 + "_s"));
 
             JsonObject texture = entry.getValue().getAsJsonObject();
             // Fetch the UV size.
@@ -92,7 +103,7 @@ public class FigModelImporter {
             @Nullable String vanillaTextureOverride = JsonUtils.getStringOrDefault(texture, "vanilla_texture_override", null);
             if (vanillaTextureOverride != null && !vanillaTextureOverride.isBlank()) {
                 allTextures.add(new ModuleMaterials.TextureMaterials.VanillaTexture(vanillaTextureOverride));
-                mapping[i] = new ModelLocalTexture(name, allTextures.size() - 1, uvSize);
+                mapping[i] = new ModelLocalTexture(name, allTextures.size() - 1, uvSize, emissiveFriendIndex, normalFriendIndex, specularFriendIndex, new Mutable<>());
                 continue;
             }
 
@@ -100,11 +111,11 @@ public class FigModelImporter {
             @Nullable String texPath = JsonUtils.getStringOrDefault(texture, "path", null);
             if (texPath != null && !texPath.isBlank()) {
                 Path path = Path.of(texPath);
-                // Check if this path is used in any existing texture:
+                // Check if this path points to any existing texture:
                 int idx = ListUtils.findIndex(allTextures, tex -> tex instanceof ModuleMaterials.TextureMaterials.OwnedTexture owned && path.equals(owned.path()));
                 // If it is, defer to that texture.
                 if (idx != -1) {
-                    mapping[i] = new ModelLocalTexture(name, idx, uvSize);
+                    mapping[i] = new ModelLocalTexture(name, idx, uvSize, emissiveFriendIndex, normalFriendIndex, specularFriendIndex, new Mutable<>());
                     continue;
                 }
             }
@@ -115,7 +126,7 @@ public class FigModelImporter {
 
             // Add to list and update mapping.
             allTextures.add(newTexture);
-            mapping[i] = new ModelLocalTexture(name, allTextures.size() - 1, uvSize);
+            mapping[i] = new ModelLocalTexture(name, allTextures.size() - 1, uvSize, emissiveFriendIndex, normalFriendIndex, specularFriendIndex, new Mutable<>());
         }
         return mapping;
     }
@@ -124,13 +135,13 @@ public class FigModelImporter {
         return MapUtils.mapValues(animations.asMap(), animElem -> AnimationImporter.parseAnimation(animElem.getAsJsonObject()), LinkedHashMap::new);
     }
 
-    private static ModuleMaterials.ModelPartMaterials processGroup(JsonObject group, ModelLocalTexture[] textureMapping) {
+    private static ModuleMaterials.ModelPartMaterials processGroup(JsonObject group, ModelLocalTexture[] textureMapping, List<ModuleMaterials.MaterialMaterials> allMaterials) {
         // Structure
         Vector3f origin = JsonUtils.parseVec3f(group.getAsJsonArray("origin"), Vector3f::new);
         Vector3f rotation = JsonUtils.parseVec3f(group.getAsJsonArray("rotation"), Vector3f::new);
         LinkedHashMap<String, ModuleMaterials.ModelPartMaterials> children = MapUtils.mapValues(
                 JsonUtils.getObjectOrEmpty(group, "children", () -> new RuntimeException("Group children must be object")).asMap(),
-                child -> processGroup(child.getAsJsonObject(), textureMapping),
+                child -> processGroup(child.getAsJsonObject(), textureMapping, allMaterials),
                 LinkedHashMap::new
         );
 
@@ -138,15 +149,35 @@ public class FigModelImporter {
         String mimicPart = JsonUtils.getStringOrDefault(group, "mimic_part", null);
 
         // Rendering
-        int textureIndex = JsonUtils.getIntOrDefault(group, "texture_index", -1);
-        int mappedTextureIndex = textureIndex == -1 ? -1 : textureMapping[textureIndex].globalTextureIndex();
+        // TODO: Plan is to make material_index be prioritized, and fallback to texture_index if not specified.
+        //       However, material_index will require a lot of work to implement so we can save it for later.
+        //       Only support texture_index in figmodel for now and auto-generate the corresponding material
+
+        Integer textureIndex = JsonUtils.getIntOrDefault(group, "texture_index", null);
+        Integer materialIndex = null;
+        if (textureIndex != null) {
+            materialIndex = textureMapping[textureIndex].generatedMaterialIndex().value;
+            if (materialIndex == null) {
+                List<Either<ModuleMaterials.BuiltinTextureBinding, Integer>> textureBindings = new ArrayList<>();
+                textureBindings.add(Either.ofB(textureMapping[textureIndex].globalTextureIndex));
+                if (textureMapping[textureIndex].normalFriendLocalIndex != -1)
+                    textureBindings.add(Either.ofB(textureMapping[textureMapping[textureIndex].normalFriendLocalIndex].globalTextureIndex));
+                if (textureMapping[textureIndex].specularFriendLocalIndex != -1)
+                    textureBindings.add(Either.ofB(textureMapping[textureMapping[textureIndex].specularFriendLocalIndex].globalTextureIndex));
+
+                ModuleMaterials.MaterialMaterials newMaterial = new ModuleMaterials.MaterialMaterials(null, Either.ofA(ModuleMaterials.BuiltinShader.BASIC), textureBindings);
+                allMaterials.add(newMaterial);
+                materialIndex = textureMapping[textureIndex].generatedMaterialIndex().value = allMaterials.size() - 1;
+            }
+        }
+
         List<ModuleMaterials.CubeData> cubes = ListUtils.map(group.getAsJsonArray("cubes"),
-                cube -> processCube(cube.getAsJsonObject(), textureMapping[textureIndex].uvSize()));
+                cube -> processCube(cube.getAsJsonObject(), textureMapping[Objects.requireNonNull(textureIndex, "Group has cubes but no texture")].uvSize()));
         List<ModuleMaterials.MeshData> meshes = ListUtils.map(group.getAsJsonArray("meshes"),
-                mesh -> processMesh(mesh.getAsJsonObject(), textureMapping[textureIndex].uvSize()));
+                mesh -> processMesh(mesh.getAsJsonObject(), textureMapping[Objects.requireNonNull(textureIndex, "Group has meshes but no texture")].uvSize()));
 
         // Return
-        return new ModuleMaterials.ModelPartMaterials(origin, rotation, children, mimicPart, mappedTextureIndex, cubes, meshes);
+        return new ModuleMaterials.ModelPartMaterials(origin, rotation, children, mimicPart, materialIndex, cubes, meshes);
     }
 
     private static ModuleMaterials.CubeData processCube(JsonObject cube, Vector2f uvSize) {
@@ -203,6 +234,7 @@ public class FigModelImporter {
 
     // A model-local texture is mapped to a global texture, and also has a UV size to modify UV values by.
     // UV size is per-model; the same texture may be included in multiple models, with multiple different UV sizes.
-    private record ModelLocalTexture(String name, int globalTextureIndex, Vector2f uvSize) {}
+    // A texture in a model may also have an associated basic material; used as a fallback if no material is defined on the part but only a texture
+    private record ModelLocalTexture(String name, int globalTextureIndex, Vector2f uvSize, int emissiveFriendLocalIndex, int normalFriendLocalIndex, int specularFriendLocalIndex, Mutable<@Nullable Integer> generatedMaterialIndex) {}
 
 }

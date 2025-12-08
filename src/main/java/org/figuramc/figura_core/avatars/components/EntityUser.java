@@ -32,18 +32,6 @@ public class EntityUser implements AvatarComponent<EntityUser> {
         else this.uuid = FiguraConnectionPoint.GAME_DATA_PROVIDER.getLocalUUID();
     }
 
-    @Override
-    public boolean onPoll() {
-        lookForEntity();
-        return false;
-    }
-
-    @Override
-    public void mainThreadInitialize() {
-        // Fetch the initial entity
-        lookForEntity();
-    }
-
     // Each tick, maybe update entity
     // If it changed, mark as changed for 1 tick
     @Override

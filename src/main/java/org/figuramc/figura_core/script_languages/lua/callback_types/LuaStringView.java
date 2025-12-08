@@ -13,20 +13,20 @@ public class LuaStringView extends StringView {
     }
 
     @Override
-    public void revoke() {
+    public synchronized void close() {
         string = null;
-        super.revoke();
+        super.close();
     }
 
     @Override
-    public int length() {
-        if (isRevoked()) throw new UnsupportedOperationException("TODO error on revoked");
+    public synchronized int length() {
+        if (isRevoked) return -1;
         return string.length();
     }
 
     @Override
-    public String copy() {
-        if (isRevoked()) throw new UnsupportedOperationException("TODO error on revoked");
+    public synchronized String copy() {
+        if (isRevoked) return null;
         return string.toJavaStringNoAlloc();
     }
 }

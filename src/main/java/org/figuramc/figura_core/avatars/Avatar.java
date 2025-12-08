@@ -27,15 +27,23 @@ public final class Avatar<K> {
     public final @Nullable AllocationTracker<AvatarError> allocationTracker;
     public final List<AvatarModules.RuntimeModule> modules; // Runtime modules.
 
+    // Thread safety
+    // An avatar's "thread safety" is a self-selected boolean.
+    // An avatar can be considered thread-safe if it upholds our expected conditions about thread safety.
+    // The reason this is optional is because upholding thread safety requirements can be difficult,
+    // and impose a significant burden on avatar creators. This will be false by default for that reason.
+    public final boolean isThreadSafe = false;
+
     // Components. Keep an IdMap to fetch nullable components, and an array to iterate only present components.
     private final IdMap<AvatarComponent.Type, AvatarComponent<?>> components; // Components, where ID -> component if present, null if not. Requires some unchecked sillies because of generics.
     private final @NotNull AvatarComponent<?>[] presentComponents; // Only the non-null components, used for iteration
 
     // Event listeners
     // Listeners for built-in events, indexed using the event's ID.
-    public final IdMap<Event<?>, EventListener<?>> eventListeners;
+    public final IdMap<Event<?, ?>, EventListener<?, ?>> eventListeners;
     // Type-safe EventListener<T> getter from Event<T>
-    @SuppressWarnings("unchecked") public <T extends CallbackItem> EventListener<T> getEventListener(Event<T> event) { return (EventListener<T>) eventListeners.get(event); }
+    @SuppressWarnings("unchecked")
+    public <T extends CallbackItem, R extends CallbackItem> EventListener<T, R> getEventListener(Event<T, R> event) { return (EventListener<T, R>) eventListeners.get(event); }
 
     // Any error that's occurred in this avatar
     private @Nullable Throwable error;
@@ -64,7 +72,7 @@ public final class Avatar<K> {
         this.manager = manager;
         this.key = key;
         this.allocationTracker = allocationTracker;
-        this.eventListeners = new IdMap<>(Event.class, e -> new EventListener<>(e.type));
+        this.eventListeners = new IdMap<>(Event.class, e -> new EventListener<>(e.type, this));
         // Add script runtimes to the set of components
         componentTypes = new HashSet<>(componentTypes);
         componentTypes.addAll(loadTimeModules.scriptRuntimeTypes());
@@ -79,13 +87,6 @@ public final class Avatar<K> {
         this.modules = ListUtils.map(loadTimeModules.loadTimeModules(), loadTime -> new AvatarModules.RuntimeModule(this, loadTime, allocationTracker));
         // Init the main module. This should be okay to run on an off-thread.
         this.modules.getLast().initialize(this.modules);
-    }
-
-    // If onPoll() returns true, the avatar's loading will be canceled.
-    public boolean onPoll() {
-        for (AvatarComponent<?> component : presentComponents)
-            if (component.onPoll()) return true;
-        return false;
     }
 
     public boolean isReady() {
@@ -141,21 +142,6 @@ public final class Avatar<K> {
             component.destroy();
     }
 
-    // Should be run on the main thread, which is why it's not part of the constructor!
-    public void mainThreadInitialize() {
-        // Run the components' main thread init functions.
-        for (AvatarComponent<?> component : presentComponents) {
-            try {
-                component.mainThreadInitialize();
-            } catch (AvatarError e) {
-                error(e);
-            } catch (Throwable unexpected) {
-                unexpectedError(unexpected);
-            }
-            if (isErrored()) break;
-        }
-    }
-
     // Run at the end of each client tick.
     // It just ticks each component in the order they were added to the Avatar.
     public void tick() {
@@ -172,21 +158,7 @@ public final class Avatar<K> {
         }
     }
 
-    // Various helper methods
-
-    // Run an event
-
-    // Run the given event, with its args.
-    // If it errors, the avatar will error out.
-    public <Args extends CallbackItem> void runEvent(Event<Args> event, Args args) {
-        if (isErrored()) return;
-        try {
-            // Fetch the event listener and invoke it.
-            getEventListener(event).invoke(args);
-        } catch (Throwable ex) {
-            unexpectedError(ex);
-        }
-    }
+    // Helper methods
 
     // Attempt to run the given lambda (which renders the model part) and error the avatar appropriately if it fails.
     public void tryRenderModelPart(ThrowingRunnable<Throwable> renderer) {

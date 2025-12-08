@@ -11,7 +11,8 @@ import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.LuaClosure;
 import org.figuramc.figura_core.avatars.Avatar;
 import org.figuramc.figura_core.avatars.AvatarError;
 import org.figuramc.figura_core.avatars.AvatarModules;
-import org.figuramc.figura_core.script_languages.lua.type_apis.callback.CallbackAPI;
+import org.figuramc.figura_core.script_hooks.callback.items.FuncView;
+import org.figuramc.figura_core.script_languages.lua.type_apis.callback.FuncViewAPI;
 import org.figuramc.figura_core.util.IOUtils;
 import org.figuramc.figura_translations.Translatable;
 import org.figuramc.figura_translations.TranslatableItems;
@@ -74,7 +75,7 @@ public class FiguraRequire {
                 }
                 // Grab its callbacks, put them in the table
                 for (var apiEntry : dependency.callbacks.entrySet()) {
-                    tab.rawset(apiEntry.getKey(), CallbackAPI.wrap(apiEntry.getValue(), (LuaRuntime) s));
+                    tab.rawset(apiEntry.getKey(), FuncViewAPI.wrap(new FuncView<>(apiEntry.getValue()), (LuaRuntime) s));
                 }
                 return tab;
             }));

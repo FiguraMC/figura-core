@@ -73,10 +73,9 @@ public class FiguraPartAPI {
     public static TextTask newText(LuaRuntime s, FiguraModelPart self, FormattedText text) throws LuaUncatchableError {
         try {
             TextTask task = new TextTask(text, s.avatar.allocationTracker);
-            self.renderTasks.add(task);
+            self.addRenderTask(task);
             return task;
-        }
-        catch (AvatarError avatarError) { throw new LuaUncatchableError(avatarError); }
+        } catch (AvatarError avatarError) { throw new LuaUncatchableError(avatarError); }
     }
 
     // Make a shallow copy of this part, with no parent. We use "shallow" to make it clear what's going on.

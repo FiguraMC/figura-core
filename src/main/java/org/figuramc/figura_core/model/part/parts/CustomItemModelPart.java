@@ -2,10 +2,11 @@ package org.figuramc.figura_core.model.part.parts;
 
 import org.figuramc.figura_core.avatars.AvatarError;
 import org.figuramc.figura_core.avatars.AvatarModules;
+import org.figuramc.figura_core.avatars.components.Materials;
 import org.figuramc.figura_core.avatars.components.Molang;
 import org.figuramc.figura_core.avatars.components.Textures;
 import org.figuramc.figura_core.avatars.components.VanillaRendering;
-import org.figuramc.figura_core.data.ModuleMaterials;
+import org.figuramc.figura_core.data.materials.ModuleMaterials;
 import org.figuramc.figura_core.minecraft_interop.ItemRenderContext;
 import org.figuramc.memory_tracker.AllocationTracker;
 import org.jetbrains.annotations.Nullable;
@@ -29,8 +30,8 @@ public class CustomItemModelPart extends FigmodelModelPart {
             // Map
             + AllocationTracker.OBJECT_SIZE;
 
-    public CustomItemModelPart(String name, AvatarModules.LoadTimeModule module, ModuleMaterials.FigmodelMaterials materials, LinkedHashMap<String, ModuleMaterials.ItemPartTransform> transforms, @Nullable AllocationTracker<AvatarError> allocationTracker, Textures texturesComponent, @Nullable Molang molangState, @Nullable VanillaRendering vanilla) throws AvatarError {
-        super(name, module, materials, allocationTracker, texturesComponent, molangState, vanilla);
+    public CustomItemModelPart(String name, AvatarModules.LoadTimeModule module, ModuleMaterials.FigmodelMaterials materials, LinkedHashMap<String, ModuleMaterials.ItemPartTransform> transforms, @Nullable AllocationTracker<AvatarError> allocationTracker, Textures texturesComponent, Materials materialsComponent, @Nullable Molang molangState, @Nullable VanillaRendering vanilla) throws AvatarError {
+        super(name, module, materials, allocationTracker, texturesComponent, materialsComponent, molangState, vanilla);
         this.itemTransforms = new HashMap<>();
         int[] size = new int[] { SIZE_ESTIMATE };
         ItemRenderContext.CONTEXTS_BY_NAME.forEach((contextName, context) -> {

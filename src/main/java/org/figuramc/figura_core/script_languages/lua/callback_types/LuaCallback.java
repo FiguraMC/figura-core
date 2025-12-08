@@ -6,6 +6,7 @@ import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.Dispatch;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.LuaFunction;
 import org.figuramc.figura_core.avatars.Avatar;
 import org.figuramc.figura_core.avatars.AvatarError;
+import org.figuramc.figura_core.manage.AvatarView;
 import org.figuramc.figura_core.script_hooks.callback.CallbackType;
 import org.figuramc.figura_core.script_hooks.callback.ScriptCallback;
 import org.figuramc.figura_core.script_hooks.callback.items.CallbackItem;
@@ -37,8 +38,8 @@ public class LuaCallback<I extends CallbackItem, O extends CallbackItem> impleme
     }
 
     @Override
-    public Avatar<?> getOwningAvatar() {
-        return state.avatar;
+    public AvatarView<?> getOwningAvatar() {
+        return new AvatarView<>(state.avatar);
     }
 
     // Callback function %s expected to return %s, but it returned %s.
@@ -56,15 +57,27 @@ public class LuaCallback<I extends CallbackItem, O extends CallbackItem> impleme
     public O call(I arg) {
         // If we're errored, don't call the function
         if (!state.avatar.isErrored()) {
-            // Convert the arg into Lua Varargs to pass to our function.
-            // We'll treat funcs with tuple/unit args specially, and make it simple to call it from Lua with just multiple args, not needing to wrap in a table.
-            Varargs luaArgs = type.param() instanceof CallbackType.Tuple<I> tuple ? ValueFactory.varargsOf(tuple.fromItems(state.callbackItemToLua, arg, LuaValue[]::new)) : type.param().fromItem(state.callbackItemToLua, arg);
-            // Run the function, getting a result:
             try {
+                // Convert the arg into Lua Varargs to pass to our function.
+                // We'll treat funcs with tuple/unit args specially, and make it simple to call it from Lua with just multiple args, not needing to wrap in a table.
+                // NOTE: Converting I into the lua args could theoretically OOM, but this isn't an issue since
+                // the lua args themselves cannot be arbitrarily large, since they're just VIEWS of big data structures.
+                // Worst case is a nested evil tuple, but this function specifically declared that it would accept a big nested evil tuple; so it's again the callee's problem.
+                Varargs luaArgs = type.param() instanceof CallbackType.Tuple<I> tuple ? ValueFactory.varargsOf(tuple.fromItems(state.callbackItemToLua, arg)) : type.param().fromItem(state.callbackItemToLua, arg);
+
+                // Run the function, getting a result:
                 Varargs luaResult = state.runNoYield(wrapped, luaArgs);
                 try {
                     // Attempt to convert the result back to an O, and return.
-                    return type.returnType() instanceof CallbackType.Tuple<O> tuple ? tuple.toItems(state.luaToCallbackItem, luaResult.toArray()) : type.returnType().toItem(state.luaToCallbackItem, luaResult.first());
+                    if (type.returnType() instanceof CallbackType.Tuple<O> tuple) {
+                        // Pad array with nils
+                        LuaValue[] arr = new LuaValue[tuple.count()];
+                        for (int i = 0; i < arr.length; i++)
+                            arr[i] = luaResult.arg(i + 1);
+                        return tuple.toItems(state.luaToCallbackItem, arr);
+                    } else {
+                        return type.returnType().toItem(state.luaToCallbackItem, luaResult.first());
+                    }
                 } catch (LuaError luaError) {
                     // Lua returned an incorrect type from the callback? Let's error with an appropriate message.
                     String funcName = wrapped instanceof LuaFunction f ? '"' + f.debugName() + '"' : "<" + wrapped.typeName() + ">";
@@ -81,8 +94,8 @@ public class LuaCallback<I extends CallbackItem, O extends CallbackItem> impleme
                 state.avatar.error((AvatarError) wrapper.getCause());
             }
         }
-        // TODO: Figure out what to return to the caller if the callee failed. A default return value?
-        throw new UnsupportedOperationException("TODO");
+        // If the callee has errored, return null.
+        return null;
     }
 
     // Do NOT invoke this across different LuaState! Ensure it's the same first.

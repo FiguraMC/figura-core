@@ -19,7 +19,7 @@ import java.util.Map;
  */
 public class EventsTable {
 
-    public static LuaTable create(LuaRuntime state, Map<Event<?>, EventListener<?>> eventListeners) throws LuaError, LuaUncatchableError {
+    public static LuaTable create(LuaRuntime state, Map<Event<?, ?>, EventListener<?, ?>> eventListeners) throws LuaError, LuaUncatchableError {
         // Create tables and set up meta-stuff
         LuaTable events = new LuaTable(state.allocationTracker); // Dummy table, which has metatable __index and __newindex
         LuaTable byName = new LuaTable(state.allocationTracker); // Backing table used as __index and for __newindex registration
@@ -29,7 +29,7 @@ public class EventsTable {
         metatable.rawset(Constants.NEWINDEX, LibFunction.create((s, eventsTab, name, func) -> {
             LuaValue event = byName.rawget(name);
             if (event.isNil()) { throw new LuaError("Event named \"" + name + "\" does not exist", s.allocationTracker); }
-            EventListener<?> eventListener = event.checkUserdata(s, EventListener.class);
+            EventListener<?, ?> eventListener = event.checkUserdata(s, EventListener.class);
             EventListenerAPI.registerImpl((LuaRuntime) s, eventListener, func);
             return Constants.NIL;
         }));

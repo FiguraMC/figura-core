@@ -26,6 +26,7 @@ public class FiguraTransformStack {
     private final ArrayList<Matrix4f> positionMatrices = new ArrayList<>();
     private final ArrayList<Matrix3f> normalMatrices = new ArrayList<>();
     private final ArrayList<Vector4f> colorMultipliers = new ArrayList<>();
+    private final ArrayList<Vector2f> lightOverrides = new ArrayList<>(); // X = block light from 0 to 1, Y = sky light
     int curIndex; //index of the top item
     int maxSize; //the number of matrices that have been on the stack at its peak
 
@@ -35,6 +36,7 @@ public class FiguraTransformStack {
         positionMatrices.add(new Matrix4f());
         normalMatrices.add(new Matrix3f());
         colorMultipliers.add(new Vector4f(1,1,1,1));
+        lightOverrides.add(new Vector2f(-1f, -1f));
     }
 
     public void translate(Vector3fc vec) {
@@ -65,6 +67,11 @@ public class FiguraTransformStack {
         colorMultipliers.get(curIndex).mul(multiplier);
     }
 
+    // Override the light level with these values
+    public void light(Vector2f override) {
+        lightOverrides.get(curIndex).set(override);
+    }
+
     public void rotate(Quaternionf quaternion) {
         positionMatrices.get(curIndex).rotate(quaternion);
         normalMatrices.get(curIndex).rotate(quaternion);
@@ -82,12 +89,19 @@ public class FiguraTransformStack {
         normalMatrices.get(curIndex).mul(normal);
     }
 
+    // Apply the given transformations as if they happened *before* the events of the current transform stack.
+    public void preMultiply(Matrix4f posMatrix, Matrix3f normalMatrix) {
+        positionMatrices.get(curIndex).mulLocal(posMatrix);
+        normalMatrices.get(curIndex).mulLocal(normalMatrix);
+    }
+
     public void push() {
         curIndex++;
         if (curIndex == maxSize) {
             positionMatrices.add(new Matrix4f(positionMatrices.get(curIndex - 1)));
             normalMatrices.add(new Matrix3f(normalMatrices.get(curIndex - 1)));
             colorMultipliers.add(new Vector4f(colorMultipliers.get(curIndex - 1)));
+            lightOverrides.add(new Vector2f(lightOverrides.get(curIndex - 1)));
             maxSize++;
         } else if (curIndex > maxSize) {
             throw new IllegalStateException("Current index should never be above max size - this is a bug in FiguraMatrixStack!");
@@ -95,6 +109,7 @@ public class FiguraTransformStack {
             positionMatrices.get(curIndex).set(positionMatrices.get(curIndex - 1));
             normalMatrices.get(curIndex).set(normalMatrices.get(curIndex - 1));
             colorMultipliers.get(curIndex).set(colorMultipliers.get(curIndex - 1));
+            lightOverrides.get(curIndex).set(lightOverrides.get(curIndex - 1));
         }
     }
 
@@ -112,6 +127,10 @@ public class FiguraTransformStack {
 
     public Vector4f peekColor() {
         return colorMultipliers.get(curIndex);
+    }
+
+    public Vector2f peekLight() {
+        return lightOverrides.get(curIndex);
     }
 
     public boolean isEmpty() {

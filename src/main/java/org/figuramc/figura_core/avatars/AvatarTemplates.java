@@ -24,7 +24,7 @@ public class AvatarTemplates {
         return new Avatar<>(
                 AvatarManagers.ENTITIES, uuid,
                 modules, allocationTracker,
-                List.of(CustomItems.TYPE, EntityRoot.TYPE, EntityUser.TYPE, HudRoot.TYPE, Molang.TYPE, Textures.TYPE, VanillaRendering.TYPE),
+                List.of(CustomItems.TYPE, EntityRoot.TYPE, EntityUser.TYPE, HudRoot.TYPE, Materials.TYPE, Molang.TYPE, Textures.TYPE, VanillaRendering.TYPE),
                 vanillaModel
         );
     }
@@ -34,7 +34,7 @@ public class AvatarTemplates {
         return new Avatar<>(
                 AvatarManagers.GUIS, AvatarManagers.GuiKind.MAIN_GUI,
                 modules, null,
-                List.of(HudRoot.TYPE, ManagerAccess.TYPE, Molang.TYPE, Textures.TYPE)
+                List.of(HudRoot.TYPE, ManagerAccess.TYPE, Materials.TYPE, Molang.TYPE, Textures.TYPE)
         );
     }
 
@@ -43,7 +43,7 @@ public class AvatarTemplates {
         return new Avatar<>(
                 AvatarManagers.ENTITIES, uuid,
                 modules, null,
-                List.of(CemSelfDeleter.TYPE, CustomItems.TYPE, EntityRoot.TYPE, EntityUser.TYPE, Molang.TYPE, Textures.TYPE, VanillaRendering.TYPE),
+                List.of(CemSelfDeleter.TYPE, CustomItems.TYPE, EntityRoot.TYPE, EntityUser.TYPE, Materials.TYPE, Molang.TYPE, Textures.TYPE, VanillaRendering.TYPE),
                 vanillaModel
         );
     }

@@ -32,15 +32,6 @@ public interface AvatarComponent<Self extends AvatarComponent<Self>> {
         }
     }
 
-    // Once loading is complete, this is run on the main/render thread, to instantiate the avatar.
-    default void mainThreadInitialize() throws AvatarError { }
-
-    // Runs when the avatar is complete, and the manager is polled on the main thread,
-    // but isReady() has not yet returned true.
-    // Can be useful when waiting for Minecraft to set a particular condition.
-    // If this returns true, the Avatar's loading will be canceled silently.
-    default boolean onPoll() { return false; }
-
     // Return true when this is completely ready to be initialized on the main thread.
     // Textures, for example, perform uploading asynchronously,
     // so they should only return true once all textures have been uploaded properly.

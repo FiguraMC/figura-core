@@ -2,7 +2,7 @@ package org.figuramc.figura_core.script_hooks;
 
 import org.figuramc.figura_core.avatars.AvatarComponent;
 import org.figuramc.figura_core.avatars.ScriptRuntimeComponent;
-import org.figuramc.figura_core.data.ModuleImportingException;
+import org.figuramc.figura_core.data.importer.ModuleImportingException;
 import org.figuramc.figura_core.script_languages.lua.LuaRuntime;
 import org.figuramc.figura_core.util.IOUtils;
 import org.figuramc.figura_core.util.data_structures.DataTree;

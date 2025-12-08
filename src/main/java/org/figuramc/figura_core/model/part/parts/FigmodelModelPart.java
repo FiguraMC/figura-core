@@ -4,10 +4,11 @@ import org.figuramc.figura_core.animation.Animation;
 import org.figuramc.figura_core.animation.AnimationInstance;
 import org.figuramc.figura_core.avatars.AvatarError;
 import org.figuramc.figura_core.avatars.AvatarModules;
+import org.figuramc.figura_core.avatars.components.Materials;
 import org.figuramc.figura_core.avatars.components.Molang;
 import org.figuramc.figura_core.avatars.components.Textures;
 import org.figuramc.figura_core.avatars.components.VanillaRendering;
-import org.figuramc.figura_core.data.ModuleMaterials;
+import org.figuramc.figura_core.data.materials.ModuleMaterials;
 import org.figuramc.figura_core.model.texture.AvatarTexture;
 import org.figuramc.figura_core.util.MapUtils;
 import org.figuramc.memory_tracker.AllocationTracker;
@@ -26,8 +27,8 @@ public class FigmodelModelPart extends FiguraModelPart {
     // Map to textures; these may be the same object reference as other textures.
     private final Map<String, AvatarTexture> textures;
 
-    public FigmodelModelPart(String name, AvatarModules.LoadTimeModule module, ModuleMaterials.FigmodelMaterials materials, @Nullable AllocationTracker<AvatarError> allocationTracker, Textures texturesComponent, Molang molangState, @Nullable VanillaRendering vanillaComponent) throws AvatarError {
-        super(name, module, materials, allocationTracker, texturesComponent, molangState, vanillaComponent);
+    public FigmodelModelPart(String name, AvatarModules.LoadTimeModule module, ModuleMaterials.FigmodelMaterials materials, @Nullable AllocationTracker<AvatarError> allocationTracker, Textures texturesComponent, Materials materialsComponent, Molang molangState, @Nullable VanillaRendering vanillaComponent) throws AvatarError {
+        super(name, module, materials, allocationTracker, texturesComponent, materialsComponent, molangState, vanillaComponent);
         animations = MapUtils.mapValues(materials.animations, (animName, animMats) -> new AnimationInstance(new Animation(name, animName, animMats, molangState, allocationTracker), this, allocationTracker));
         textures = MapUtils.mapValues(materials.textures, texIndex -> texturesComponent.getTexture(module.index, texIndex));
 

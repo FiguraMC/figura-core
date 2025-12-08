@@ -1,8 +1,8 @@
 package org.figuramc.figura_core.avatars;
 
-import org.figuramc.figura_core.data.ModuleImporter;
-import org.figuramc.figura_core.data.ModuleImportingException;
-import org.figuramc.figura_core.data.ModuleMaterials;
+import org.figuramc.figura_core.data.importer.v1.ModuleImporter;
+import org.figuramc.figura_core.data.importer.ModuleImportingException;
+import org.figuramc.figura_core.data.materials.ModuleMaterials;
 import org.figuramc.figura_core.minecraft_interop.FiguraConnectionPoint;
 import org.figuramc.figura_core.script_hooks.ScriptingLanguage;
 import org.figuramc.figura_core.script_hooks.callback.CallbackType;

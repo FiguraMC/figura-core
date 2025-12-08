@@ -1,11 +1,10 @@
 package org.figuramc.figura_core.script_languages.lua;
 
 import org.figuramc.figura_cobalt.LuaUncatchableError;
-import org.figuramc.figura_cobalt.cc.tweaked.cobalt.internal.unwind.SuspendedAction;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.*;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.compiler.CompileException;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.compiler.LoadState;
-import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.Dispatch;
+import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.LibFunction;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.LuaClosure;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.LuaFunction;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.interrupt.InterruptAction;
@@ -16,14 +15,15 @@ import org.figuramc.figura_core.avatars.AvatarError;
 import org.figuramc.figura_core.avatars.AvatarModules;
 import org.figuramc.figura_core.avatars.ScriptRuntimeComponent;
 import org.figuramc.figura_core.avatars.components.*;
+import org.figuramc.figura_core.model.texture.AvatarTexture;
 import org.figuramc.figura_core.script_hooks.callback.CallbackType;
 import org.figuramc.figura_core.script_languages.lua.callback_types.LuaCallback;
 import org.figuramc.figura_core.script_languages.lua.callback_types.convert.CallbackItemToLua;
 import org.figuramc.figura_core.script_languages.lua.callback_types.convert.LuaToCallbackItem;
 import org.figuramc.figura_core.script_languages.lua.other_apis.*;
 import org.figuramc.figura_core.script_languages.lua.type_apis.model_parts.FiguraPartAPI;
+import org.figuramc.figura_core.script_languages.lua.type_apis.rendering.TextureAPI;
 import org.figuramc.figura_core.util.exception.FiguraException;
-import org.figuramc.figura_translations.Translatable;
 import org.figuramc.figura_translations.TranslatableItems;
 import org.figuramc.memory_tracker.DelegateAllocationTracker;
 import org.jetbrains.annotations.Nullable;
@@ -33,11 +33,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class LuaRuntime extends LuaState implements ScriptRuntimeComponent<LuaRuntime> {
 
-    public static final Type<LuaRuntime> TYPE = new Type<>(LuaRuntime::create, Molang.TYPE, VanillaRendering.TYPE, EntityRoot.TYPE, HudRoot.TYPE, ManagerAccess.TYPE);
+    public static final Type<LuaRuntime> TYPE = new Type<>(LuaRuntime::create, Textures.TYPE, Molang.TYPE, VanillaRendering.TYPE, EntityRoot.TYPE, HudRoot.TYPE, ManagerAccess.TYPE);
 
     // Map each module index to its environment, so we can initialize them
     private final Map<Integer, LuaTable> moduleEnvironments = new IdentityHashMap<>();
@@ -73,6 +74,7 @@ public class LuaRuntime extends LuaState implements ScriptRuntimeComponent<LuaRu
         this.avatar = avatar;
 
         // Fetch other components we depend on
+        @Nullable Textures texturesComponent = avatar.getComponent(Textures.TYPE);
         @Nullable Molang molang = avatar.getComponent(Molang.TYPE);
         @Nullable VanillaRendering vanillaRendering = avatar.getComponent(VanillaRendering.TYPE);
         @Nullable EntityRoot entityRoot = avatar.getComponent(EntityRoot.TYPE);
@@ -94,6 +96,12 @@ public class LuaRuntime extends LuaState implements ScriptRuntimeComponent<LuaRu
         globals().rawset("client", ClientTable.create(this));
         globals().rawset("text", TextTable.create(this, molang));
 
+        // Temp testing, just prints to console
+        globals().rawset("print", LibFunction.create((state, arg) -> {
+            System.out.println("LUA >>> " + arg.toJavaString(state.allocationTracker));
+            return Constants.NIL;
+        }));
+
         // Add tables for other components we have
         if (vanillaRendering != null) globals().rawset("vanilla", VanillaTable.create(this, vanillaRendering));
         if (managerAccess != null) globals().rawset("manager", ManagerTable.create(this, managerAccess));
@@ -109,6 +117,19 @@ public class LuaRuntime extends LuaState implements ScriptRuntimeComponent<LuaRu
             // Save the environment so we can initialize
             moduleEnvironments.put(module.index, _ENV);
             // Create globals unique to this module:
+
+            // textures:
+            if (texturesComponent != null) {
+                LuaTable textures = ValueFactory.tableOf(this.allocationTracker);
+                _ENV.rawset("textures", textures);
+                List<AvatarTexture> moduleTextures = texturesComponent.getTextures(module.index);
+                for (int i = 0; i < module.materials.textures().size(); i++) {
+                    String texName = module.materials.textures().get(i).name();
+                    if (texName != null) textures.rawset(texName, TextureAPI.wrap(moduleTextures.get(i), this));
+                }
+            }
+
+
 
             // models:
             LuaTable models = ValueFactory.tableOf(this.allocationTracker);

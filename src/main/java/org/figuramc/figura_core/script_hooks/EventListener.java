@@ -1,10 +1,13 @@
 package org.figuramc.figura_core.script_hooks;
 
+import org.figuramc.figura_core.avatars.Avatar;
 import org.figuramc.figura_core.script_hooks.callback.CallbackType;
 import org.figuramc.figura_core.script_hooks.callback.ScriptCallback;
 import org.figuramc.figura_core.script_hooks.callback.items.CallbackItem;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
 
 /**
  * Each Avatar is given a built-in EventListener per Event.
@@ -14,29 +17,53 @@ import java.util.ArrayList;
  *
  * The Java side maintains a collection of built-in EventListeners, which it can invoke when an event occurs.
  */
-public class EventListener<Args extends CallbackItem> {
+public class EventListener<Args extends CallbackItem, Ret extends CallbackItem> {
 
-    public final CallbackType.Func<Args, CallbackItem.Bool> funcType; // Type for callbacks
-    private final ArrayList<ScriptCallback<Args, CallbackItem.Bool>> callbacks = new ArrayList<>();
+    public final Avatar<?> owningAvatar; // The avatar which owns this event listener. Only Callbacks owned by the same avatar should be added to it.
+    public final CallbackType.Func<Args, Ret> funcType; // Type for callbacks
+    private final ArrayList<ScriptCallback<Args, Ret>> callbacks = new ArrayList<>();
 
     // Requires static param types on creation
-    public EventListener(CallbackType.Func<Args, CallbackItem.Bool> funcType) {
+    public EventListener(CallbackType.Func<Args, Ret> funcType, Avatar<?> owningAvatar) {
         this.funcType = funcType;
+        this.owningAvatar = owningAvatar;
     }
 
     // Only allow appending to the list at the end.
     // This is because of the potential for a callback to register additional callbacks.
-    public void registerCallback(ScriptCallback<Args, CallbackItem.Bool> callback) {
+    // The callback MUST be owned by the same avatar as this EventListener!
+    public void registerCallback(ScriptCallback<Args, Ret> callback) {
         this.callbacks.add(callback);
     }
 
-    // Invoke the event listener with the given args.
+    // Invoke the event listener with the given args, ignoring returns.
     public void invoke(Args args) {
-        // Any callback returning true will be removed.
-        for (int i = 0; i < callbacks.size(); i++) {
-            ScriptCallback<Args, CallbackItem.Bool> callback = callbacks.get(i);
-            boolean remove = callback.getOwningAvatar().isErrored() || callback.call(args).value();
-            if (remove) { callbacks.remove(i); i--; }
+        for (ScriptCallback<Args, Ret> callback : callbacks) {
+            if (owningAvatar.isErrored()) break;
+            callback.call(args);
         }
     }
+
+    // Invoke the event listener with the given args, returning a list of results.
+    public List<Ret> invokeFor(Args args) {
+        List<Ret> res = new ArrayList<>();
+        for (ScriptCallback<Args, Ret> callback : callbacks) {
+            if (owningAvatar.isErrored()) break;
+            Ret result = callback.call(args);
+            if (result != null) res.add(result);
+        }
+        return res;
+    }
+
+    public Args invokeChained(Args initialArg, Function<Ret, Args> chainer) {
+        Args cur = initialArg;
+        for (ScriptCallback<Args, Ret> callback : callbacks) {
+            if (owningAvatar.isErrored()) break;
+            Ret result = callback.call(cur);
+            if (result == null) break; // The avatar is errored if we get null
+            cur = chainer.apply(result);
+        }
+        return cur;
+    }
+
 }

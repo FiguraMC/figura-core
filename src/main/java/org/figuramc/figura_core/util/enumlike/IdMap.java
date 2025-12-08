@@ -11,7 +11,7 @@ import java.util.function.Function;
 // No hashmap lookup, uses direct array
 // Values cannot be null
 // Expects method calls to not violate generic rules
-public class IdMap<K extends EnumLike, V> implements Map<K, V> {
+public class IdMap<K extends EnumLike, V> implements Map<K, @NotNull V> {
 
     private int size = 0;
     private final List<? extends K> allKeys; // Shared reference to global list.
@@ -212,5 +212,38 @@ public class IdMap<K extends EnumLike, V> implements Map<K, V> {
             IdMap.this.clear();
         }
     }
+
+    // IdMap.of() impls
+
+    @SafeVarargs
+    public static <KV extends EnumLike> IdMap<KV, KV> of(Class<KV> kClass, KV... keysValues) {
+        if (keysValues.length % 2 != 0) throw new IllegalArgumentException("Expected even number of args");
+        IdMap<KV, KV> res = new IdMap<>(kClass);
+        for (int i = 0; i < keysValues.length; i += 2)
+            res.put(keysValues[i], keysValues[i+1]);
+        return res;
+    }
+
+    public static <K extends EnumLike, V> IdMap<K, V> of(Class<K> kClass, K k1, V v1) {
+        IdMap<K, V> res = new IdMap<K, V>(kClass);
+        res.put(k1, v1);
+        return res;
+    }
+    public static <K extends EnumLike, V> IdMap<K, V> of(Class<K> kClass, K k1, V v1, K k2, V v2) {
+        IdMap<K, V> res = of(kClass, k1, v1);
+        res.put(k2, v2);
+        return res;
+    }
+    public static <K extends EnumLike, V> IdMap<K, V> of(Class<K> kClass, K k1, V v1, K k2, V v2, K k3, V v3) {
+        IdMap<K, V> res = of(kClass, k1, v1, k2, v2);
+        res.put(k3, v3);
+        return res;
+    }
+    public static <K extends EnumLike, V> IdMap<K, V> of(Class<K> kClass, K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4) {
+        IdMap<K, V> res = of(kClass, k1, v1, k2, v2, k3, v3);
+        res.put(k4, v4);
+        return res;
+    }
+
 
 }

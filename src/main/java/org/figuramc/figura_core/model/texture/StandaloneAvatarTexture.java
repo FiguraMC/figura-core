@@ -1,7 +1,7 @@
 package org.figuramc.figura_core.model.texture;
 
 import org.figuramc.figura_core.avatars.AvatarError;
-import org.figuramc.figura_core.data.ModuleMaterials;
+import org.figuramc.figura_core.data.materials.ModuleMaterials;
 import org.figuramc.figura_core.minecraft_interop.FiguraConnectionPoint;
 import org.figuramc.figura_core.minecraft_interop.texture.OwnedMinecraftTexture;
 import org.figuramc.figura_translations.TranslatableItems;

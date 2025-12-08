@@ -2,14 +2,13 @@ package org.figuramc.figura_core.manage;
 
 import org.figuramc.figura_core.avatars.AvatarModules;
 import org.figuramc.figura_core.avatars.AvatarTemplates;
-import org.figuramc.figura_core.data.ModuleImporter;
-import org.figuramc.figura_core.data.ModuleMaterials;
+import org.figuramc.figura_core.data.importer.v1.ModuleImporter;
+import org.figuramc.figura_core.data.materials.ModuleMaterials;
 import org.figuramc.figura_core.minecraft_interop.FiguraConnectionPoint;
 import org.figuramc.figura_core.minecraft_interop.game_data.entity.EntityKind;
 import org.figuramc.figura_core.minecraft_interop.game_data.entity.MinecraftEntity;
 import org.figuramc.figura_core.minecraft_interop.vanilla_parts.VanillaModel;
 import org.figuramc.figura_core.util.exception.ExceptionUtils;
-import org.figuramc.figura_core.util.exception.FiguraException;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Files;

@@ -1,7 +1,8 @@
-package org.figuramc.figura_core.data;
+package org.figuramc.figura_core.data.materials;
 
 import org.figuramc.figura_core.script_hooks.callback.CallbackType;
 import org.figuramc.figura_core.util.data_structures.DataTree;
+import org.figuramc.figura_core.util.data_structures.Either;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2f;
@@ -38,7 +39,8 @@ import java.util.TreeMap;
 public record ModuleMaterials(
         MetadataMaterials metadata,
         DataTree<String, byte[]> scripts,
-        List<TextureMaterials> textures,// Use a list because of texture indices for referral, and also not all textures have names!
+        List<TextureMaterials> textures, // Use a list because of texture indices for referral
+        List<MaterialMaterials> materials, // Use a list because of material indices for referral
         TreeMap<String, ModelPartMaterials> worldRoots,
         @Nullable ModelPartMaterials entityRoot,
         @Nullable ModelPartMaterials hudRoot,
@@ -67,30 +69,50 @@ public record ModuleMaterials(
         record VanillaTexture(String resourceLocation) implements TextureMaterials { @Override public String name() { return null; }}
     }
 
+    // MATERIALS
+
+    // Order matters, used in encoding
+    public enum BuiltinShader {
+        BASIC, END_PORTAL, END_GATEWAY
+    }
+    public enum BuiltinTextureBinding {
+        NONE, LIGHTMAP, OVERLAY
+    }
+
+    public record MaterialMaterials(
+        @Nullable String name, // Only use if this is a standalone material (Not implemented yet)
+        Either<BuiltinShader, Integer> shader, // Shader for this material; either a builtin or index of a custom
+        // Texture bindings:
+        // - Null/list too short = default for the shader
+        // - Builtin = builtin texture
+        // - Integer = texture index in module
+        List<@Nullable Either<BuiltinTextureBinding, Integer>> textureBindings
+    ) {}
+
     // MODEL PARTS
     public static class ModelPartMaterials {
         // Structuring
         public final Vector3f origin, rotation;
         public final LinkedHashMap<String, ModelPartMaterials> children;
-        // Vanilla part to mimic if any, in the form "ModelName/PartName" ("ENTITY/head")
+        // Vanilla part to mimic if any. Legal values depend on the entity, we can't do validation here.
         public final @Nullable String mimic;
         // Rendering data
-        public final int textureIndex;
+        public final @Nullable Integer materialIndex; // null means no material; implies no cubes or meshes either
         public final List<CubeData> cubes;
         public final List<MeshData> meshes;
         // Create with all fields
-        public ModelPartMaterials(Vector3f origin, Vector3f rotation, LinkedHashMap<String, ModelPartMaterials> children, @Nullable String mimic, int textureIndex, List<CubeData> cubes, List<MeshData> meshes) {
+        public ModelPartMaterials(Vector3f origin, Vector3f rotation, LinkedHashMap<String, ModelPartMaterials> children, @Nullable String mimic, @Nullable Integer materialIndex, List<CubeData> cubes, List<MeshData> meshes) {
             this.origin = origin;
             this.rotation = rotation;
             this.children = children;
             this.mimic = mimic;
-            this.textureIndex = textureIndex;
+            this.materialIndex = materialIndex;
             this.cubes = cubes;
             this.meshes = meshes;
         }
         // Constructor to create a simple wrapper around children
         public ModelPartMaterials(LinkedHashMap<String, ModelPartMaterials> children) {
-            this(new Vector3f(), new Vector3f(), children, null, -1, List.of(), List.of());
+            this(new Vector3f(), new Vector3f(), children, null, null, List.of(), List.of());
         }
     }
     // Correlates to a figmodel

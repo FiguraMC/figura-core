@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
  * In much the same way an Avatar allocates a List then passes a View of that list to another avatar to prevent hostages,
  * java code allocates an Entity and only passes a View of it to the avatar, to prevent an avatar from taking the global java memory hostage.
  */
-public final class EntityView<T extends MinecraftEntity> implements CallbackItem {
+public final class EntityView<T extends MinecraftEntity> implements CallbackItem, AutoCloseable {
 
     private @Nullable T entity;
 
@@ -18,19 +18,15 @@ public final class EntityView<T extends MinecraftEntity> implements CallbackItem
         this.entity = entity;
     }
 
-    // Check if the entity view is revoked.
+    // DO NOT use isRevoked as a check for whether an operation is safe to run!
+    // Another thread might revoke the item after you call this!
+    // Use it only as a means for diagnosing a sentinel-return in the actual methods!
     public boolean isRevoked() {
         return entity == null;
     }
 
-    // Revoke the entity view.
-    public void revoke() {
-        entity = null;
-    }
-
-    // Return the entity.
-    // Returns null if the view was revoked.
-    public @Nullable T getEntity() {
+    // Return the entity, or null if revoked.
+    public synchronized @Nullable T getEntity() {
         return entity;
     }
 
@@ -38,9 +34,14 @@ public final class EntityView<T extends MinecraftEntity> implements CallbackItem
     // If it is, returns the entity cast to that type.
     // If it isn't, or the entity is revoked, returns null.
     @SuppressWarnings("unchecked")
-    public <R extends MinecraftEntity> @Nullable R checkEntityType(Class<R> clazz) {
+    public synchronized <R extends MinecraftEntity> @Nullable R checkEntityType(Class<R> clazz) {
         if (clazz.isInstance(entity)) return (R) entity;
         return null;
     }
 
+    // Revoke the entity view.
+    @Override
+    public synchronized void close() {
+        entity = null;
+    }
 }

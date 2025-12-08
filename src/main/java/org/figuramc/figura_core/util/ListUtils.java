@@ -11,6 +11,11 @@ import java.util.*;
 @SuppressWarnings({"DuplicatedCode"})
 public class ListUtils {
 
+    public static <T> @Nullable T getOrNull(List<T> list, int index) {
+        if (index < 0 || index >= list.size()) return null;
+        return list.get(index);
+    }
+
     public static <T> void swap(List<T> list, int i, int j) {
         T elem = list.get(i);
         list.set(i, list.get(j));
