@@ -18,9 +18,6 @@ public class ShaderHookPoint extends EnumLike {
 
     // All fragment hooks:
 
-
-
-
     public final Stage stage;
     public final String name;
     public final List<String> paramTypes;
@@ -37,7 +34,7 @@ public class ShaderHookPoint extends EnumLike {
         defaultImplBuilder.append(returnType).append(" ").append(name).append("(");
         for (int i = 0; i < paramTypes.size(); i++) {
             defaultImplBuilder.append(paramTypes.get(i));
-            defaultImplBuilder.append((char) ('a' + i));
+            defaultImplBuilder.append(' ').append((char) ('a' + i));
             if (i != paramTypes.size() - 1) defaultImplBuilder.append(", ");
         }
         defaultImplBuilder.append(") {");
