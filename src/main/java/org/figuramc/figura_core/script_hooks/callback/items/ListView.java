@@ -10,10 +10,10 @@ import org.jetbrains.annotations.Nullable;
  */
 public abstract non-sealed class ListView<T extends CallbackItem> implements CallbackItem, AutoCloseable {
 
-    public final CallbackType<T> callbackType;
+    public CallbackType<T> elementType;
 
-    public ListView(CallbackType<T> callbackType) {
-        this.callbackType = callbackType;
+    public ListView(CallbackType<T> elementType) {
+        this.elementType = elementType;
     }
 
     private static final byte NOT_REVOKED = 0;
@@ -21,7 +21,7 @@ public abstract non-sealed class ListView<T extends CallbackItem> implements Cal
     private static final byte REVOKED = 2;
     private byte revokeState = NOT_REVOKED;
 
-    @Override public synchronized void close() { revokeState = REVOKED; }
+    @Override public synchronized void close() { revokeState = REVOKED; elementType = null; }
     public synchronized void freeze() { if (revokeState == NOT_REVOKED) revokeState = FROZEN; }
 
     // DO NOT use isRevoked/isFrozenOrRevoked as a check for whether an operation is safe to run!

@@ -27,7 +27,9 @@ public class ListViewAPI {
     }
 
     @LuaExpose public static void revoke(ListView<?> self) { self.close(); }
+    @LuaExpose public static void freeze(ListView<?> self) { self.freeze(); }
     @LuaExpose public static boolean isRevoked(ListView<?> self) { return self.isRevoked(); }
+    @LuaExpose public static boolean isFrozen(ListView<?> self) { return self.isFrozenOrRevoked(); }
     @LuaExpose public static int length(ListView<?> self) { return self.length(); }
 
     @LuaExpose @LuaPassState
@@ -43,7 +45,7 @@ public class ListViewAPI {
             if (len == -1) return Constants.NIL;
             LuaTable tab = new LuaTable(len, 0, state.allocationTracker);
             for (int i = 0; i < len; i++)
-                tab.rawset(i + 1, view.callbackType.fromItem(state.callbackItemToLua, view.get(i)));
+                tab.rawset(i + 1, view.elementType.fromItem(state.callbackItemToLua, view.get(i)));
             return tab;
         }
     }

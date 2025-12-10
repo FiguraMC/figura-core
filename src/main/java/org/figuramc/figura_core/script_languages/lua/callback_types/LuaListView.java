@@ -19,13 +19,11 @@ public class LuaListView<T extends CallbackItem> extends ListView<T> {
     private final int length;
     private LuaRuntime owningState;
     private LuaTable backingTable;
-    private CallbackType<T> elementType;
 
     public LuaListView(LuaRuntime owningState, LuaTable backingTable, CallbackType<T> elementType) {
         super(elementType);
         this.owningState = owningState;
         this.backingTable = backingTable;
-        this.elementType = elementType;
         this.length = backingTable.length();
     }
 
@@ -33,13 +31,12 @@ public class LuaListView<T extends CallbackItem> extends ListView<T> {
     public synchronized void close() {
         owningState = null;
         backingTable = null;
-        elementType = null;
         super.close();
     }
 
     @Override
     public synchronized int length() {
-        if (isRevoked()) throw new UnsupportedOperationException("TODO error on revoked");
+        if (isRevoked()) return -1;
         return length;
     }
 
@@ -51,8 +48,8 @@ public class LuaListView<T extends CallbackItem> extends ListView<T> {
             backingTable.rawset(index + 1, elementType.fromItem(owningState.callbackItemToLua, item));
             return true;
         } catch (LuaUncatchableError avatarError) {
-            // If this happens it's the callee's fault
-            throw new UnsupportedOperationException("TODO Error the LuaListView callee on OOM", avatarError);
+            // In case of OOM: it's the fault of the one who provided the view, they should be prepared for set() calls to edit the list if it's not frozen
+            throw new UnsupportedOperationException("TODO Error the LuaListView provider on OOM", avatarError);
         }
     }
 
@@ -63,6 +60,7 @@ public class LuaListView<T extends CallbackItem> extends ListView<T> {
         try {
             return elementType.toItem(owningState.luaToCallbackItem, backingTable.rawget(index + 1));
         } catch (LuaError | LuaUncatchableError e) {
+            // In case of conversion error: It's the fault of the one who provided the view, they should only have proper T values in the list
             throw new UnsupportedOperationException("TODO Error the LuaListView provider if incorrect element", e);
         }
     }
