@@ -69,7 +69,7 @@ public class EntityViewAPI {
 
 
     @LuaExpose @LuaPassState
-    public static LuaTable passengers(LuaState s, EntityView<?> self) throws LuaError, LuaUncatchableError {
+    public static LuaTable passengers(LuaRuntime s, EntityView<?> self) throws LuaError, LuaUncatchableError {
         // Get the passengers list.
         List<MinecraftEntity> list = fetchEntity(s, self).getPassengers();
         if (list == null) {
@@ -81,7 +81,7 @@ public class EntityViewAPI {
         LuaTable table = new LuaTable(list.size(), 0, s.allocationTracker);
         int i = 1;
         for (MinecraftEntity entity : list) {
-            table.rawset(i, EntityViewAPI.wrap(new EntityView<>(entity), (LuaRuntime) s));
+            table.rawset(i, EntityViewAPI.wrap(new EntityView<>(entity), s));
             i++;
         }
         return table;
