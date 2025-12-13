@@ -121,12 +121,12 @@ public final class Avatar<K> {
         // Mark as errored
         this.error = reason;
         // Report the error to user(?) (Todo improve)
-        FiguraConnectionPoint.ERROR_REPORTER.report(reason);
+        FiguraConnectionPoint.CONSOLE_OUTPUT.reportError(reason);
     }
 
     public void unexpectedError(Throwable reason) {
         this.error = reason;
-        FiguraConnectionPoint.ERROR_REPORTER.reportUnexpected(reason);
+        FiguraConnectionPoint.CONSOLE_OUTPUT.reportUnexpectedError(reason);
     }
 
     // We want to use this function only when strictly necessary; for most usages, the fact

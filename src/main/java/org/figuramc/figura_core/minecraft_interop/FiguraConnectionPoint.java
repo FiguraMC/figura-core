@@ -13,7 +13,6 @@ import org.figuramc.figura_core.script_languages.lua.LuaRuntime;
 import org.figuramc.figura_core.util.ReflectionUtils;
 import org.figuramc.figura_core.util.enumlike.EnumLike;
 import org.figuramc.figura_core.util.functional.ThrowingFunction;
-import org.figuramc.figura_core.util.functional.ThrowingSupplier;
 import org.figuramc.figura_translations.FiguraTranslations;
 
 /**
@@ -26,7 +25,7 @@ public class FiguraConnectionPoint {
     public static MinecraftTextureProvider TEXTURE_PROVIDER = null;
     public static ThrowingFunction<RenderingRoot<?>, PartRenderer, AvatarError> PART_RENDERER_FACTORY = null;
     public static GameDataProvider GAME_DATA_PROVIDER = null;
-    public static ErrorReporter ERROR_REPORTER = null;
+    public static ConsoleOutput CONSOLE_OUTPUT = null;
     public static PathProvider PATH_PROVIDER = null;
 
     /**
