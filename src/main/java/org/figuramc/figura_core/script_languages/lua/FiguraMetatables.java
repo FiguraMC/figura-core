@@ -33,6 +33,8 @@ public class FiguraMetatables {
 
     // Minecraft callback items
     public final LuaTable entityView;
+    public final LuaTable blockStateView;
+    public final LuaTable worldView;
 
     // Math objects
     public final LuaTable vec2;
@@ -74,6 +76,8 @@ public class FiguraMetatables {
 
         // Minecraft items
         entityView = API__Entity.createMetatable(state);
+        blockStateView = API__BlockState.createMetatable(state);
+        worldView = API__World.createMetatable(state);
 
         // Math objects
         vec2 = API__Vec2.createMetatable(state);

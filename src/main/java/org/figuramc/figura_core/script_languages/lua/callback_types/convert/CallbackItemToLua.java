@@ -8,6 +8,8 @@ import org.figuramc.figura_core.script_languages.lua.LuaRuntime;
 import org.figuramc.figura_core.script_languages.lua.type_apis.callback.FuncViewAPI;
 import org.figuramc.figura_core.script_languages.lua.type_apis.callback.ListViewAPI;
 import org.figuramc.figura_core.script_languages.lua.type_apis.callback.StringViewAPI;
+import org.figuramc.figura_core.script_languages.lua.type_apis.world.WorldViewAPI;
+import org.figuramc.figura_core.script_languages.lua.type_apis.world.block.BlockStateViewAPI;
 import org.figuramc.figura_core.script_languages.lua.type_apis.world.entity.EntityViewAPI;
 
 import java.util.function.Function;
@@ -47,6 +49,8 @@ public class CallbackItemToLua implements CallbackType.FromItemVisitor<LuaValue,
             case StringView stringView -> StringViewAPI.wrap(stringView, state);
             // Figura objects
             case EntityView<?> entityView -> EntityViewAPI.wrap(entityView, state);
+            case BlockStateView<?> blockStateView -> BlockStateViewAPI.wrap(blockStateView, state);
+            case WorldView<?> worldView -> WorldViewAPI.wrap(worldView, state);
             // Generic
             case CallbackItem.Tuple tuple -> ValueFactory.listOf(state.allocationTracker, tuple.<LuaValue, LuaUncatchableError, RuntimeException>map(inner -> CallbackType.Any.INSTANCE.fromItem(this, inner), LuaValue[]::new));
             case ListView<?> listView -> ListViewAPI.wrap(listView, state);
@@ -86,6 +90,12 @@ public class CallbackItemToLua implements CallbackType.FromItemVisitor<LuaValue,
     public LuaValue visit(CallbackType.Entity __, EntityView<?> item) {
         return EntityViewAPI.wrap(item, state);
     }
+
+    @Override
+    public LuaValue visit(CallbackType.BlockState __, BlockStateView<?> item) { return BlockStateViewAPI.wrap(item, state); }
+
+    @Override
+    public LuaValue visit(CallbackType.World __, WorldView<?> item) { return WorldViewAPI.wrap(item, state); }
 
     @Override
     public <T extends CallbackItem> LuaValue visit(CallbackType.List<T> list, ListView<T> item) {

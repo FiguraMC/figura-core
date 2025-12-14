@@ -1,10 +1,7 @@
 package org.figuramc.figura_core.script_hooks;
 
 import org.figuramc.figura_core.script_hooks.callback.CallbackType;
-import org.figuramc.figura_core.script_hooks.callback.items.CallbackItem;
-import org.figuramc.figura_core.script_hooks.callback.items.EntityView;
-import org.figuramc.figura_core.script_hooks.callback.items.FuncView;
-import org.figuramc.figura_core.script_hooks.callback.items.StringView;
+import org.figuramc.figura_core.script_hooks.callback.items.*;
 import org.figuramc.figura_core.util.enumlike.EnumLike;
 
 import java.util.LinkedHashMap;
@@ -35,7 +32,7 @@ public final class Event<Args extends CallbackItem, ReturnType extends CallbackI
     public static final Event<CallbackItem.Unit, CallbackItem.Unit> CLIENT_TICK = new Event<>("client_tick", CallbackType.Unit.INSTANCE, CallbackType.Unit.INSTANCE);
     // Entity -> ()
     // Runs AFTER the entity associated with the avatar is ticked.
-    public static final Event<EntityView<?>, CallbackItem.Unit> ENTITY_TICK = new Event<>("entity_tick", CallbackType.Entity.INSTANCE, CallbackType.Unit.INSTANCE);
+    public static final Event<CallbackItem.Tuple2<EntityView<?>, WorldView<?>>, CallbackItem.Unit> ENTITY_TICK = new Event<>("entity_tick", new CallbackType.Tuple2<>(CallbackType.Entity.INSTANCE, CallbackType.World.INSTANCE), CallbackType.Unit.INSTANCE);
 
     // ----- RENDER EVENTS -----
 

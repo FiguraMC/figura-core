@@ -79,6 +79,16 @@ public class LuaToCallbackItem implements CallbackType.ToItemVisitor<LuaValue, L
     }
 
     @Override
+    public BlockStateView<?> visit(CallbackType.BlockState __, LuaValue value) throws LuaError, LuaUncatchableError {
+        return value.checkUserdata(state, BlockStateView.class);
+    }
+
+    @Override
+    public WorldView<?> visit(CallbackType.World __, LuaValue value) throws LuaError, LuaUncatchableError {
+        return value.checkUserdata(state, WorldView.class);
+    }
+
+    @Override
     public <T extends CallbackItem> ListView<T> visit(CallbackType.List<T> list, LuaValue value) throws LuaError, LuaUncatchableError {
         // TODO figure out list passthrough (what if it's a different type of list? needs typecheck)
         return new LuaListView<>(state, value.checkTable(state), list.element());
