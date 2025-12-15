@@ -116,7 +116,7 @@ public class TextStyle {
 
     // TODO better errors for invalid inputs
 
-    @Contract("!null, _, _ -> !null")
+    @Contract("!null, _, _, _ -> !null")
     private static @Nullable StyleElementProvider<Boolean> parseBoolean(@Nullable JsonElement e, @Nullable Molang molang, int startCharIndex, int charCount) throws AvatarError, MolangCompileException {
         if (e == null) return null;
         if (!(e instanceof JsonPrimitive p)) throw new IllegalArgumentException("Should be primitive");
@@ -131,7 +131,7 @@ public class TextStyle {
         throw new IllegalArgumentException("Should be bool or string");
     }
 
-    @Contract("!null, _, _ -> !null")
+    @Contract("!null, _, _, _ -> !null")
     private static @Nullable StyleElementProvider<Float> parseFloat(@Nullable JsonElement e, @Nullable Molang molang, int startCharIndex, int charCount) throws AvatarError, MolangCompileException {
         if (e == null) return null;
         if (!(e instanceof JsonPrimitive p)) throw new IllegalArgumentException("Should be primitive");
@@ -146,7 +146,7 @@ public class TextStyle {
         throw new IllegalArgumentException("Should be number or string");
     }
 
-    @Contract("!null, _, _ -> !null")
+    @Contract("!null, _, _, _ -> !null")
     private static @Nullable StyleElementProvider<Vector2f> parseVec2(@Nullable JsonElement e, @Nullable Molang molang, int startCharIndex, int charCount) throws AvatarError, MolangCompileException {
         if (e == null) return null;
         // Accept array of 2 float elements
@@ -181,7 +181,7 @@ public class TextStyle {
         throw new IllegalArgumentException("Should be number or string");
     }
 
-    @Contract("!null, _, _ -> !null")
+    @Contract("!null, _, _, _ -> !null")
     private static @Nullable StyleElementProvider<Vector4f> parseVec4(@Nullable JsonElement e, @Nullable Molang molang, int startCharIndex, int charCount) throws AvatarError, MolangCompileException {
         if (e == null) return null;
         // Accept array of 4 float elements
