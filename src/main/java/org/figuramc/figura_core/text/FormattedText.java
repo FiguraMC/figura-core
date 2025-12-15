@@ -102,6 +102,11 @@ public class FormattedText {
         };
     }
 
-
-
+    public boolean isDynamic() {
+        if (style.isDynamic) return true;
+        for (FormattedText child : children) {
+            if (child.isDynamic()) return true;
+        }
+        return false;
+    }
 }
