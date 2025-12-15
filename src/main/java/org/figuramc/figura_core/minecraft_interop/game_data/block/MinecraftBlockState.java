@@ -34,7 +34,7 @@ public interface MinecraftBlockState {
     String toStateString();
 
     int getOpacity();
-    int getComparatorOutput();
+    int getComparatorOutput(String direction);
     int getLuminance();
     float getHardness();
     float getFriction();

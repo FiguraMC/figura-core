@@ -102,8 +102,8 @@ public class BlockStateViewAPI {
     }
 
     @LuaExpose @LuaPassState
-    public static int comparatorOutput(LuaRuntime s, BlockStateView<?> self) throws LuaError, LuaUncatchableError {
-        return fetchBlockState(s, self).getComparatorOutput();
+    public static int comparatorOutput(LuaRuntime s, BlockStateView<?> self, String direction) throws LuaError, LuaUncatchableError {
+        return fetchBlockState(s, self).getComparatorOutput(direction);
     }
 
     @LuaExpose @LuaPassState
