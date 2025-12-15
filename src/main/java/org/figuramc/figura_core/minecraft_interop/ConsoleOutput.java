@@ -18,6 +18,14 @@ public interface ConsoleOutput {
      */
     void logFormatted(FormattedText text);
 
+    /**
+     * Write the given text in a client-native format to the output device.
+     * No guarantees are made that this is any specific format.
+     * If the input is invalid, use fallback text or silently continue.
+     * In the case of modern Minecraft, this is JSON or SNBT.
+     */
+    void logNativeFormatted(String formatted);
+
     // Report the given error (to chat, to logs, etc)
     void reportError(FiguraException figuraException);
     // Report the given unexpected error
