@@ -16,7 +16,7 @@ public sealed interface CallbackItem permits
         // Primitives
         CallbackItem.Unit, CallbackItem.Opaque, CallbackItem.Bool, CallbackItem.I32, CallbackItem.F32, CallbackItem.F64,
         // Figura types
-        EntityView, BlockStateView, WorldView,
+        EntityView, BlockStateView, WorldView, ItemStackView,
         // Tuples
         CallbackItem.Tuple, CallbackItem.Tuple2, CallbackItem.Tuple3, CallbackItem.Tuple4, CallbackItem.Tuple5, CallbackItem.Tuple6, CallbackItem.Tuple7, CallbackItem.Tuple8,
         // Generics

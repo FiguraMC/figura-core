@@ -93,6 +93,12 @@ public sealed interface CallbackType<T extends CallbackItem> {
         @Override public <Outside, E1 extends Throwable, E2 extends Throwable> WorldView<?> toItem(ToItemVisitor<Outside, E1, E2> visitor, Outside outside) throws E1, E2 { return visitor.visit(this, outside); }
         @Override public <Outside, E1 extends Throwable, E2 extends Throwable> Outside fromItem(FromItemVisitor<Outside, E1, E2> visitor, WorldView<?> item) throws E1, E2 { return visitor.visit(this, item); }
     }
+    final class ItemStack implements CallbackType<ItemStackView<?>> {
+        public static final ItemStack INSTANCE = new ItemStack(); private ItemStack() {}
+        @Override public <Outside, E1 extends Throwable, E2 extends Throwable> ItemStackView<?> toItem(ToItemVisitor<Outside, E1, E2> visitor, Outside outside) throws E1, E2 { return visitor.visit(this, outside); }
+        @Override public <Outside, E1 extends Throwable, E2 extends Throwable> Outside fromItem(FromItemVisitor<Outside, E1, E2> visitor, ItemStackView<?> item) throws E1, E2 { return visitor.visit(this, item); }
+    }
+
     // Objects
 //    final class FiguraPart implements CallbackType { public static final FiguraPart INSTANCE = new FiguraPart(); private FiguraPart() {} }
 
@@ -182,6 +188,7 @@ public sealed interface CallbackType<T extends CallbackItem> {
         EntityView<?> visit(Entity __, Outside outside) throws E1, E2;
         BlockStateView<?> visit(BlockState __, Outside outside) throws E1, E2;
         WorldView<?> visit(World __, Outside outside) throws E1, E2;
+        ItemStackView<?> visit(ItemStack __, Outside outside) throws E1, E2;
 
         // Generic
         <T extends CallbackItem> ListView<T> visit(List<T> list, Outside outside) throws E1, E2;
@@ -214,6 +221,7 @@ public sealed interface CallbackType<T extends CallbackItem> {
         Outside visit(Entity __, EntityView<?> item) throws E1, E2;
         Outside visit(BlockState __, BlockStateView<?> item) throws E1, E2;
         Outside visit(World __, WorldView<?> item) throws E1, E2;
+        Outside visit(ItemStack __, ItemStackView<?> item) throws E1, E2;
         // Generic
         <T extends CallbackItem> Outside visit(List<T> type, ListView<T> item) throws E1, E2;
         <K extends CallbackItem, V extends CallbackItem> Outside visit(Map<K, V> type, MapView<K, V> item) throws E1, E2;
@@ -249,6 +257,7 @@ public sealed interface CallbackType<T extends CallbackItem> {
         @Override public String visit(Entity __, EntityView<?> ___) { return "entity"; }
         @Override public String visit(BlockState __, BlockStateView<?> ___) { return "block_state"; }
         @Override public String visit(World __, WorldView<?> ___) { return "world"; }
+        @Override public String visit(ItemStack __, ItemStackView<?> ___) { return "item_stack"; }
 
 
         @Override public <T extends CallbackItem> String visit(List<T> type, ListView<T> ___) { return "[" + type.element.fromItem(this, null) + "]"; }
@@ -281,6 +290,7 @@ public sealed interface CallbackType<T extends CallbackItem> {
         @Override public Integer visit(Entity __, EntityView<?> ___) { return 0; }
         @Override public Integer visit(BlockState __, BlockStateView<?> ___) { return 0; }
         @Override public Integer visit(World __, WorldView<?> ___) { return 0; }
+        @Override public Integer visit(ItemStack __, ItemStackView<?> ___) { return 0; }
 
         @Override public <T extends CallbackItem> Integer visit(List<T> type, ListView<T> ___) {
             return AllocationTracker.OBJECT_SIZE + AllocationTracker.REFERENCE_SIZE + type.element.fromItem(this, null);
