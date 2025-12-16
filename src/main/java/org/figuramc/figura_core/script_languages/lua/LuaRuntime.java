@@ -97,10 +97,10 @@ public class LuaRuntime extends LuaState implements ScriptRuntimeComponent<LuaRu
         globals().rawset("text", TextTable.create(this, molang));
 
         // Temp testing, just prints to console
-        globals().rawset("print", LibFunction.create((state, arg) -> {
-            System.out.println("LUA >>> " + arg.toJavaString(state.allocationTracker));
-            return Constants.NIL;
-        }));
+        LuaPrint printFns = new LuaPrint(avatar);
+        globals().rawset("printNative", printFns.printNative);
+        globals().rawset("printToLog", printFns.printToLog);
+        globals().rawset("print", printFns.print);
 
         // Add tables for other components we have
         if (vanillaRendering != null) globals().rawset("vanilla", VanillaTable.create(this, vanillaRendering));

@@ -35,6 +35,9 @@
   "figura_core.error.script.lua.no_main": "For a module with language = \"lua\", you must have a file \"scripts/main.lua\".",
   "figura_core.error.script.lua.compile_error": "Lua Script \"%s\" failed to compile: \n%s.",
   "figura_core.error.script.lua.incorrect_callback_return": "Callback function %s expected to return %s, but it returned %s.",
-  "figura_core.error.script.lua.error_in_callback": "Callback function %s had an error: \n%s"
+  "figura_core.error.script.lua.error_in_callback": "Callback function %s had an error: \n%s",
 
+  // Logging messages
+  "figura_core.log.missing_entity": "missing entity",
+  "figura_core.log.no_source": "no source available"
 }

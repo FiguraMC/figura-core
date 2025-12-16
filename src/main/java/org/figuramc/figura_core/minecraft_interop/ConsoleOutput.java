@@ -2,6 +2,9 @@ package org.figuramc.figura_core.minecraft_interop;
 
 import org.figuramc.figura_core.text.FormattedText;
 import org.figuramc.figura_core.util.exception.FiguraException;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.UUID;
 
 /**
  * TODO completely rework error reporting to use fancy FWL text thingies!
@@ -10,7 +13,7 @@ public interface ConsoleOutput {
     /**
      * Write the given message to the output device (chat, logs, etc.)
      */
-    void logSimple(String message);
+    void logSimple(@Nullable UUID source, String message);
 
     /**
      * Write the given formatted text to the output device, if supported.
