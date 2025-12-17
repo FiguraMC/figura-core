@@ -29,6 +29,12 @@ public interface ConsoleOutput {
      */
     void logNativeFormatted(String formatted);
 
+    /**
+     * Write the given message at a lower priority.
+     * (This usually means outputting to the game log instead of chat)
+     */
+    void logVerbose(@Nullable UUID source, String message);
+
     // Report the given error (to chat, to logs, etc)
     void reportError(FiguraException figuraException);
     // Report the given unexpected error

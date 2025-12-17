@@ -12,7 +12,9 @@ public final class LuaPrint {
 
     public LuaPrint(Avatar<?> owner) {
         printToLog = LibFunction.create((state, arg) -> {
-            System.out.printf("[Lua] %s: %s%n", owner.key.toString(), arg.toJavaString(state.allocationTracker));
+            Object k = owner.key;
+            UUID ownerID = k instanceof UUID uuid ? uuid : null;
+            FiguraConnectionPoint.CONSOLE_OUTPUT.logVerbose(ownerID, arg.toJavaString(state.allocationTracker));
             return Constants.NIL;
         });
         printNative = LibFunction.create((state, arg) -> {
