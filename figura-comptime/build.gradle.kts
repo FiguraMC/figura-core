@@ -9,8 +9,13 @@ repositories {
     mavenCentral()
 }
 
-dependencies {
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
 
+dependencies {
     annotationProcessor("com.google.auto.service:auto-service:1.1.1")
     compileOnly("com.google.auto.service:auto-service:1.1.1")
 }
