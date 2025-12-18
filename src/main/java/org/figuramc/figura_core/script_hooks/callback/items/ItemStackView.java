@@ -12,6 +12,8 @@ public final class ItemStackView<T extends MinecraftItemStack> implements Callba
         this.itemStack = itemStack;
     }
 
+
+
     // Return the entity, or null if revoked.
     public synchronized @Nullable T getItemStack() {
         return itemStack;

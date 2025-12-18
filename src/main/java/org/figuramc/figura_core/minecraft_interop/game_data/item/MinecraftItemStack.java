@@ -8,7 +8,7 @@ import java.util.List;
 public interface MinecraftItemStack {
 
     List<String> getTags();
-    // ? List<String> getEnchantments();
+    // maybe? List<String> getEnchantments();
 
     MinecraftItemStack copy();
     MinecraftBlockState getBlockState();
