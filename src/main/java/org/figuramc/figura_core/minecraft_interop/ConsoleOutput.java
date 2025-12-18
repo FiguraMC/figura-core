@@ -18,6 +18,8 @@ public interface ConsoleOutput {
     /**
      * Write the given formatted text to the output device, if supported.
      * Outputs that lack formatting should make a good-faith effort to convert it to unformatted text.
+     *
+     * TODO: Needs implementation
      */
     void logFormatted(FormattedText text);
 
