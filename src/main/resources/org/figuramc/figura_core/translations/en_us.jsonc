@@ -38,6 +38,7 @@
   "figura_core.error.script.lua.error_in_callback": "Callback function %s had an error: \n%s",
 
   // Logging messages
-  "figura_core.log.missing_entity": "missing entity",
-  "figura_core.log.no_source": "no source available"
+  "figura_core.log.missing_entity": "Missing Entity",
+  "figura_core.log.no_source": "No Source",
+  "figura_core.log.unknown_source": "Unknown Source"
 }

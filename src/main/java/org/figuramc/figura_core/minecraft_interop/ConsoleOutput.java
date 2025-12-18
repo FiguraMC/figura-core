@@ -13,7 +13,7 @@ public interface ConsoleOutput {
     /**
      * Write the given message to the output device (chat, logs, etc.)
      */
-    void logSimple(@Nullable UUID source, String message);
+    void logSimple(@Nullable Object source, String message);
 
     /**
      * Write the given formatted text to the output device, if supported.
@@ -35,7 +35,7 @@ public interface ConsoleOutput {
      * Write the given message at a lower priority.
      * (This usually means outputting to the game log instead of chat)
      */
-    void logVerbose(@Nullable UUID source, String message);
+    void logVerbose(@Nullable Object source, String message);
 
     // Report the given error (to chat, to logs, etc)
     void reportError(FiguraException figuraException);
