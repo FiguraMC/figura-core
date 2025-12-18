@@ -4,7 +4,6 @@ import org.figuramc.figura_cobalt.LuaUncatchableError;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.*;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.compiler.CompileException;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.compiler.LoadState;
-import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.LibFunction;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.LuaClosure;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.LuaFunction;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.interrupt.InterruptAction;
@@ -92,15 +91,10 @@ public class LuaRuntime extends LuaState implements ScriptRuntimeComponent<LuaRu
         CoreLibraries.standardGlobals(this);
         Bit32Lib.add(this);
         FiguraMath.init(this);
+        FiguraPrint.init(this);
         globals().rawset("events", EventsTable.create(this, avatar.eventListeners));
         globals().rawset("client", ClientTable.create(this));
         globals().rawset("text", TextTable.create(this, molang));
-
-        // Temp testing, just prints to console
-        globals().rawset("print", LibFunction.create((state, arg) -> {
-            System.out.println("LUA >>> " + arg.toJavaString(state.allocationTracker));
-            return Constants.NIL;
-        }));
 
         // Add tables for other components we have
         if (vanillaRendering != null) globals().rawset("vanilla", VanillaTable.create(this, vanillaRendering));

@@ -22,6 +22,11 @@ public class TextStyle {
     public final StyleElementProvider<Vector2f> scale, outlineScale, skew, offset, shadowOffset;
     public final StyleElementProvider<Vector4f> color, backgroundColor, shadowColor, strikethroughColor, underlineColor, outlineColor;
 
+    /**
+     * true if this TextStyle has any dynamic StyleElementProvider(s)
+     */
+    public final boolean isDynamic;
+
     private TextStyle() {
         bold = italic = obfuscated = StyleElementProvider.Constant.FALSE;
         verticalAlignment = StyleElementProvider.Constant.ZERO;
@@ -29,6 +34,7 @@ public class TextStyle {
         skew = offset = StyleElementProvider.Constant.VEC2_ZEROES;
         color = StyleElementProvider.Constant.VEC4_ONES;
         backgroundColor = shadowColor = strikethroughColor = underlineColor = outlineColor = StyleElementProvider.Constant.VEC4_ZEROES;
+        isDynamic = false;
     }
 
     public TextStyle(
@@ -64,6 +70,17 @@ public class TextStyle {
         this.strikethroughColor = strikethroughColor != null ? strikethroughColor : parent.strikethroughColor;
         this.underlineColor = underlineColor != null ? underlineColor : parent.underlineColor;
         this.outlineColor = outlineColor != null ? outlineColor : parent.outlineColor;
+        this.isDynamic = computeIsDynamic();
+    }
+
+    private boolean computeIsDynamic() {
+        // this is its own method in order to avoid having to type `this` repeatedly
+        return (
+                bold.isDynamic || italic.isDynamic || obfuscated.isDynamic || verticalAlignment.isDynamic
+                        || scale.isDynamic || outlineScale.isDynamic || skew.isDynamic || offset.isDynamic
+                        || shadowOffset.isDynamic || color.isDynamic || backgroundColor.isDynamic
+                        || shadowColor.isDynamic || strikethroughColor.isDynamic || underlineColor.isDynamic
+        );
     }
 
     public static class Builder {
@@ -116,7 +133,7 @@ public class TextStyle {
 
     // TODO better errors for invalid inputs
 
-    @Contract("!null, _, _ -> !null")
+    @Contract("!null, _, _, _ -> !null")
     private static @Nullable StyleElementProvider<Boolean> parseBoolean(@Nullable JsonElement e, @Nullable Molang molang, int startCharIndex, int charCount) throws AvatarError, MolangCompileException {
         if (e == null) return null;
         if (!(e instanceof JsonPrimitive p)) throw new IllegalArgumentException("Should be primitive");
@@ -131,7 +148,7 @@ public class TextStyle {
         throw new IllegalArgumentException("Should be bool or string");
     }
 
-    @Contract("!null, _, _ -> !null")
+    @Contract("!null, _, _, _ -> !null")
     private static @Nullable StyleElementProvider<Float> parseFloat(@Nullable JsonElement e, @Nullable Molang molang, int startCharIndex, int charCount) throws AvatarError, MolangCompileException {
         if (e == null) return null;
         if (!(e instanceof JsonPrimitive p)) throw new IllegalArgumentException("Should be primitive");
@@ -146,7 +163,7 @@ public class TextStyle {
         throw new IllegalArgumentException("Should be number or string");
     }
 
-    @Contract("!null, _, _ -> !null")
+    @Contract("!null, _, _, _ -> !null")
     private static @Nullable StyleElementProvider<Vector2f> parseVec2(@Nullable JsonElement e, @Nullable Molang molang, int startCharIndex, int charCount) throws AvatarError, MolangCompileException {
         if (e == null) return null;
         // Accept array of 2 float elements
@@ -181,7 +198,7 @@ public class TextStyle {
         throw new IllegalArgumentException("Should be number or string");
     }
 
-    @Contract("!null, _, _ -> !null")
+    @Contract("!null, _, _, _ -> !null")
     private static @Nullable StyleElementProvider<Vector4f> parseVec4(@Nullable JsonElement e, @Nullable Molang molang, int startCharIndex, int charCount) throws AvatarError, MolangCompileException {
         if (e == null) return null;
         // Accept array of 4 float elements
@@ -220,8 +237,4 @@ public class TextStyle {
         }
         throw new IllegalArgumentException("Should be number or string");
     }
-
-
-
-
 }
