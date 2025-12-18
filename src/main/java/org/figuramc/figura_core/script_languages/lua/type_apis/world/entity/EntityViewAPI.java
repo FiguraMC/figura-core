@@ -7,9 +7,10 @@ import org.figuramc.figura_core.comptime.lua.annotations.LuaPassState;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaTypeAPI;
 import org.figuramc.figura_core.minecraft_interop.game_data.entity.MinecraftEntity;
 
-import org.figuramc.figura_core.script_hooks.callback.items.CallbackItem;
 import org.figuramc.figura_core.script_hooks.callback.items.EntityView;
 import org.figuramc.figura_core.script_languages.lua.LuaRuntime;
+import org.figuramc.figura_core.script_languages.lua.type_apis.math.vector.Vec3API;
+import org.figuramc.figura_core.util.data_structures.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2d;
@@ -98,15 +99,15 @@ public class EntityViewAPI {
         return null;
     }
 
-    /* TODO: Tuple is invalid, it is an unexpected return type. How to tuple?
+
     @LuaExpose @LuaPassState
-    public static CallbackItem.Tuple2<EntityView<MinecraftEntity>, EntityView<MinecraftEntity>> targetedEntity(LuaRuntime s, EntityView<?> self, Double distance) throws LuaError, LuaUncatchableError {
-        kotlin.Pair<MinecraftEntity, Vector3d> pair = fetchEntity(s, self).getTargetedEntity(distance);
+    public static Varargs targetedEntity(LuaRuntime s, EntityView<?> self, Double distance) throws LuaError, LuaUncatchableError {
+      Pair<MinecraftEntity, Vector3d> pair = fetchEntity(s, self).getTargetedEntity(distance);
         if (pair == null)
             return null;
 
-        return new CallbackItem.Tuple2<>(new EntityView<MinecraftEntity>(pair.getFirst()), new EntityView<MinecraftEntity>(pair.getFirst()));
-    }*/
+        return ValueFactory.varargsOf(EntityViewAPI.wrap(new EntityView<>(pair.a()), s), Vec3API.wrap(pair.b(), s));
+    }
 
 
 
