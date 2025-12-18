@@ -88,6 +88,7 @@ public class BlockStateViewAPI {
         return fetchBlockState(s, self).getMapColor();
     }*/
 
+    // TODO NBT discussion
     @LuaExpose @LuaPassState
     public static String stateString(LuaRuntime s, BlockStateView<?> self) throws LuaError, LuaUncatchableError {
         return fetchBlockState(s, self).toStateString();

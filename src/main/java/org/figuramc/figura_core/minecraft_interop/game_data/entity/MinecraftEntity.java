@@ -1,10 +1,7 @@
 package org.figuramc.figura_core.minecraft_interop.game_data.entity;
 
-import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaTable;
-import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaValue;
-import org.figuramc.figura_core.minecraft_interop.texture.MinecraftTexture;
 import org.figuramc.figura_core.minecraft_interop.vanilla_parts.VanillaModel;
-import org.figuramc.figura_core.script_hooks.callback.items.EntityView;
+import org.figuramc.figura_core.util.data_structures.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
@@ -45,9 +42,8 @@ public interface MinecraftEntity {
     @Nullable
     MinecraftEntity getControllingPassenger();
 
-    // Should return [MinecraftEntity, Vec3]
     @Nullable
-    Object[] getTargetedEntity(Double distance);
+    Pair<MinecraftEntity, Vector3d> getTargetedEntity(Double distance);
     @Nullable
     MinecraftEntity getNearestEntity(String type, Double radius);
 

@@ -33,7 +33,6 @@ public class ItemStackViewAPI {
 
         int i = 1;
         for (String tag : tags) {
-            // Convert each MinecraftEntity into an EntityViewAPI
             table.rawset(i, LuaString.valueOf(s.allocationTracker, tag));
             i++;
         }
@@ -155,11 +154,11 @@ public class ItemStackViewAPI {
 
     // Helper to fetch entity, or error if revoked
     private static @NotNull MinecraftItemStack fetchItemStack(LuaState state, ItemStackView<?> itemStackView) throws LuaError, LuaUncatchableError {
-        // Get entity
+        // Get itemStack
         @Nullable MinecraftItemStack itemStack = itemStackView.getItemStack();
         // If null (aka revoked), error
-        if (itemStack == null) throw new LuaError("Attempt to use entity view after it was revoked!", state.allocationTracker);
-        // Return the non-null entity
+        if (itemStack == null) throw new LuaError("Attempt to use item stack view after it was revoked!", state.allocationTracker);
+        // Return the non-null itemStack
         return itemStack;
     }
 }

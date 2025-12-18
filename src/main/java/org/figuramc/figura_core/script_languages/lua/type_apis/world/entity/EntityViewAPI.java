@@ -6,6 +6,8 @@ import org.figuramc.figura_core.comptime.lua.annotations.LuaExpose;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaPassState;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaTypeAPI;
 import org.figuramc.figura_core.minecraft_interop.game_data.entity.MinecraftEntity;
+
+import org.figuramc.figura_core.script_hooks.callback.items.CallbackItem;
 import org.figuramc.figura_core.script_hooks.callback.items.EntityView;
 import org.figuramc.figura_core.script_languages.lua.LuaRuntime;
 import org.jetbrains.annotations.NotNull;
@@ -77,7 +79,7 @@ public class EntityViewAPI {
             return null;
         }
 
-        // Define the LUA table to write on.
+        // Define the Lua table to write on.
         LuaTable table = new LuaTable(list.size(), 0, s.allocationTracker);
         int i = 1;
         for (MinecraftEntity entity : list) {
@@ -96,12 +98,16 @@ public class EntityViewAPI {
         return null;
     }
 
-    /* TODO Return two elements?
+    /* TODO: Tuple is invalid, it is an unexpected return type. How to tuple?
     @LuaExpose @LuaPassState
-    public static Object[] targetedEntity(LuaState s, EntityView<?> self, Double distance) throws LuaError, LuaUncatchableError {
-        return fetchEntity(s, self).getTargetedEntity(distance);
-    }
-    */
+    public static CallbackItem.Tuple2<EntityView<MinecraftEntity>, EntityView<MinecraftEntity>> targetedEntity(LuaRuntime s, EntityView<?> self, Double distance) throws LuaError, LuaUncatchableError {
+        kotlin.Pair<MinecraftEntity, Vector3d> pair = fetchEntity(s, self).getTargetedEntity(distance);
+        if (pair == null)
+            return null;
+
+        return new CallbackItem.Tuple2<>(new EntityView<MinecraftEntity>(pair.getFirst()), new EntityView<MinecraftEntity>(pair.getFirst()));
+    }*/
+
 
 
     @LuaExpose @LuaPassState

@@ -18,8 +18,9 @@ public interface MinecraftItemStack {
      */
     MinecraftItem getItem();
 
-    // TODO: IDK what this means yet
+    // TODO: NBT DISCUSSION
     Object getTag();
+    // ? Object getComponent() instead?
 
     String getUseAction();
     String getName();

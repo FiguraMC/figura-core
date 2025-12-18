@@ -100,7 +100,7 @@ public class CallbackItemToLua implements CallbackType.FromItemVisitor<LuaValue,
     public LuaValue visit(CallbackType.World __, WorldView<?> item) { return WorldViewAPI.wrap(item, state); }
 
     @Override
-    public LuaValue visit(CallbackType.ItemStack __, ItemStackView<?> item) throws LuaUncatchableError, RuntimeException { return ItemStackViewAPI.wrap(item, state); }
+    public LuaValue visit(CallbackType.ItemStack __, ItemStackView<?> item) { return ItemStackViewAPI.wrap(item, state); }
 
     @Override
     public <T extends CallbackItem> LuaValue visit(CallbackType.List<T> list, ListView<T> item) {
