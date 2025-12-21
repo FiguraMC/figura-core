@@ -1,35 +1,45 @@
 package org.figuramc.figura_core.minecraft_interop.game_data.block;
 
-import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaTable;
-import org.figuramc.figura_core.minecraft_interop.game_data.item.MinecraftItem;
-import org.joml.Vector3d;
+import org.figuramc.figura_core.minecraft_interop.game_data.MinecraftIdentifier;
+import org.figuramc.figura_core.minecraft_interop.game_data.item.MinecraftItemStack;
+import org.joml.Vector3f;
+import org.joml.Vector3i;
+import org.joml.Vector3ic;
 
-import java.util.*;
+import java.util.List;
 
 /**
- *   A view into a MinecraftBlockState instance
+ * Wraps a minecraft BlockState, as well as a Vector3i indicating the position.
+ * This is useful because many block properties can depend on the position in the world.
  */
 public interface MinecraftBlockState {
 
-    String getId();
+    MinecraftIdentifier getIdentifier();
 
-    Vector3d getPos();
+    // Get the position bundled alongside the blockstate
+    // Store the value in the param and return it, like JOML
+    Vector3i getBundledPos(Vector3i output);
+    // Return a new MinecraftBlockState with the same BlockState as this one, but with the given bundled pos
+    MinecraftBlockState withBundledPos(Vector3ic position);
 
-    List<List<Vector3d>> getCollisionShape();
-    List<List<Vector3d>> getOutlineShape();
+    // List of AABBs, denoted by their corners
+    record AABB(double x1, double y1, double z1, double x2, double y2, double z2) {}
+    List<AABB> getCollisionShape();
+    List<AABB> getOutlineShape();
 
-    HashMap<String, Set<String>> getTextures();
-    Map<String, Object> getSounds();
+//    HashMap<String, Set<String>> getTextures(); // TODO make this return Set<MinecraftTexture> instead. Also make the keys be a Direction enum instead of strings
+//    Map<String, Object> getSounds(); // TODO make this once we have a MinecraftSound handle object. Also make it a custom class instead of Map<String, Object>
     List<String> getProperties();
-    List<String> getTags();
-    List<String> getFluidTags();
+    List<MinecraftIdentifier> getTags();
+    List<MinecraftIdentifier> getFluidTags();
 
     // TODO NBT handling
     // Object? getEntityData
 
-    Vector3d getMapColor();
+    // Write output to the vector and return it, like JOML
+    Vector3f getMapColor(Vector3f output);
 
-    MinecraftItem asItem();
+    MinecraftItemStack asItem();
 
     String toStateString();
 

@@ -31,83 +31,47 @@ public class WorldViewAPI {
 
     @LuaExpose @LuaPassState
     public static LuaTable players(LuaRuntime s, WorldView<?> self) throws LuaError, LuaUncatchableError {
-        // Get the player hashmap
-        Map<String, MinecraftEntity> player_map = fetchWorld(s, self).getPlayers();
-        LuaTable table = new LuaTable(player_map.size(), 1, s.allocationTracker);
-        for (Map.Entry<String, MinecraftEntity> entry : player_map.entrySet()) {
-            // Convert each MinecraftEntity into an EntityViewAPI
-            table.rawset(entry.getKey(), EntityViewAPI.wrap(new EntityView<>(entry.getValue()), s));
-        }
+        LuaTable table = new LuaTable(s.allocationTracker);
+        fetchWorld(s, self).forEachPlayer(player -> table.rawset(
+                player.getName(),
+                EntityViewAPI.wrap(new EntityView<>(player, self), s)
+        ));
         return table;
     }
 
     @LuaExpose @LuaPassState
-    public static LuaTable entities(LuaRuntime s, WorldView<?> self, int x1, int y1, int z1, int x2, int y2, int z2) throws LuaError, LuaUncatchableError {
-        // Get the entities present
-        List<MinecraftEntity> entities = fetchWorld(s, self).getEntities(x1, y1, z1, x2, y2, z2);
-        LuaTable table = new LuaTable(entities.size(), 1, s.allocationTracker);
-        int i = 1;
-        for (MinecraftEntity entity : entities) {
-            // Convert each MinecraftEntity into an EntityViewAPI
-            table.rawset(i, EntityViewAPI.wrap(new EntityView<>(entity), s));
-            i++;
-        }
-        return table;
-    }
-    @LuaExpose @LuaPassState
-    public static LuaTable entities(LuaRuntime s, WorldView<?> self, Vector3d pos1, Vector3d pos2) throws LuaError, LuaUncatchableError {
-        return entities(s, self, (int) pos1.x, (int) pos1.y, (int) pos1.z, (int) pos2.x, (int) pos2.y, (int) pos2.z);
-    }
-
-    @LuaExpose @LuaPassState
-    public static LuaTable getMapData(LuaRuntime s, WorldView<?> self, int id) throws LuaError, LuaUncatchableError {
-        HashMap<String, Object> map_data = fetchWorld(s, self).getMapData(id);
-        if (map_data == null)
-            return null;
-
-        // Just pass one table to the other
-        LuaTable table = new LuaTable(map_data.size(), 1, s.allocationTracker);
-
-        table.rawset("center_x", LuaInteger.valueOf((int) map_data.get("center_x")));
-        table.rawset("center_z", LuaInteger.valueOf((int) map_data.get("center_z")));
-        table.rawset("locked", LuaBoolean.valueOf((boolean) map_data.get("locked")));
-        table.rawset("scale", LuaInteger.valueOf((int) map_data.get("scale")));
-
+    public static LuaTable entities(LuaRuntime s, WorldView<?> self) throws LuaError, LuaUncatchableError {
+        LuaTable table = new LuaTable(s.allocationTracker);
+        int[] i = new int[1];
+        fetchWorld(s, self).forEachEntity(entity -> table.rawset(
+                ++i[0],
+                EntityViewAPI.wrap(new EntityView<>(entity, self), s))
+        );
         return table;
     }
 
+    // Return nil if this ID has no data associated, or return a table with various key/value pairs
     @LuaExpose @LuaPassState
-    public static LuaTable blocks(LuaRuntime s, WorldView<?> self, int x, int y, int z, int w, int t, int h) throws LuaError, LuaUncatchableError {
-        List<MinecraftBlockState> blocks = fetchWorld(s, self).getBlocks(x, y, z, w, t, h);
-        LuaTable table = new LuaTable(blocks.size(), 1, s.allocationTracker);
-        int i = 1;
-        for (MinecraftBlockState block : blocks) {
-            table.rawset(i, BlockStateViewAPI.wrap(new BlockStateView<>(block), s));
-            i++;
-        }
+    public static LuaValue getMapData(LuaRuntime s, WorldView<?> self, int id) throws LuaError, LuaUncatchableError {
+        MinecraftWorld.MapData mapData = fetchWorld(s, self).getMapData(id);
+        if (mapData == null) return Constants.NIL;
+
+        LuaTable table = new LuaTable(s.allocationTracker);
+        table.rawset("center_x", LuaInteger.valueOf(mapData.centerX()));
+        table.rawset("center_z", LuaInteger.valueOf(mapData.centerZ()));
+        table.rawset("locked", LuaBoolean.valueOf(mapData.locked()));
+        table.rawset("scale", LuaInteger.valueOf(mapData.scale()));
+
         return table;
-    }
-    @LuaExpose @LuaPassState
-    public static LuaTable blocks(LuaRuntime s, WorldView<?> self, Vector3d pos1, Vector3d pos2) throws LuaError, LuaUncatchableError {
-        return blocks(s, self, (int) pos1.x, (int) pos1.y, (int) pos1.z, (int) pos2.x, (int) pos2.y, (int) pos2.z);
     }
 
     @LuaExpose @LuaPassState
     public static BlockStateView<MinecraftBlockState> blockState(LuaState s, WorldView<?> self, int x, int y, int z) throws LuaError, LuaUncatchableError {
-        return new BlockStateView<>(fetchWorld(s, self).getBlockState(x, y, z));
+        return new BlockStateView<>(fetchWorld(s, self).getBlockState(x, y, z), self);
     }
     @LuaExpose @LuaPassState
     public static BlockStateView<MinecraftBlockState> blockState(LuaState s, WorldView<?> self, Vector3d pos) throws LuaError, LuaUncatchableError {
-        return new BlockStateView<>(fetchWorld(s, self).getBlockState((int) pos.x, (int) pos.y, (int) pos.z));
-    }
-
-    @LuaExpose @LuaPassState
-    public static BlockStateView<MinecraftBlockState> newBlock(LuaState s, WorldView<?> self, String data, int x, int y, int z) throws LuaError, LuaUncatchableError {
-        return new BlockStateView<>(fetchWorld(s, self).newBlock(data, x, y, z));
-    }
-    @LuaExpose @LuaPassState
-    public static BlockStateView<MinecraftBlockState> newBlock(LuaState s, WorldView<?> self, String data, Vector3d pos) throws LuaError, LuaUncatchableError {
-        return new BlockStateView<>(fetchWorld(s, self).newBlock(data, (int) pos.x, (int) pos.y, (int) pos.z));
+        return blockState(s, self, (int) pos.x, (int) pos.y, (int) pos.z);
     }
 
     /* TODO: ItemStackAPI must exist before implementation
@@ -119,16 +83,13 @@ public class WorldViewAPI {
     @LuaExpose @LuaPassState
     public static EntityView<MinecraftEntity> entity(LuaState s, WorldView<?> self, UUID uuid) throws LuaError, LuaUncatchableError {
         MinecraftEntity entity = fetchWorld(s, self).getEntity(uuid);
-        if (entity == null)
-            return null;
-        return new EntityView<>(entity);
+        return entity == null ? null : new EntityView<>(entity, self);
     }
 
     @LuaExpose @LuaPassState
     public static String dimension(LuaState s, WorldView<?> self) throws LuaError, LuaUncatchableError {
-        return fetchWorld(s, self).getCurrentDimension();
+        return fetchWorld(s, self).getDimension().toString();
     }
-
 
     @LuaExpose @LuaPassState
     public static int redstonePower(LuaState s, WorldView<?> self, int x, int y, int z) throws LuaError, LuaUncatchableError {
@@ -152,7 +113,6 @@ public class WorldViewAPI {
     public static int moonPhase(LuaState s, WorldView<?> self) throws LuaError, LuaUncatchableError {
         return fetchWorld(s, self).getMoonPhase();
     }
-
 
     @LuaExpose @LuaPassState
     public static int lightLevel(LuaState s, WorldView<?> self, int x, int y, int z) throws LuaError, LuaUncatchableError {
@@ -187,25 +147,24 @@ public class WorldViewAPI {
     }
 
     @LuaExpose @LuaPassState
-    public static double time(LuaState s, WorldView<?> self, double delta) throws LuaError, LuaUncatchableError {
-        return fetchWorld(s, self).getTime(delta);
+    public static long time(LuaState s, WorldView<?> self) throws LuaError, LuaUncatchableError {
+        return fetchWorld(s, self).getTime();
     }
 
     @LuaExpose @LuaPassState
-    public static double timeOfDay(LuaState s, WorldView<?> self, double delta) throws LuaError, LuaUncatchableError {
-        return fetchWorld(s, self).getTimeOfDay(delta);
+    public static double timeOfDay(LuaState s, WorldView<?> self) throws LuaError, LuaUncatchableError {
+        return fetchWorld(s, self).getTimeOfDay();
     }
 
     @LuaExpose @LuaPassState
-    public static double dayTime(LuaState s, WorldView<?> self, double delta) throws LuaError, LuaUncatchableError {
-        return fetchWorld(s, self).getDayTime(delta);
+    public static double day(LuaState s, WorldView<?> self) throws LuaError, LuaUncatchableError {
+        return fetchWorld(s, self).getDay();
     }
 
     @LuaExpose @LuaPassState
-    public static double day(LuaState s, WorldView<?> self, double delta) throws LuaError, LuaUncatchableError {
-        return fetchWorld(s, self).getDay(delta);
+    public static double rainGradient(LuaState s, WorldView<?> self) throws LuaError, LuaUncatchableError {
+        return rainGradient(s, self, 1.0f);
     }
-
     @LuaExpose @LuaPassState
     public static double rainGradient(LuaState s, WorldView<?> self, float delta) throws LuaError, LuaUncatchableError {
         return fetchWorld(s, self).getRainGradient(delta);
@@ -221,12 +180,8 @@ public class WorldViewAPI {
     }
 
     @LuaExpose @LuaPassState
-    public static boolean isThundering(LuaState s, WorldView<?> self, int x, int y, int z) throws LuaError, LuaUncatchableError {
-        return fetchWorld(s, self).isThundering(x, y, z);
-    }
-    @LuaExpose @LuaPassState
-    public static boolean isThundering(LuaState s, WorldView<?> self, Vector3d pos) throws LuaError, LuaUncatchableError {
-        return isThundering(s, self, (int) pos.x, (int) pos.y, (int) pos.z);
+    public static boolean isThundering(LuaState s, WorldView<?> self) throws LuaError, LuaUncatchableError {
+        return fetchWorld(s, self).isThundering();
     }
 
     @LuaExpose @LuaPassState
@@ -240,10 +195,8 @@ public class WorldViewAPI {
 
     private static @NotNull MinecraftWorld fetchWorld(LuaState state, WorldView<?> worldView) throws LuaError, LuaUncatchableError {
         // Get world
-        MinecraftWorld world = worldView.getWorld();
-
+        MinecraftWorld world = worldView.getValue();
         if (world == null) throw new LuaError("Attempt to use world view after it was revoked!", state.allocationTracker);
-
         return world;
     }
 }

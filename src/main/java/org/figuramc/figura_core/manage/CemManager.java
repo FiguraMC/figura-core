@@ -5,7 +5,7 @@ import org.figuramc.figura_core.avatars.AvatarTemplates;
 import org.figuramc.figura_core.data.importer.v1.ModuleImporter;
 import org.figuramc.figura_core.data.materials.ModuleMaterials;
 import org.figuramc.figura_core.minecraft_interop.FiguraConnectionPoint;
-import org.figuramc.figura_core.minecraft_interop.game_data.entity.EntityKind;
+import org.figuramc.figura_core.minecraft_interop.game_data.MinecraftIdentifier;
 import org.figuramc.figura_core.minecraft_interop.game_data.entity.MinecraftEntity;
 import org.figuramc.figura_core.minecraft_interop.vanilla_parts.VanillaModel;
 import org.figuramc.figura_core.util.exception.ExceptionUtils;
@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class CemManager {
 
-    private static final ConcurrentHashMap<EntityKind, CompletableFuture<@Nullable ModuleMaterials>> IMPORTED_MATERIALS = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<CemKey, CompletableFuture<@Nullable ModuleMaterials>> IMPORTED_MATERIALS = new ConcurrentHashMap<>();
 
     public static void clear() {
         IMPORTED_MATERIALS.clear();
@@ -34,12 +34,12 @@ public class CemManager {
     public static void launchCemTask(MinecraftEntity entity) {
         UUID uuid = entity.getUUID();
         if (AvatarManagers.ENTITIES.isInProgress(uuid)) return;
-        EntityKind kind = entity.getKind();
+        MinecraftIdentifier type = entity.getType();
         // Fetch the materials, or begin a task for them.
-        CompletableFuture<@Nullable ModuleMaterials> materials = IMPORTED_MATERIALS.computeIfAbsent(kind,
-                t -> CompletableFuture.supplyAsync(ExceptionUtils.wrapChecked(() -> {
+        CompletableFuture<@Nullable ModuleMaterials> materials = IMPORTED_MATERIALS.computeIfAbsent(new CemKey(type),
+                cemKey -> CompletableFuture.supplyAsync(ExceptionUtils.wrapChecked(() -> {
                     // Try to load for this type
-                    Path entityDir = FiguraConnectionPoint.PATH_PROVIDER.getCEMFolder().join().resolve(kind.namespace()).resolve(kind.name());
+                    Path entityDir = FiguraConnectionPoint.PATH_PROVIDER.getCEMFolder().join().resolve(cemKey.entityType.namespace()).resolve(cemKey.entityType.name());
                     return Files.exists(entityDir) ? ModuleImporter.importPath(entityDir) : null;
                 }, CompletionException::new)));
         // If the task isn't complete yet, just return out.
@@ -54,5 +54,6 @@ public class CemManager {
         AvatarManagers.ENTITIES.load(uuid, () -> AvatarTemplates.cemAvatar(uuid, model, AvatarModules.loadModules(result)));
     }
 
+    public record CemKey(MinecraftIdentifier entityType) {}
 
 }

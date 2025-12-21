@@ -29,8 +29,11 @@ public final class Event<Args extends CallbackItem, ReturnType extends CallbackI
     // () -> ()
     // Runs at the END of every client tick.
     // This is so when rendering, avatars have the most recent information to go off of (since values were updated during this tick)
-    public static final Event<WorldView<?>, CallbackItem.Unit> CLIENT_TICK = new Event<>("client_tick", CallbackType.World.INSTANCE, CallbackType.Unit.INSTANCE);
-    // Entity -> ()
+    public static final Event<CallbackItem.Unit, CallbackItem.Unit> CLIENT_TICK = new Event<>("client_tick", CallbackType.Unit.INSTANCE, CallbackType.Unit.INSTANCE);
+    // World -> ()
+    // Runs at the END of every world tick.
+    public static final Event<WorldView<?>, CallbackItem.Unit> WORLD_TICK = new Event<>("world_tick", CallbackType.World.INSTANCE, CallbackType.Unit.INSTANCE);
+    // Entity, World -> ()
     // Runs AFTER the entity associated with the avatar is ticked.
     public static final Event<CallbackItem.Tuple2<EntityView<?>, WorldView<?>>, CallbackItem.Unit> ENTITY_TICK = new Event<>("entity_tick", new CallbackType.Tuple2<>(CallbackType.Entity.INSTANCE, CallbackType.World.INSTANCE), CallbackType.Unit.INSTANCE);
 
@@ -45,17 +48,17 @@ public final class Event<Args extends CallbackItem, ReturnType extends CallbackI
     // Earliest thing to run every frame. The passed number is the tick progress, often called "tick delta", the progress 0 to 1 between the previous tick and the current tick.
     // It runs near the beginning of the frame because we want an injection point early enough to modify the camera and other per-frame things without being a frame late.
     public static final Event<
-            CallbackItem.Tuple2<CallbackItem.F32, WorldView<?>>,
+            CallbackItem.F32,
             CallbackItem.Tuple2<CallbackItem.Optional<FuncView<CallbackItem, CallbackItem.Unit>>, CallbackItem>
-    > CLIENT_RENDER = new Event<>("client_render", new CallbackType.Tuple2<>(CallbackType.F32.INSTANCE, CallbackType.World.INSTANCE), RENDER_EVENT_RETURN_TYPE);
-    // (tickDelta: f32) -> (Option<Any -> ()>, Any)
+    > CLIENT_RENDER = new Event<>("client_render", CallbackType.F32.INSTANCE, RENDER_EVENT_RETURN_TYPE);
+    // (tickDelta: f32, World) -> (Option<Any -> ()>, Any)
     // Runs just before the world is rendered, but after things like the camera are set up by client_render.
     // This is useful if you want to READ per-frame values like the targeted entity after they've been set up.
     public static final Event<
             CallbackItem.Tuple2<CallbackItem.F32, WorldView<?>>,
             CallbackItem.Tuple2<CallbackItem.Optional<FuncView<CallbackItem, CallbackItem.Unit>>, CallbackItem>
     > WORLD_RENDER = new Event<>("world_render", new CallbackType.Tuple2<>(CallbackType.F32.INSTANCE, CallbackType.World.INSTANCE), RENDER_EVENT_RETURN_TYPE);
-    // (tickDelta: f32, Entity) -> (Option<Any -> ()>, Any)
+    // (tickDelta: f32, Entity, World) -> (Option<Any -> ()>, Any)
     // Runs during entity rendering, at a point after the entity's vanilla model has been posed, but before its vanilla model been drawn.
     // This is to give the avatar a chance to both read the vanilla model's pose and write to it before it's drawn this frame.
     public static final Event<

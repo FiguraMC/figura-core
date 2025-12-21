@@ -13,6 +13,11 @@ public class LuaStringView extends StringView {
     }
 
     @Override
+    public boolean isRevoked() {
+        return string == null;
+    }
+
+    @Override
     public synchronized void close() {
         string = null;
         super.close();
@@ -20,13 +25,13 @@ public class LuaStringView extends StringView {
 
     @Override
     public synchronized int length() {
-        if (isRevoked) return -1;
+        if (isRevoked()) return -1;
         return string.length();
     }
 
     @Override
     public synchronized String copy() {
-        if (isRevoked) return null;
+        if (isRevoked()) return null;
         return string.toJavaStringNoAlloc();
     }
 }

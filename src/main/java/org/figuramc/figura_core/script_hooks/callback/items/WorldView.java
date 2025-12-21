@@ -5,16 +5,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * A view into a Minecraft Level
+ * A view into a Minecraft World
  */
-public final class WorldView<T extends MinecraftWorld> implements CallbackItem, AutoCloseable {
+public final class WorldView<T extends MinecraftWorld> extends SimpleView<T> implements CallbackItem {
 
-    private @Nullable T world;
+    public WorldView(@NotNull T world) { super(world); }
+    public WorldView(@NotNull T world, AbstractView parent) { super(world, parent); }
 
-    public WorldView(@NotNull T world) { this.world = world; }
-
-    public synchronized @Nullable T getWorld() { return world; }
-
-    @Override
-    public synchronized void close() { world = null; }
 }

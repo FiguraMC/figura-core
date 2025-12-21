@@ -1,7 +1,6 @@
 package org.figuramc.figura_core.minecraft_interop.game_data;
 
 import org.figuramc.figura_core.minecraft_interop.game_data.entity.MinecraftEntity;
-import org.figuramc.figura_core.minecraft_interop.game_data.item.MinecraftItem;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
@@ -23,11 +22,6 @@ public interface GameDataProvider {
      * TODO do we care about old enough versions that UUIDs didn't exist yet? No way right?
      */
     @Nullable MinecraftEntity getEntity(UUID uuid);
-
-    /**
-     * Fetch the item with the given string id (namespace:item_name or just item_name for short)
-     */
-    @Nullable MinecraftItem getItem(String identifier);
 
     // The following functions will be used by the "Client API" to have client information.
     // They should be callable at any point, from any thread!

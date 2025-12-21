@@ -1,5 +1,6 @@
 package org.figuramc.figura_core.minecraft_interop.game_data.item;
 
+import org.figuramc.figura_core.minecraft_interop.game_data.MinecraftIdentifier;
 import org.figuramc.figura_core.minecraft_interop.game_data.block.MinecraftBlockState;
 import org.jetbrains.annotations.Nullable;
 
@@ -7,34 +8,27 @@ import java.util.List;
 
 public interface MinecraftItemStack {
 
-    List<String> getTags();
+    MinecraftIdentifier getIdentifier(); // Identifier for the item type
+
+    List<MinecraftIdentifier> getTags();
     // maybe? List<String> getEnchantments();
 
-    MinecraftItemStack copy();
+//    MinecraftItemStack copy(); // TODO should this exist? What use is there in an ideal world to "copy" an item stack? We also don't know how much memory this might use.
     MinecraftBlockState getBlockState();
 
-    /**
-     * Get the item type which this is a stack of
-     */
-    MinecraftItem getItem();
-
     // TODO: NBT DISCUSSION
-    Object getTag();
-    // ? Object getComponent() instead?
+//    Object getTag();
 
-    String getUseAction();
+    ItemUseAction getUseAction();
     String getName();
-    String getID();
-    String getRarity();
+    ItemRarity getRarity();
     String toStackString();
-    @Nullable
-    String getEquipmentSlot();
+    @Nullable EquipmentSlot getEquipmentSlot();
 
     int getCount();
     int getDamage();
     int getPopTime();
     int getMaxDamage();
-    @Nullable
     int getRepairCost();
     int getUseDuration();
 

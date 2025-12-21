@@ -61,11 +61,7 @@ public class FiguraPartAPI {
     // Get a list-like table of all children
     @LuaExpose @LuaPassState
     public static LuaTable children(LuaRuntime s, FiguraModelPart self) throws LuaError, LuaUncatchableError {
-        LuaTable result = new LuaTable(self.children.size(), 0, s.allocationTracker);
-        int i = 1;
-        for (FiguraModelPart child : self.children)
-            result.rawset(i++, wrap(child, s));
-        return result;
+        return s.listToTable(self.children, (r, child) -> wrap(child, r));
     }
 
     // Create a new text task on this part with the given Text object and return it

@@ -4,24 +4,10 @@ import org.figuramc.figura_core.minecraft_interop.game_data.item.MinecraftItemSt
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class ItemStackView<T extends MinecraftItemStack> implements CallbackItem, AutoCloseable {
-
-    private @Nullable T itemStack;
-
-    public ItemStackView(@NotNull T itemStack) {
-        this.itemStack = itemStack;
-    }
+public final class ItemStackView<T extends MinecraftItemStack> extends SimpleView<T> implements CallbackItem {
 
 
+    public ItemStackView(@NotNull T itemStack) { super(itemStack); }
+    public ItemStackView(@NotNull T itemStack, AbstractView parent) { super(itemStack, parent); }
 
-    // Return the entity, or null if revoked.
-    public synchronized @Nullable T getItemStack() {
-        return itemStack;
-    }
-
-    // Revoke the entity view.
-    @Override
-    public synchronized void close() {
-        itemStack = null;
-    }
 }

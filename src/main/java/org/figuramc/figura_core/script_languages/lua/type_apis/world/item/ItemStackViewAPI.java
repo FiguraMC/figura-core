@@ -5,8 +5,10 @@ import org.figuramc.figura_cobalt.org.squiddev.cobalt.*;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaExpose;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaPassState;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaTypeAPI;
+import org.figuramc.figura_core.minecraft_interop.game_data.MinecraftIdentifier;
 import org.figuramc.figura_core.minecraft_interop.game_data.block.MinecraftBlockState;
 import org.figuramc.figura_core.minecraft_interop.game_data.entity.MinecraftEntity;
+import org.figuramc.figura_core.minecraft_interop.game_data.item.EquipmentSlot;
 import org.figuramc.figura_core.minecraft_interop.game_data.item.MinecraftItemStack;
 import org.figuramc.figura_core.script_hooks.callback.items.BlockStateView;
 import org.figuramc.figura_core.script_hooks.callback.items.EntityView;
@@ -27,33 +29,26 @@ public class ItemStackViewAPI {
     }
 
     @LuaExpose @LuaPassState
-    public static LuaTable getTags(LuaState s, ItemStackView<?> self) throws LuaError, LuaUncatchableError {
-        List<String> tags = fetchItemStack(s, self).getTags();
-        LuaTable table = new LuaTable(tags.size(), 1, s.allocationTracker);
-
-        int i = 1;
-        for (String tag : tags) {
-            table.rawset(i, LuaString.valueOf(s.allocationTracker, tag));
-            i++;
-        }
-        return table;
+    public static LuaTable getTags(LuaRuntime s, ItemStackView<?> self) throws LuaError, LuaUncatchableError {
+        return s.listToTable(
+                fetchItemStack(s, self).getTags(),
+                (r, tag) -> LuaString.valueOf(r.allocationTracker, tag.toString())
+        );
     }
 
-    @LuaExpose @LuaPassState
-    public static ItemStackView<?> copy(LuaRuntime s, ItemStackView<?> self) throws LuaError, LuaUncatchableError {
-        return new ItemStackView<>(fetchItemStack(s, self).copy());
-    }
+//    @LuaExpose @LuaPassState
+//    public static ItemStackView<?> copy(LuaRuntime s, ItemStackView<?> self) throws LuaError, LuaUncatchableError {
+//        return new ItemStackView<>(fetchItemStack(s, self).copy());
+//    }
 
     public static BlockStateView<?> blockState(LuaRuntime s, ItemStackView<?> self) throws LuaError, LuaUncatchableError {
         MinecraftBlockState blockState = fetchItemStack(s, self).getBlockState();
-        if (blockState == null)
-            return null;
-        return new BlockStateView<>(blockState);
+        return blockState == null ? null : new BlockStateView<>(blockState, self);
     }
 
     @LuaExpose @LuaPassState
     public static String useAction(LuaState s, ItemStackView<?> self) throws LuaError, LuaUncatchableError {
-        return fetchItemStack(s, self).getUseAction();
+        return fetchItemStack(s, self).getUseAction().name;
     }
 
     @LuaExpose @LuaPassState
@@ -62,13 +57,13 @@ public class ItemStackViewAPI {
     }
 
     @LuaExpose @LuaPassState
-    public static String getID(LuaState s, ItemStackView<?> self) throws LuaError, LuaUncatchableError {
-        return fetchItemStack(s, self).getID();
+    public static String getIdentifier(LuaState s, ItemStackView<?> self) throws LuaError, LuaUncatchableError {
+        return fetchItemStack(s, self).getIdentifier().toString();
     }
 
     @LuaExpose @LuaPassState
     public static String getRarity(LuaState s, ItemStackView<?> self) throws LuaError, LuaUncatchableError {
-        return fetchItemStack(s, self).getRarity();
+        return fetchItemStack(s, self).getRarity().name;
     }
 
     // TODO: debate on NBT data
@@ -78,8 +73,9 @@ public class ItemStackViewAPI {
     }
 
     @LuaExpose @LuaPassState
-    public static String equipmentSlot(LuaState s, ItemStackView<?> self) throws LuaError, LuaUncatchableError {
-        return fetchItemStack(s, self).getEquipmentSlot();
+    public static @Nullable String equipmentSlot(LuaState s, ItemStackView<?> self) throws LuaError, LuaUncatchableError {
+        EquipmentSlot e = fetchItemStack(s, self).getEquipmentSlot();
+        return e == null ? null : e.name;
     }
 
     @LuaExpose @LuaPassState
@@ -133,7 +129,7 @@ public class ItemStackViewAPI {
     }
 
     @LuaExpose @LuaPassState
-    public static boolean isDamagable(LuaState s, ItemStackView<?> self) throws LuaError, LuaUncatchableError {
+    public static boolean isDamageable(LuaState s, ItemStackView<?> self) throws LuaError, LuaUncatchableError {
         return fetchItemStack(s, self).isDamageable();
     }
 
@@ -155,7 +151,7 @@ public class ItemStackViewAPI {
     // Helper to fetch entity, or error if revoked
     private static @NotNull MinecraftItemStack fetchItemStack(LuaState state, ItemStackView<?> itemStackView) throws LuaError, LuaUncatchableError {
         // Get itemStack
-        @Nullable MinecraftItemStack itemStack = itemStackView.getItemStack();
+        @Nullable MinecraftItemStack itemStack = itemStackView.getValue();
         // If null (aka revoked), error
         if (itemStack == null) throw new LuaError("Attempt to use item stack view after it was revoked!", state.allocationTracker);
         // Return the non-null itemStack
