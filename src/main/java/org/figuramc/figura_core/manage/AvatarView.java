@@ -1,6 +1,7 @@
 package org.figuramc.figura_core.manage;
 
 import org.figuramc.figura_core.avatars.Avatar;
+import org.figuramc.figura_core.script_hooks.timing.CpuTimeAccountant;
 import org.figuramc.figura_core.util.functional.BiThrowingConsumer;
 import org.figuramc.figura_core.util.functional.BiThrowingFunction;
 
@@ -37,6 +38,21 @@ public class AvatarView<Key> {
             }
         }
     }
+
+    // Use the Avatar for a timed operation in the given context.
+    // The time taken is reported to CpuTimeAccountant with the given context.
+    // If the timeout (in nanoseconds) is reached, this operation will error out the Avatar appropriately.
+    public <E1 extends Throwable, E2 extends Throwable> void useTimed(String context, long timeout, BiThrowingConsumer<Avatar<Key>, E1, E2> func) throws E1, E2 {
+        long start = System.nanoTime();
+        try {
+            this.use(func);
+        } finally {
+            // Make sure we always report elapsed time, using finally {}
+            long end = System.nanoTime();
+            CpuTimeAccountant.report(this.avatar, start, end - start, context);
+        }
+    }
+
     // Use the Avatar in an operation and return a result.
     public <R, E1 extends Throwable, E2 extends Throwable> R useFor(BiThrowingFunction<Avatar<Key>, R, E1, E2> func) throws E1, E2 {
         if (avatar.isThreadSafe) {
@@ -45,6 +61,16 @@ public class AvatarView<Key> {
             synchronized (avatar) {
                 return func.apply(avatar);
             }
+        }
+    }
+
+    public <R, E1 extends Throwable, E2 extends Throwable> R useForTimed(String context, long timeout, BiThrowingFunction<Avatar<Key>, R, E1, E2> func) throws E1, E2 {
+        long start = System.nanoTime();
+        try {
+            return this.useFor(func);
+        } finally {
+            long end = System.nanoTime();
+            CpuTimeAccountant.report(this.avatar, start, end - start, context);
         }
     }
 }

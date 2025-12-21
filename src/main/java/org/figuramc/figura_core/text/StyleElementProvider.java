@@ -7,7 +7,7 @@ import org.joml.Vector4f;
 /**
  * Provider that takes in certain inputs (accessible while rendering text) and outputs T.
  * If a style makes use of molang, make sure to update the relevant fields of the Avatar's
- * Molang component before fetching the value from this!
+ * Molang component before fetching the value from this! (TODO: Check if this warning is still relevant?)
  */
 public abstract class StyleElementProvider<T> {
 

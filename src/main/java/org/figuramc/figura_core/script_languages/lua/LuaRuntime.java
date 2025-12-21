@@ -7,6 +7,7 @@ import org.figuramc.figura_cobalt.org.squiddev.cobalt.compiler.LoadState;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.LuaClosure;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.LuaFunction;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.interrupt.InterruptAction;
+import org.figuramc.figura_cobalt.org.squiddev.cobalt.interrupt.InterruptHandler;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.lib.Bit32Lib;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.lib.CoreLibraries;
 import org.figuramc.figura_core.avatars.Avatar;
@@ -16,12 +17,15 @@ import org.figuramc.figura_core.avatars.ScriptRuntimeComponent;
 import org.figuramc.figura_core.avatars.components.*;
 import org.figuramc.figura_core.model.texture.AvatarTexture;
 import org.figuramc.figura_core.script_hooks.callback.CallbackType;
+import org.figuramc.figura_core.script_hooks.callback.ScriptCallback;
 import org.figuramc.figura_core.script_languages.lua.callback_types.LuaCallback;
 import org.figuramc.figura_core.script_languages.lua.callback_types.convert.CallbackItemToLua;
 import org.figuramc.figura_core.script_languages.lua.callback_types.convert.LuaToCallbackItem;
 import org.figuramc.figura_core.script_languages.lua.other_apis.*;
 import org.figuramc.figura_core.script_languages.lua.type_apis.model_parts.FiguraPartAPI;
 import org.figuramc.figura_core.script_languages.lua.type_apis.rendering.TextureAPI;
+import org.figuramc.figura_core.util.data_structures.NullEmptyStack;
+import org.figuramc.figura_core.util.data_structures.Pair;
 import org.figuramc.figura_core.util.exception.FiguraException;
 import org.figuramc.figura_translations.TranslatableItems;
 import org.figuramc.memory_tracker.DelegateAllocationTracker;
@@ -48,6 +52,7 @@ public class LuaRuntime extends LuaState implements ScriptRuntimeComponent<LuaRu
     public final CallbackItemToLua callbackItemToLua;
     // The avatar this runtime is attached to. If an error occurs, this is who to blame.
     public final Avatar<?> avatar; // Can also fetch its allocation tracker if needed!
+    public final LuaRuntimeInterruptHandler interruptHandler;
 
     // Use this for the factory since it throws AvatarError
     public static LuaRuntime create(Avatar<?> avatar, AvatarModules modules) throws AvatarError {
@@ -60,17 +65,44 @@ public class LuaRuntime extends LuaState implements ScriptRuntimeComponent<LuaRu
         }
     }
 
+    // Implementation of interruption handler
+    public static class LuaRuntimeInterruptHandler implements InterruptHandler {
+        // Stack of suspend deadlines.
+        // When we invoke a callback owned by this state with a deadline, we push to this stack.
+        // When the callback exits, we must pop from it.
+        // TODO: Should this be a ThreadLocal<NullEmptyStack<Long>> instead?? Multithreaded avatars?
+        private final NullEmptyStack<Long> suspendDeadlines = new NullEmptyStack<>();
+        private int index = 0;
+        private static final int INTERRUPT_FREQUENCY = 128;
+
+        public void pushDeadline(long deadline) { this.suspendDeadlines.push(deadline); }
+        public void popDeadline() { this.suspendDeadlines.pop(); }
+
+        @Override
+        public InterruptAction interrupted() throws LuaError {
+            if (index++ == INTERRUPT_FREQUENCY) {
+                Long deadline = suspendDeadlines.peek();
+                if (deadline != null && System.nanoTime() > deadline) {
+                    return InterruptAction.SUSPEND;
+                }
+                index = 0;
+            }
+            return InterruptAction.CONTINUE;
+        }
+    }
+
     /**
      * Create a Lua runtime, but do not run any user code yet!
      */
     private LuaRuntime(Avatar<?> avatar, AvatarModules modules) throws LuaError, LuaUncatchableError, AvatarError {
         // Initialize as LuaState
         super(LuaState.builder()
-                .interruptHandler(() -> InterruptAction.CONTINUE)
+                .interruptHandler(new LuaRuntimeInterruptHandler())
                 .allocationTracker(avatar.allocationTracker == null ? null : new DelegateAllocationTracker<>(avatar.allocationTracker, AvatarError.class, LuaUncatchableError::new))
         );
         // Save avatar, so we know who to blame if an error occurs
         this.avatar = avatar;
+        this.interruptHandler = (LuaRuntimeInterruptHandler) super.interruptHandler;
 
         // Fetch other components we depend on
         @Nullable Textures texturesComponent = avatar.getComponent(Textures.TYPE);

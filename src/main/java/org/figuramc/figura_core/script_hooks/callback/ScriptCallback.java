@@ -37,7 +37,14 @@ public interface ScriptCallback<I extends CallbackItem, O extends CallbackItem> 
      * side would have already happened by this point. Any errors that occur inside the call are the fault of the CALLEE.
      * So these issues should be caught there, and they'll have their Avatar errored out.
      * If the callee errored, this function will return null.
+     *
+     * @param caller The callback which is calling this one.
+     *               If no other callback is calling it (it's called from Figura itself) then pass null.
+     * @param timeout The length of the timeout to set, in nanoseconds.
+     *                If the call takes longer than that, then the function should return null early, restoring
+     *                control to the caller.
+     * @param arg The statically typed argument to the callback
      */
-    @Nullable O call(I arg);
+    @Nullable O call(@Nullable ScriptCallback<?,?> caller, long timeout, I arg);
 
 }

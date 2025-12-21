@@ -23,8 +23,9 @@ public final class Avatar<K> {
 
     public final AvatarManager<K> manager;
     public final K key; // The key which accesses this Avatar in its corresponding AvatarSubManager<K>
-    public final @Nullable AllocationTracker<AvatarError> allocationTracker;
+    public final @Nullable AllocationTracker<AvatarError> allocationTracker; // Tracks allocation
     public final List<AvatarModules.RuntimeModule> modules; // Runtime modules.
+    public final ThreadLocal<@Nullable Long> deadline = new ThreadLocal<>(); // The deadline for code execution for this Avatar on this Thread, if any
 
     // Thread safety
     // An avatar's "thread safety" is a self-selected boolean.

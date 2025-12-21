@@ -13,6 +13,7 @@ import org.figuramc.figura_core.script_hooks.callback.items.CallbackItem;
 import org.figuramc.figura_core.script_languages.lua.LuaRuntime;
 import org.figuramc.figura_translations.Translatable;
 import org.figuramc.figura_translations.TranslatableItems;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -54,7 +55,7 @@ public class LuaCallback<I extends CallbackItem, O extends CallbackItem> impleme
     // Remember that the things running here are the fault of the CALLEE.
     // So if an error arises, we don't throw it back to the CALLER, we fault the Avatar who created this incorrect callback.
     @Override
-    public O call(I arg) {
+    public O call(@Nullable ScriptCallback<?, ?> caller, long timeout, I arg) {
         // If we're errored, don't call the function
         if (!state.avatar.isErrored()) {
             try {
