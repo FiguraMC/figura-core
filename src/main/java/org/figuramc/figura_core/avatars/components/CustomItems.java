@@ -6,7 +6,7 @@ import org.figuramc.figura_core.avatars.AvatarError;
 import org.figuramc.figura_core.avatars.AvatarModules;
 import org.figuramc.figura_core.minecraft_interop.FiguraConnectionPoint;
 import org.figuramc.figura_core.minecraft_interop.ItemRenderContext;
-import org.figuramc.figura_core.minecraft_interop.game_data.item.MinecraftItem;
+import org.figuramc.figura_core.minecraft_interop.game_data.MinecraftIdentifier;
 import org.figuramc.figura_core.minecraft_interop.game_data.item.MinecraftItemStack;
 import org.figuramc.figura_core.model.part.parts.CustomItemModelPart;
 import org.figuramc.figura_core.model.part.parts.FiguraModelPart;
@@ -51,9 +51,9 @@ public class CustomItems implements AvatarComponent<CustomItems> {
                     String endsWith = pattern.substring(1);
                     matcher = new Matcher.EndsWithMatcher(endsWith);
                 } else {
-                    MinecraftItem item = FiguraConnectionPoint.GAME_DATA_PROVIDER.getItem(pattern.replace('$', ':'));
-                    if (item == null) continue;
-                    matcher = new Matcher.ExactMatcher(item);
+                    MinecraftIdentifier parsed = MinecraftIdentifier.parse(pattern, '$');
+                    if (parsed == null) continue;
+                    matcher = new Matcher.ExactMatcher(parsed);
                 }
                 // Convert the materials to a CustomItemModelPart
                 RenderingRoot<CustomItemModelPart> mainPart;
@@ -128,29 +128,36 @@ public class CustomItems implements AvatarComponent<CustomItems> {
     private sealed interface Matcher extends Comparable<Matcher> {
         boolean matches(MinecraftItemStack itemStack);
 
-        record ExactMatcher(MinecraftItem item) implements Matcher {
+        record ExactMatcher(MinecraftIdentifier ident) implements Matcher {
             @Override
             public boolean matches(MinecraftItemStack itemStack) {
-                return this.item.equals(itemStack.getItem());
+                return this.ident.equals(itemStack.getIdentifier());
             }
 
             @Override
             public int compareTo(@NotNull CustomItems.Matcher o) {
-                if (o instanceof EndsWithMatcher) return -1;
-                return item.identifier().compareTo(((ExactMatcher) o).item.identifier());
+                return switch (o) {
+                    case EndsWithMatcher endsWithMatcher -> -1; // Exact matchers come first
+                    case ExactMatcher exactMatcher -> ident.compareTo(exactMatcher.ident);
+                };
             }
         }
         record EndsWithMatcher(String ending) implements Matcher {
             @Override
             public boolean matches(MinecraftItemStack itemStack) {
-                return itemStack.getItem().identifier().endsWith(ending);
+                return itemStack.getIdentifier().name().endsWith(ending);
             }
             @Override
             public int compareTo(@NotNull CustomItems.Matcher o) {
-                if (o instanceof ExactMatcher) return 1;
-                int lenCompare = ((EndsWithMatcher) o).ending.length() - this.ending.length();
-                if (lenCompare != 0) return lenCompare;
-                return this.ending.compareTo(((EndsWithMatcher) o).ending);
+                return switch (o) {
+                    case ExactMatcher exactMatcher -> 1; // Exact matchers come first
+                    case EndsWithMatcher endsWithMatcher -> {
+                        // Longer matchers come first
+                        int lenCompare = endsWithMatcher.ending.length() - this.ending.length();
+                        if (lenCompare != 0) yield lenCompare;
+                        yield this.ending.compareTo(endsWithMatcher.ending);
+                    }
+                };
             }
         }
     }

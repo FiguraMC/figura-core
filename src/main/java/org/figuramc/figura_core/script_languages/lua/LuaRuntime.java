@@ -14,15 +14,20 @@ import org.figuramc.figura_core.avatars.AvatarError;
 import org.figuramc.figura_core.avatars.AvatarModules;
 import org.figuramc.figura_core.avatars.ScriptRuntimeComponent;
 import org.figuramc.figura_core.avatars.components.*;
+import org.figuramc.figura_core.minecraft_interop.game_data.MinecraftWorld;
 import org.figuramc.figura_core.model.texture.AvatarTexture;
 import org.figuramc.figura_core.script_hooks.callback.CallbackType;
+import org.figuramc.figura_core.script_hooks.callback.items.WorldView;
 import org.figuramc.figura_core.script_languages.lua.callback_types.LuaCallback;
 import org.figuramc.figura_core.script_languages.lua.callback_types.convert.CallbackItemToLua;
 import org.figuramc.figura_core.script_languages.lua.callback_types.convert.LuaToCallbackItem;
 import org.figuramc.figura_core.script_languages.lua.other_apis.*;
 import org.figuramc.figura_core.script_languages.lua.type_apis.model_parts.FiguraPartAPI;
 import org.figuramc.figura_core.script_languages.lua.type_apis.rendering.TextureAPI;
+import org.figuramc.figura_core.script_languages.lua.type_apis.world.WorldViewAPI;
 import org.figuramc.figura_core.util.exception.FiguraException;
+import org.figuramc.figura_core.util.functional.BiThrowingBiFunction;
+import org.figuramc.figura_core.util.functional.BiThrowingFunction;
 import org.figuramc.figura_translations.TranslatableItems;
 import org.figuramc.memory_tracker.DelegateAllocationTracker;
 import org.jetbrains.annotations.Nullable;
@@ -31,6 +36,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -178,6 +184,21 @@ public class LuaRuntime extends LuaState implements ScriptRuntimeComponent<LuaRu
         } catch (CompileException e) {
             throw new LuaError("Figura failed to compile builtin file \"" + name + ".lua\"", state.allocationTracker);
         }
+    }
+
+    // Helper to turn a java List into a LuaTable
+    public <T, E1 extends Throwable, E2 extends Throwable> LuaTable listToTable(List<T> items, BiThrowingBiFunction<LuaRuntime, T, LuaValue, E1, E2> function) throws LuaUncatchableError, E1, E2 {
+        LuaTable tab = new LuaTable(items.size(), 0, allocationTracker);
+        int i = 1;
+        for (T item : items) tab.rawset(i++, function.apply(this, item));
+        return tab;
+    }
+
+    public LuaTable stringListToTable(List<String> items) throws LuaUncatchableError {
+        LuaTable tab = new LuaTable(items.size(), 0, allocationTracker);
+        int i = 1;
+        for (String item : items) tab.rawset(i++, LuaString.valueOf(allocationTracker, item));
+        return tab;
     }
 
 

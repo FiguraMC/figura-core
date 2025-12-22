@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
  * This is NOT a ListView someone else created which Lua is accessing.
  * That situation is handled by ListViewAPI.
  */
-public class LuaListView<T extends CallbackItem> extends ListView<T> {
+public final class LuaListView<T extends CallbackItem> extends ListView<T> {
 
     private final int length;
     private LuaRuntime owningState;
@@ -27,6 +27,8 @@ public class LuaListView<T extends CallbackItem> extends ListView<T> {
         this.length = backingTable.length();
     }
 
+    @Override public boolean isRevoked() { return owningState != null; }
+
     @Override
     public synchronized void close() {
         owningState = null;
@@ -38,19 +40,6 @@ public class LuaListView<T extends CallbackItem> extends ListView<T> {
     public synchronized int length() {
         if (isRevoked()) return -1;
         return length;
-    }
-
-    @Override
-    public synchronized boolean set(int index, T item) {
-        if (isFrozenOrRevoked()) return false;
-        if (index < 0 || index >= length) throw new UnsupportedOperationException("TODO error on list out of bounds");
-        try {
-            backingTable.rawset(index + 1, elementType.fromItem(owningState.callbackItemToLua, item));
-            return true;
-        } catch (LuaUncatchableError avatarError) {
-            // In case of OOM: it's the fault of the one who provided the view, they should be prepared for set() calls to edit the list if it's not frozen
-            throw new UnsupportedOperationException("TODO Error the LuaListView provider on OOM", avatarError);
-        }
     }
 
     @Override

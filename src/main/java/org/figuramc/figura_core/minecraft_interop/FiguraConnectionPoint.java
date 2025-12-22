@@ -4,6 +4,9 @@ import org.figuramc.figura_core.avatars.AvatarComponent;
 import org.figuramc.figura_core.avatars.AvatarError;
 import org.figuramc.figura_core.avatars.components.*;
 import org.figuramc.figura_core.minecraft_interop.game_data.GameDataProvider;
+import org.figuramc.figura_core.minecraft_interop.game_data.entity.EntityPose;
+import org.figuramc.figura_core.minecraft_interop.game_data.item.ItemRarity;
+import org.figuramc.figura_core.minecraft_interop.game_data.item.ItemUseAction;
 import org.figuramc.figura_core.minecraft_interop.render.PartRenderer;
 import org.figuramc.figura_core.minecraft_interop.texture.MinecraftTextureProvider;
 import org.figuramc.figura_core.model.rendering.RenderingRoot;
@@ -43,10 +46,16 @@ public class FiguraConnectionPoint {
                 LuaRuntime.class
         );
         ReflectionUtils.ensureInitialized(ShaderHookPoint.class);
+        ReflectionUtils.ensureInitialized(EntityPose.class, ItemRarity.class, ItemUseAction.class);
+
+        // TODO let addons construct extra EnumLike instances here
 
         EnumLike.freeze(Event.class);
         EnumLike.freeze(AvatarComponent.Type.class);
         EnumLike.freeze(ShaderHookPoint.class);
+        EnumLike.freeze(EntityPose.class);
+        EnumLike.freeze(ItemRarity.class);
+        EnumLike.freeze(ItemUseAction.class);
         FiguraTranslations.registerTranslationResources("org/figuramc/figura_core/translations/");
     }
 

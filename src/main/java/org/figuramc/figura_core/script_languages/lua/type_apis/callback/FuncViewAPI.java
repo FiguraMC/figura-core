@@ -38,7 +38,7 @@ public class FuncViewAPI {
     public static Varargs __call(LuaState s, Varargs args) throws LuaError, LuaUncatchableError {
         // Fetch callback from userdata
         FuncView<?, ?> funcView = args.first().checkUserdata(s, FuncView.class);
-        ScriptCallback<?,?> callback = funcView.getCallback();
+        ScriptCallback<?,?> callback = funcView.getValue();
         if (callback == null) { return Constants.NONE; } // If it's been revoked, return nothing.
 
         // Fast track. If it's a LuaCallback and it uses the same LuaState, we can go faster with localCall.
