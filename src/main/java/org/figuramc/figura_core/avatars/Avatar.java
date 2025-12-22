@@ -1,11 +1,13 @@
 package org.figuramc.figura_core.avatars;
 
+import org.figuramc.figura_core.avatars.components.ExternalText;
 import org.figuramc.figura_core.manage.AvatarManager;
 import org.figuramc.figura_core.minecraft_interop.FiguraConnectionPoint;
 import org.figuramc.figura_core.minecraft_interop.vanilla_parts.VanillaModel;
 import org.figuramc.figura_core.script_hooks.Event;
 import org.figuramc.figura_core.script_hooks.EventListener;
 import org.figuramc.figura_core.script_hooks.callback.items.CallbackItem;
+import org.figuramc.figura_core.text.FormattedText;
 import org.figuramc.figura_core.util.ListUtils;
 import org.figuramc.figura_core.util.enumlike.IdMap;
 import org.figuramc.figura_core.util.functional.ThrowingRunnable;
@@ -15,10 +17,7 @@ import org.figuramc.memory_tracker.AllocationTracker;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public final class Avatar<K> {
 
@@ -113,6 +112,20 @@ public final class Avatar<K> {
         return (T) components.get(type);
     }
 
+    /**
+     * Get a formatted text by UUID, if one is available.
+     */
+    public @Nullable FormattedText getExposedFormattedText(UUID textID) {
+        // this intentionally doesn't check for errors
+        ExternalText textBin = (ExternalText) components.get(ExternalText.TYPE);
+        FormattedText text = textBin.texts.get(textID);
+        if (text == null) return null;
+        // this is always OK because it can't be referencing the avatar's Molang instance
+        if (!text.isDynamic()) return text;
+        if (isErrored()) return null;
+        return text;
+    }
+
     public <T extends AvatarComponent<T>> @NotNull T assertComponent(AvatarComponent.Type<T> type) {
         return Objects.requireNonNull(getComponent(type), "Asserted component was not present!");
     }
@@ -121,12 +134,12 @@ public final class Avatar<K> {
         // Mark as errored
         this.error = reason;
         // Report the error to user(?) (Todo improve)
-        FiguraConnectionPoint.ERROR_REPORTER.report(reason);
+        FiguraConnectionPoint.CONSOLE_OUTPUT.reportError(reason);
     }
 
     public void unexpectedError(Throwable reason) {
         this.error = reason;
-        FiguraConnectionPoint.ERROR_REPORTER.reportUnexpected(reason);
+        FiguraConnectionPoint.CONSOLE_OUTPUT.reportUnexpectedError(reason);
     }
 
     // We want to use this function only when strictly necessary; for most usages, the fact

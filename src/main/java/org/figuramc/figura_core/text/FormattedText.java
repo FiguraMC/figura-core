@@ -102,6 +102,16 @@ public class FormattedText {
         };
     }
 
-
-
+    // -1 = uncalculated, 0 = calculated as false, 1 = calculated as true
+    private byte isDynamicCached = -1;
+    public boolean isDynamic() {
+        if (isDynamicCached == -1) {
+            isDynamicCached = 0;
+            if (style.isDynamic) isDynamicCached = 1;
+            for (FormattedText child : children) {
+                if (child.isDynamic()) isDynamicCached = 1;
+            }
+        }
+        return isDynamicCached != 0;
+    }
 }

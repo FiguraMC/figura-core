@@ -29,6 +29,7 @@ public class FiguraMetatables {
     public final LuaTable callbackType; // CallbackType
     public final LuaTable stringView; // StringView
     public final LuaTable listView; // ListView
+    public final LuaTable mapView; // MapView
     public final LuaTable funcView; // FuncView
 
     // Minecraft callback items
@@ -73,6 +74,7 @@ public class FiguraMetatables {
         callbackType = API__CallbackType.createMetatable(state);
         stringView = API__StringView.createMetatable(state);
         listView = API__ListView.createMetatable(state);
+        mapView = API__MapView.createMetatable(state);
         funcView = API__FuncView.createMetatable(state);
 
         // Minecraft items

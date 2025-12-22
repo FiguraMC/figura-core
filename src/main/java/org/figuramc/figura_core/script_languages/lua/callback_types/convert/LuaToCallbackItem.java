@@ -8,6 +8,7 @@ import org.figuramc.figura_core.script_hooks.callback.items.*;
 import org.figuramc.figura_core.script_languages.lua.LuaRuntime;
 import org.figuramc.figura_core.script_languages.lua.callback_types.LuaCallback;
 import org.figuramc.figura_core.script_languages.lua.callback_types.LuaListView;
+import org.figuramc.figura_core.script_languages.lua.callback_types.LuaMapView;
 import org.figuramc.figura_core.script_languages.lua.callback_types.LuaStringView;
 
 // TODO make conversion errors translatable / have more context?
@@ -38,7 +39,7 @@ public class LuaToCallbackItem implements CallbackType.ToItemVisitor<LuaValue, L
             case LuaDouble number -> new CallbackItem.F64(number.doubleValue());
             case LuaString string -> new LuaStringView(string);
             case LuaFunction func -> new FuncView<>(new LuaCallback<>(CallbackType.Func.ANY_TO_ANY, state, func));
-            // TODO LuaTable turning into a MapView
+            case LuaTable table -> new LuaMapView<>(state, table, CallbackType.Any.INSTANCE, CallbackType.Any.INSTANCE); // Table is Any -> Any map
             case LuaUserdata userdata -> switch (userdata.userdata()) {
                 case CallbackItem anyItem -> anyItem;
                 default -> new CallbackItem.Opaque(userdata); // Default to opaque object wrapping LuaValue

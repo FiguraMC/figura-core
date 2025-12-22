@@ -7,6 +7,7 @@ import org.figuramc.figura_core.script_hooks.callback.items.*;
 import org.figuramc.figura_core.script_languages.lua.LuaRuntime;
 import org.figuramc.figura_core.script_languages.lua.type_apis.callback.FuncViewAPI;
 import org.figuramc.figura_core.script_languages.lua.type_apis.callback.ListViewAPI;
+import org.figuramc.figura_core.script_languages.lua.type_apis.callback.MapViewAPI;
 import org.figuramc.figura_core.script_languages.lua.type_apis.callback.StringViewAPI;
 import org.figuramc.figura_core.script_languages.lua.type_apis.world.WorldViewAPI;
 import org.figuramc.figura_core.script_languages.lua.type_apis.world.block.BlockStateViewAPI;
@@ -56,10 +57,9 @@ public class CallbackItemToLua implements CallbackType.FromItemVisitor<LuaValue,
             // Generic
             case CallbackItem.Tuple tuple -> ValueFactory.listOf(state.allocationTracker, tuple.<LuaValue, LuaUncatchableError, RuntimeException>map(inner -> CallbackType.Any.INSTANCE.fromItem(this, inner), LuaValue[]::new));
             case ListView<?> listView -> ListViewAPI.wrap(listView, state);
+            case MapView<?, ?> mapView -> MapViewAPI.wrap(mapView, state);
             case FuncView<?, ?> funcView -> FuncViewAPI.wrap(funcView, state);
             case CallbackItem.Optional<?> optional -> optional.value() == null ? Constants.NIL : CallbackType.Any.INSTANCE.fromItem(this, optional.value());
-            // todo :P
-            case MapView<?,?> mapView -> throw new UnsupportedOperationException("TODO: Lua conversion for " + item.getClass());
         };
     }
 

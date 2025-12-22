@@ -38,7 +38,7 @@ public final class LuaListView<T extends CallbackItem> extends ListView<T> {
 
     @Override
     public synchronized int length() {
-        if (isRevoked()) throw new UnsupportedOperationException("TODO error on revoked");
+        if (isRevoked()) return -1;
         return length;
     }
 
@@ -49,6 +49,7 @@ public final class LuaListView<T extends CallbackItem> extends ListView<T> {
         try {
             return elementType.toItem(owningState.luaToCallbackItem, backingTable.rawget(index + 1));
         } catch (LuaError | LuaUncatchableError e) {
+            // In case of conversion error: It's the fault of the one who provided the view, they should only have proper T values in the list
             throw new UnsupportedOperationException("TODO Error the LuaListView provider if incorrect element", e);
         }
     }

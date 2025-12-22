@@ -36,13 +36,13 @@ public class AvatarManager<K> {
                 } catch (CompletionException ex) {
                     // For now, we'll ALWAYS report to chat/console.
                     // Maybe later we'll disable this for multiplayer avatars (whenever we get to that lol)
-                    if (ex.getCause() instanceof FiguraException figuraException) FiguraConnectionPoint.ERROR_REPORTER.report(figuraException);
-                    else FiguraConnectionPoint.ERROR_REPORTER.reportUnexpected(ex.getCause());
+                    if (ex.getCause() instanceof FiguraException figuraException) FiguraConnectionPoint.CONSOLE_OUTPUT.reportError(figuraException);
+                    else FiguraConnectionPoint.CONSOLE_OUTPUT.reportUnexpectedError(ex.getCause());
                     // Cancel the in-progress Avatar, since it errored
                     cancelInProgress(key);
                     continue;
                 } catch (Throwable unexpected) {
-                    FiguraConnectionPoint.ERROR_REPORTER.reportUnexpected(unexpected);
+                    FiguraConnectionPoint.CONSOLE_OUTPUT.reportUnexpectedError(unexpected);
                     cancelInProgress(key);
                     continue;
                 }

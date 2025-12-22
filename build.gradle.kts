@@ -17,10 +17,10 @@ repositories {
 
 dependencies {
     // Other Figura repos which this uses
-    implementation("org.figuramc:memory-tracker:1.0-SNAPSHOT")
-    implementation("org.figuramc:figura-translations:1.0-SNAPSHOT")
-    implementation("org.figuramc:figura-molang:1.0-SNAPSHOT")
-    implementation("org.figuramc:figura-cobalt:1.0-SNAPSHOT")
+    api("org.figuramc:memory-tracker:1.0-SNAPSHOT")
+    api("org.figuramc:figura-translations:1.0-SNAPSHOT")
+    api("org.figuramc:figura-molang:1.0-SNAPSHOT")
+    api("org.figuramc:figura-cobalt:1.0-SNAPSHOT")
 
     // Subproject annotation processor
     compileOnly(project(":figura-comptime"))
@@ -34,6 +34,10 @@ dependencies {
 
 java {
     withSourcesJar()
+
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
 }
 
 publishing {
