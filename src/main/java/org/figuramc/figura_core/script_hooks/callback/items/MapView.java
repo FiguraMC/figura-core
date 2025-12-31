@@ -13,9 +13,14 @@ public abstract non-sealed class MapView<K extends CallbackItem, V extends Callb
         this.valueType = valueType;
     }
 
+    // Returns null if revoked
+    public @Nullable CallbackType<K> keyType() { return keyType; }
+    public @Nullable CallbackType<V> valueType() { return valueType; }
+
     @Override public synchronized void close() { this.keyType = null; this.valueType = null; super.close(); }
 
-    public abstract int size(); // Number of entries in the map, or -1 if revoked
-    public abstract @Nullable V get(K key); // Get value for key, or return null if revoked
+    public abstract /* synchronized */ int size(); // Number of entries in the map, or -1 if revoked
+    public abstract /* synchronized */ @Nullable V get(K key); // Get value for key, or return null if revoked
+    public abstract /* synchronized */ @Nullable Iterable<K> keys(); // Get iterable of keys
 
 }

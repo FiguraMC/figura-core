@@ -24,9 +24,7 @@ public class MapViewAPI {
     }
 
     @LuaExpose public static void revoke(MapView<?, ?> self) { self.close(); }
-    @LuaExpose public static void freeze(MapView<?, ?> self) { self.freeze(); }
     @LuaExpose public static boolean isRevoked(MapView<?, ?> self) { return self.isRevoked(); }
-    @LuaExpose public static boolean isFrozen(MapView<?, ?> self) { return self.isFrozenOrRevoked(); }
     @LuaExpose public static int size(MapView<?, ?> self) { return self.size(); }
 
     @LuaExpose @LuaPassState
@@ -40,9 +38,9 @@ public class MapViewAPI {
             if (view.isRevoked()) return Constants.NIL;
             for (K key : view.keys()) {
                 V value = view.get(key);
-                LuaValue luaKey = view.keyType.fromItem(state.callbackItemToLua, key);
+                LuaValue luaKey = view.keyType().fromItem(state.callbackItemToLua, key);
                 if (luaKey.isNil() || luaKey instanceof LuaDouble d && Double.isNaN(d.doubleValue())) continue;
-                LuaValue luaValue = view.valueType.fromItem(state.callbackItemToLua, value);
+                LuaValue luaValue = view.valueType().fromItem(state.callbackItemToLua, value);
                 res.rawset(luaKey, luaValue);
             }
             return res;

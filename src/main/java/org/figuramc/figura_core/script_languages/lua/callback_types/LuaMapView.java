@@ -54,4 +54,19 @@ public final class LuaMapView<K extends CallbackItem, V extends CallbackItem> ex
             throw new UnsupportedOperationException("TODO Error the LuaMapView provider if incorrect element", err);
         }
     }
+
+    @Override
+    public synchronized @Nullable Iterable<K> keys() {
+        if (isRevoked()) return null;
+        try {
+            List<K> keys = new ArrayList<>();
+            for (LuaValue k = backingTable.next(Constants.NIL).first(); !k.isNil(); k = backingTable.next(k).first()) {
+                keys.add(keyType.toItem(owningState.luaToCallbackItem, k));
+            }
+            return keys;
+        } catch (LuaError | LuaUncatchableError err) {
+            // In case of conversion error; Fault lies with the one who provided the view, they should have provided proper K keys in the map
+            throw new UnsupportedOperationException("TODO Error the LuaMapView provider if incorrect element", err);
+        }
+    }
 }
