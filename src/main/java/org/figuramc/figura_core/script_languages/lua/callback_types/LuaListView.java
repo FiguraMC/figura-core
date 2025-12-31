@@ -27,7 +27,9 @@ public final class LuaListView<T extends CallbackItem> extends ListView<T> {
         this.length = backingTable.length();
     }
 
-    @Override public boolean isRevoked() { return owningState != null; }
+    @Override public boolean isRevoked() {
+        return owningState == null;
+    }
 
     @Override
     public synchronized void close() {
