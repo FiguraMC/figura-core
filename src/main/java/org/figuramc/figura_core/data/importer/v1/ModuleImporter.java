@@ -76,7 +76,7 @@ public class ModuleImporter {
         // Textures
         Path texturesRoot = root.resolve("textures");
         ArrayList<ModuleMaterials.TextureMaterials> textures = new ArrayList<>();
-        IOUtils.recursiveProcess(texturesRoot, p -> readTexture(p, texturesRoot), "png", false, false).stream().map(Pair::b).forEach(textures::add);
+        IOUtils.recursiveProcess(texturesRoot, p -> readTexture(p, texturesRoot), "png", false, false, IOUtils.getIgnoredFiles(root)).stream().map(Pair::b).forEach(textures::add);
 
         // Materials (custom are TODO)
         ArrayList<ModuleMaterials.MaterialMaterials> materials = new ArrayList<>();
@@ -157,7 +157,7 @@ public class ModuleImporter {
         return IOUtils.recursiveProcess(root.resolve(name),
                 figmodel -> readFigModel(root, figmodel, textures, materials),
                 (folder, models) -> new ModuleMaterials.ModelPartMaterials(models),
-                "figmodel", true
+                "figmodel", true, IOUtils.getIgnoredFiles(root)
         );
     }
 
@@ -193,7 +193,7 @@ public class ModuleImporter {
                         pair.a = model;
                     }
                     return null;
-                }, (p, m) -> null);
+                }, (p, m) -> null, IOUtils.getIgnoredFiles(root));
         // Map values and return
         return MapUtils.mapValues(pairs, pair -> new ModuleMaterials.CustomItem(pair.a, pair.b), TreeMap::new);
     }

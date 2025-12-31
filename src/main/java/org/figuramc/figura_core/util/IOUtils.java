@@ -8,13 +8,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.stream.Stream;
+import java.nio.file.*;
+import java.util.*;
 
 public class IOUtils {
 
@@ -30,20 +25,56 @@ public class IOUtils {
         return str.substring(idx + 1);
     }
 
+    ///  Returns a list containing patterns defined in an avatar's `.figignore`
+    public static @Nullable List<PathMatcher> getIgnoredFiles(Path avatarRoot) throws IOException {
+        Path figIgnore = avatarRoot.resolve(".figignore");
+        if (!Files.exists(figIgnore)) {
+            return null;
+        }
+
+        // Ignore file is defined. Let's read it.
+        ArrayList<PathMatcher> patterns = new ArrayList<>();
+
+        for (String line : Files.readAllLines(figIgnore)) {
+            // Skip over comments.
+            if (line.startsWith("#")) continue;
+            // Use the default FileSystem and use glob for our path matcher.
+            // We use ** to make sure it checks everywhere, just like git does.
+            // ** means anything[].
+            // We also add it at the end to make sure directories hide all of their children (like git)
+            patterns.add(FileSystems.getDefault().getPathMatcher("glob:**" + line + "**"));
+        }
+
+        return patterns;
+    }
+
+    ///  Goes through a list fo patterns to determine if a file should be ignored.
+    public static boolean isIgnoredFile(@Nullable List<PathMatcher> patterns, Path path) {
+        // No .figignore
+        if (patterns == null) return false;
+
+        for (PathMatcher pattern : patterns) {
+            if (pattern.matches(path)) return true;
+        }
+
+        // File succeeded all checks.
+        return false;
+    }
     // Recursively process a directory and the files in it.
     // "process" is called on non-directory files, and "gather" is called with the directory and the results.
     // If "process" returns null, the file will be ignored and treated like it's not there.
     // If the root file does not exist, returns null.
     // Ignores "hidden" files (starting with dot, or hidden however your OS defines it)
-    public static <T, E extends Throwable> @Nullable T recursiveProcess(Path root, BiThrowingFunction<Path, @Nullable T, E, IOException> process, BiThrowingBiFunction<Path, LinkedHashMap<String, T>, T, E, IOException> gather) throws E, IOException {
-        return recursiveProcess(root, process, gather, null, false);
+    public static <T, E extends Throwable> @Nullable T recursiveProcess(Path root, BiThrowingFunction<Path, @Nullable T, E, IOException> process, BiThrowingBiFunction<Path, LinkedHashMap<String, T>, T, E, IOException> gather, @Nullable List<PathMatcher> ignoredFiles) throws E, IOException {
+        return recursiveProcess(root, process, gather, null, false, ignoredFiles);
     }
     public static <T, E extends Throwable> @Nullable T recursiveProcess(
             Path root,
             BiThrowingFunction<Path, @Nullable T, E, IOException> process,
             BiThrowingBiFunction<Path, LinkedHashMap<String, T>, T, E, IOException> gather,
             @Nullable String extension, // The file extension we're looking for
-            boolean stripExtension // Whether to strip the file extension from terminal files
+            boolean stripExtension, // Whether to strip the file extension from terminal files
+            @Nullable List<PathMatcher> ignoredFiles
     ) throws E, IOException {
         File f = root.toFile();
         if (f.isDirectory()) {
@@ -55,13 +86,15 @@ public class IOUtils {
                 if (child.isHidden()) continue;
                 String name = child.getName();
                 if (name.startsWith(".")) continue;
+                if (isIgnoredFile(ignoredFiles, child.toPath())) continue;;
+
                 if (extension != null && !child.isDirectory()) {
                     // If the extension is wrong, skip the file
                     if (!extension.equals(IOUtils.getExtension(name))) continue;
                     // If we strip extension, strip it from the name
                     if (stripExtension) name = IOUtils.stripExtension(name, extension);
                 }
-                T result = recursiveProcess(child.toPath(), process, gather, extension, stripExtension);
+                T result = recursiveProcess(child.toPath(), process, gather, extension, stripExtension, ignoredFiles);
                 if (result != null) map.put(name, result);
             }
             return gather.apply(root, map);
@@ -77,7 +110,8 @@ public class IOUtils {
             BiThrowingFunction<Path, @Nullable V, E, IOException> process,
             @Nullable String extension,
             boolean stripExtension,
-            boolean tryProcessingFolders // Whether to try processing folders before recursing into them
+            boolean tryProcessingFolders, // Whether to try processing folders before recursing into them
+            @Nullable List<PathMatcher> ignoredFiles
     ) throws IOException, E {
         if (!Files.exists(root))
             return new DataTree<>();
@@ -89,10 +123,12 @@ public class IOUtils {
             if (Files.isHidden(child)) continue;
             String name = child.getFileName().toString();
             if (name.startsWith(".")) continue;
+            if (isIgnoredFile(ignoredFiles, child)) continue;;
+
             if (Files.isDirectory(child)) {
                 // Child is a directory
                 if (!tryProcessingFolders) {
-                    output.addNode(name, recursiveProcess(child, process, extension, stripExtension, tryProcessingFolders));
+                    output.addNode(name, recursiveProcess(child, process, extension, stripExtension, tryProcessingFolders, ignoredFiles));
                     continue;
                 }
                 // Try processing this folder

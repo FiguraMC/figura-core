@@ -42,7 +42,7 @@ public class ManagerAccess implements AvatarComponent<ManagerAccess> {
                 } catch (ModuleImportingException error) {
                     return new AvatarListEntry.ImportError(path, error);
                 }
-            }, null, false, true);
+            }, null, false, true, null);
         } catch (Throwable unexpectedError) {
             return null;
         }

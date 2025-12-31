@@ -65,7 +65,7 @@ public abstract class ScriptingLanguage {
             if (!Files.exists(mainLua))
                 throw new ModuleImportingException(NO_MAIN, TranslatableItems.Items0.INSTANCE);
             // Fetch all files!
-            return IOUtils.recursiveProcess(scriptsRoot, Files::readAllBytes, "lua", true, false);
+            return IOUtils.recursiveProcess(scriptsRoot, Files::readAllBytes, "lua", true, false, IOUtils.getIgnoredFiles(avatarRoot));
         }
     };
 
