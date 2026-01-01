@@ -11,6 +11,7 @@ import org.figuramc.figura_core.util.IOUtils;
 import org.figuramc.figura_core.util.data_structures.DataTree;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -30,17 +31,17 @@ public class ManagerAccess implements AvatarComponent<ManagerAccess> {
      * or if an error otherwise occurs while accessing the avatars folder.
      */
     public @Nullable DataTree<String, AvatarListEntry> getAvatars() {
-        Path avatars = FiguraConnectionPoint.PATH_PROVIDER.getAvatarsFolder().getNow(null);
+        File avatars = FiguraConnectionPoint.PATH_PROVIDER.getAvatarsFolder().getNow(null);
         if (avatars == null) return null;
         try {
-            return IOUtils.recursiveProcess(avatars, path -> {
+            return IOUtils.recursiveProcessToDataTree(avatars, file -> {
                 try {
-                    if (!Files.isDirectory(path)) return null;
-                    ModuleMaterials.MetadataMaterials materials = ModuleImporter.checkMetadata(path);
+                    if (!file.isDirectory()) return null;
+                    ModuleMaterials.MetadataMaterials materials = ModuleImporter.checkMetadata(file);
                     if (materials == null) return null;
-                    return new AvatarListEntry.ValidEntry(path, materials);
+                    return new AvatarListEntry.ValidEntry(file, materials);
                 } catch (ModuleImportingException error) {
-                    return new AvatarListEntry.ImportError(path, error);
+                    return new AvatarListEntry.ImportError(file, error);
                 }
             }, null, false, true, null);
         } catch (Throwable unexpectedError) {
@@ -52,9 +53,9 @@ public class ManagerAccess implements AvatarComponent<ManagerAccess> {
      * Outputs for getAvatars() function
      */
     public sealed interface AvatarListEntry {
-        Path path();
-        record ImportError(Path path, ModuleImportingException error) implements AvatarListEntry {}
-        record ValidEntry(Path path, ModuleMaterials.MetadataMaterials metadata) implements AvatarListEntry {}
+        File file();
+        record ImportError(File file, ModuleImportingException error) implements AvatarListEntry {}
+        record ValidEntry(File file, ModuleMaterials.MetadataMaterials metadata) implements AvatarListEntry {}
     }
 
 }

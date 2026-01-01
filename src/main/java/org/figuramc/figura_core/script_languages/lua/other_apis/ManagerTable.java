@@ -18,6 +18,7 @@ import org.figuramc.figura_core.script_languages.lua.type_apis.manager.AvatarLis
 import org.figuramc.figura_core.util.data_structures.DataTree;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.util.UUID;
 
@@ -44,10 +45,10 @@ public class ManagerTable {
             if (entry == null) {
                 AvatarManagers.ENTITIES.unload(uuid);
             } else {
-                Path path = entry.path();
+                File file = entry.file();
                 VanillaModel vanillaModel = FiguraConnectionPoint.GAME_DATA_PROVIDER.getEntity(uuid).getModel();
                 AvatarManagers.ENTITIES.load(uuid, () -> {
-                    ModuleMaterials materials = ModuleImporter.importPath(path);
+                    ModuleMaterials materials = ModuleImporter.importFromFile(file);
                     AvatarModules modules = AvatarModules.loadModules(materials);
                     return AvatarTemplates.localPlayer(modules, vanillaModel);
                 });

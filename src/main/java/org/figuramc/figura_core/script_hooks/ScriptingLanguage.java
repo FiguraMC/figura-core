@@ -8,12 +8,15 @@ import org.figuramc.figura_core.util.IOUtils;
 import org.figuramc.figura_core.util.data_structures.DataTree;
 import org.figuramc.figura_translations.Translatable;
 import org.figuramc.figura_translations.TranslatableItems;
+import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 
 /**
  * A place where we gather all scripting languages, and relevant operations for
@@ -49,7 +52,7 @@ public abstract class ScriptingLanguage {
      * Traverse the avatar folder during the import phase,
      * and output a mapping from String -> byte[] of script files.
      */
-    public abstract DataTree<String, byte[]> findScripts(Path avatarRoot) throws ModuleImportingException, IOException;
+    public abstract DataTree<String, byte[]> findScripts(File avatarRoot, @Nullable Predicate<File> shouldIgnore) throws ModuleImportingException, IOException;
 
     // ----- Builtin ScriptingLanguages -----
 
@@ -58,14 +61,14 @@ public abstract class ScriptingLanguage {
                 = Translatable.create("figura_core.error.script.lua.no_main");
 
         @Override
-        public DataTree<String, byte[]> findScripts(Path avatarRoot) throws ModuleImportingException, IOException {
-            Path scriptsRoot = avatarRoot.resolve("scripts");
+        public DataTree<String, byte[]> findScripts(File avatarRoot, @Nullable Predicate<File> shouldIgnore) throws ModuleImportingException, IOException {
+            File scriptsRoot = new File(avatarRoot, "scripts");
             // Ensure scripts/main.lua exists
-            Path mainLua = scriptsRoot.resolve("main.lua");
-            if (!Files.exists(mainLua))
+            File mainLua = new File(scriptsRoot, "main.lua");
+            if (!mainLua.exists())
                 throw new ModuleImportingException(NO_MAIN, TranslatableItems.Items0.INSTANCE);
             // Fetch all files!
-            return IOUtils.recursiveProcess(scriptsRoot, Files::readAllBytes, "lua", true, false, IOUtils.getIgnoredFiles(avatarRoot));
+            return IOUtils.recursiveProcessToDataTree(scriptsRoot, f -> Files.readAllBytes(f.toPath()), "lua", true, false, shouldIgnore);
         }
     };
 

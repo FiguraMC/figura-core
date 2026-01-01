@@ -2,6 +2,7 @@ package org.figuramc.figura_core.manage;
 
 import org.figuramc.figura_core.avatars.AvatarModules;
 import org.figuramc.figura_core.avatars.AvatarTemplates;
+import org.figuramc.figura_core.data.importer.ModuleImportingException;
 import org.figuramc.figura_core.data.importer.v1.ModuleImporter;
 import org.figuramc.figura_core.data.materials.ModuleMaterials;
 import org.figuramc.figura_core.minecraft_interop.FiguraConnectionPoint;
@@ -9,14 +10,17 @@ import org.figuramc.figura_core.minecraft_interop.game_data.MinecraftIdentifier;
 import org.figuramc.figura_core.minecraft_interop.game_data.entity.MinecraftEntity;
 import org.figuramc.figura_core.minecraft_interop.vanilla_parts.VanillaModel;
 import org.figuramc.figura_core.util.exception.ExceptionUtils;
+import org.figuramc.figura_core.util.exception.FiguraException;
 import org.jetbrains.annotations.Nullable;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 
 public class CemManager {
 
@@ -37,15 +41,27 @@ public class CemManager {
         MinecraftIdentifier type = entity.getType();
         // Fetch the materials, or begin a task for them.
         CompletableFuture<@Nullable ModuleMaterials> materials = IMPORTED_MATERIALS.computeIfAbsent(new CemKey(type),
-                cemKey -> CompletableFuture.supplyAsync(ExceptionUtils.wrapChecked(() -> {
+                cemKey -> CompletableFuture.supplyAsync(() -> {
                     // Try to load for this type
-                    Path entityDir = FiguraConnectionPoint.PATH_PROVIDER.getCEMFolder().join().resolve(cemKey.entityType.namespace()).resolve(cemKey.entityType.name());
-                    return Files.exists(entityDir) ? ModuleImporter.importPath(entityDir) : null;
-                }, CompletionException::new)));
-        // If the task isn't complete yet, just return out.
+                    @Nullable File cemDir = FiguraConnectionPoint.PATH_PROVIDER.getCEMFolder().exceptionally(x -> null).join();
+                    if (cemDir == null) return null; // If no CEM dir, return null right away
+                    File namespaceDir = new File(cemDir, cemKey.entityType.namespace());
+                    File entityDir = new File(namespaceDir, cemKey.entityType.name());
+                    if (!entityDir.exists()) return null;
+                    try {
+                        return ModuleImporter.importFromFile(entityDir);
+                    } catch (ModuleImportingException importingError) {
+                        // For now, we'll ALWAYS report to chat/console.
+                        // Maybe later we'll disable this for multiplayer avatars (whenever we get to that lol)
+                        FiguraConnectionPoint.CONSOLE_OUTPUT.reportError(importingError);
+                    } catch (Throwable otherError) {
+                        FiguraConnectionPoint.CONSOLE_OUTPUT.reportUnexpectedError(otherError);
+                    }
+                    return null; // Don't try again next time
+                }));
+        // If the material-fetching task isn't complete yet, just return out.
         if (!materials.isDone()) return;
-
-        // Fetch the result. If this doesn't throw, then it completed without error.
+        // This should theoretically never throw, since all errors are caught in the earlier task
         @Nullable ModuleMaterials result = materials.getNow(null);
         // If the result is null, this entity has no CEM, so just do nothing and return.
         if (result == null) return;
