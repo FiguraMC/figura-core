@@ -11,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Manages a set of avatars, indexed by the given key.
@@ -31,9 +32,9 @@ public class AvatarManager<K> {
                 // Fetch the result of the future:
                 Avatar<K> result;
                 try {
-                    // If the following getNow() call doesn't throw, then the async task finished without throwing
-                    result = future.getNow(null);
-                } catch (CompletionException ex) {
+                    // If the following get() call doesn't throw, then the async task finished without throwing
+                    result = future.get();
+                } catch (ExecutionException ex) {
                     // For now, we'll ALWAYS report to chat/console.
                     // Maybe later we'll disable this for multiplayer avatars (whenever we get to that lol)
                     if (ex.getCause() instanceof FiguraException figuraException) FiguraConnectionPoint.CONSOLE_OUTPUT.reportError(figuraException);

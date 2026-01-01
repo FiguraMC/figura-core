@@ -11,6 +11,7 @@ import org.figuramc.figura_translations.TranslatableItems;
 import org.figuramc.memory_tracker.AllocationTracker;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
@@ -30,15 +31,15 @@ public record AvatarModules(List<LoadTimeModule> loadTimeModules, Collection<Ava
     }
 
     private static int loadModule(ArrayList<LoadTimeModule> loadTimeModules, Set<AvatarComponent.Type<? extends ScriptRuntimeComponent<?>>> scriptRuntimeTypes, ModuleMaterials materials, Map<String, Integer> alreadyImported) throws ModuleImportingException, IOException {
-        Path commonModules = FiguraConnectionPoint.PATH_PROVIDER.getCommonModulesFolder().join();
+        File commonModules = FiguraConnectionPoint.PATH_PROVIDER.getCommonModulesFolder().join();
         LinkedHashMap<String, Integer> dependencyIndices = new LinkedHashMap<>();
         for (var dep : materials.metadata().dependencies().entrySet()) {
             String givenName = dep.getKey();
             String dependency = dep.getValue();
             // Get dependency if not already imported
             if (!alreadyImported.containsKey(dependency)) {
-                Path dependencyPath = commonModules.resolve(dependency);
-                ModuleMaterials dependencyMats = ModuleImporter.importPath(dependencyPath);
+                File dependencyFile = new File(commonModules, dependency);
+                ModuleMaterials dependencyMats = ModuleImporter.importFromFile(dependencyFile);
                 int index = loadModule(loadTimeModules, scriptRuntimeTypes, dependencyMats, alreadyImported);
                 alreadyImported.put(dependency, index);
             }

@@ -19,6 +19,7 @@ import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.joml.Vector4i;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.util.*;
 
@@ -32,10 +33,10 @@ public class FigModelImporter {
     private static final Translatable<TranslatableItems.Items1<String>> INVALID_FIGMODEL
             = Translatable.create("figura_core.error.importing.invalid_figmodel", String.class);
 
-    public static ModuleMaterials.FigmodelMaterials parseFigModel(String fileName, String prefix, JsonObject figmodel, ArrayList<ModuleMaterials.TextureMaterials> textures, ArrayList<ModuleMaterials.MaterialMaterials> materials) throws ModuleImportingException {
+    public static ModuleMaterials.FigmodelMaterials parseFigModel(File rootFile, File modelFile, String fileName, String prefix, JsonObject figmodel, ArrayList<ModuleMaterials.TextureMaterials> textures, ArrayList<ModuleMaterials.MaterialMaterials> materials) throws ModuleImportingException {
         try {
             // Process textures and generate a model-local mapping
-            ModelLocalTexture[] textureMapping = processTextures(JsonUtils.getObjectOrEmpty(figmodel, "textures", () -> new RuntimeException("textures must be object")), textures);
+            ModelLocalTexture[] textureMapping = processTextures(rootFile, modelFile, JsonUtils.getObjectOrEmpty(figmodel, "textures", () -> new RuntimeException("textures must be object")), textures);
             // TODO: custom shaders/materials included in the figmodel
             // Process animations
             LinkedHashMap<String, ModuleMaterials.AnimationMaterials> anims = processAnimations(JsonUtils.getObjectOrEmpty(figmodel, "animations", () -> new RuntimeException("animations must be object")));
@@ -53,10 +54,10 @@ public class FigModelImporter {
     }
 
     // Parse a custom item model
-    public static ModuleMaterials.CustomItemModel parseCustomItemModel(String fileName, String prefix, JsonObject figmodel, ArrayList<ModuleMaterials.TextureMaterials> textures, ArrayList<ModuleMaterials.MaterialMaterials> materials) throws ModuleImportingException {
+    public static ModuleMaterials.CustomItemModel parseCustomItemModel(File rootFile, File modelFile, String fileName, String prefix, JsonObject figmodel, ArrayList<ModuleMaterials.TextureMaterials> textures, ArrayList<ModuleMaterials.MaterialMaterials> materials) throws ModuleImportingException {
         try {
             // First parse the regular model:
-            ModuleMaterials.FigmodelMaterials mats = parseFigModel(fileName, prefix, figmodel, textures, materials);
+            ModuleMaterials.FigmodelMaterials mats = parseFigModel(rootFile, modelFile, fileName, prefix, figmodel, textures, materials);
             // Also parse the transforms map
             LinkedHashMap<String, ModuleMaterials.ItemPartTransform> transforms = new LinkedHashMap<>();
             if (figmodel.has("item_display_data")) {
@@ -80,7 +81,7 @@ public class FigModelImporter {
     }
 
     // Return info about textures specific to this model
-    private static ModelLocalTexture[] processTextures(JsonObject modelTextures, List<ModuleMaterials.TextureMaterials> allTextures) {
+    private static ModelLocalTexture[] processTextures(File rootFile, File modelFile, JsonObject modelTextures, List<ModuleMaterials.TextureMaterials> allTextures) {
         ModelLocalTexture[] mapping = new ModelLocalTexture[modelTextures.size()];
         int i = -1;
         for (Map.Entry<String, JsonElement> entry : modelTextures.entrySet()) {
@@ -110,17 +111,20 @@ public class FigModelImporter {
             // Second, check if it's a linked texture:
             @Nullable String texPath = JsonUtils.getStringOrDefault(texture, "path", null);
             if (texPath != null && !texPath.isBlank()) {
-                Path path = Path.of(texPath);
-                // Check if this path points to any existing texture:
-                int idx = ListUtils.findIndex(allTextures, tex -> tex instanceof ModuleMaterials.TextureMaterials.OwnedTexture owned && path.equals(owned.path()));
-                // If it is, defer to that texture.
+                Path someKindOfPath = Path.of(texPath); // Path might be relative to the figmodel file's parent folder, or might be absolute
+                Path resolvedPath = modelFile.toPath().getParent().resolve(someKindOfPath); // This should have the resolved path
+
+                // Check if this path points to any existing texture
+                String location = IOUtils.stringRelativeTo(resolvedPath.toFile(), rootFile);
+                int idx = ListUtils.findIndex(allTextures, tex -> tex instanceof ModuleMaterials.TextureMaterials.OwnedTexture owned && location.equals(owned.location()));
+                // If it does, defer to that texture.
                 if (idx != -1) {
                     mapping[i] = new ModelLocalTexture(name, idx, uvSize, emissiveFriendIndex, normalFriendIndex, specularFriendIndex, new Mutable<>());
                     continue;
                 }
             }
 
-            // Finally, it was neither, so create a new owned texture.
+            // Finally, it was neither vanilla nor linked, so create a new owned texture.
             byte[] data = Base64.getDecoder().decode(texture.get("png_bytes_base64").getAsString());
             ModuleMaterials.TextureMaterials newTexture = new ModuleMaterials.TextureMaterials.OwnedTexture(null, null, data, noAtlas);
 

@@ -12,7 +12,6 @@ import org.joml.Vector4i;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
-import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.TreeMap;
@@ -65,7 +64,7 @@ public record ModuleMaterials(
     // TEXTURES
     public sealed interface TextureMaterials {
         @Nullable String name(); // Only use if this is a standalone texture!
-        record OwnedTexture(@Nullable String name, @Nullable @NoSerialize Path path, byte[] data, boolean noAtlas) implements TextureMaterials {}
+        record OwnedTexture(@Nullable String name, @Nullable @NoSerialize String location, byte[] data, boolean noAtlas) implements TextureMaterials {}
         record VanillaTexture(String resourceLocation) implements TextureMaterials { @Override public String name() { return null; }}
     }
 

@@ -4,6 +4,7 @@ import org.figuramc.figura_core.util.exception.FiguraException;
 import org.figuramc.figura_translations.Translatable;
 import org.figuramc.figura_translations.TranslatableItems;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 
@@ -17,13 +18,13 @@ public interface PathProvider {
      * If none is known, prompt the user for it asynchronously.
      * If the user declines the prompt or something like that, complete the future with a CouldNotLocateFolderError.
      */
-    CompletableFuture<Path> locateFiguraFolder();
+    CompletableFuture<File> locateFiguraFolder();
 
     // Helpers to get sub-folders without having magic strings everywhere
-    default CompletableFuture<Path> getAvatarsFolder() { return locateFiguraFolder().thenApply(p -> p.resolve("avatars")); }
-    default CompletableFuture<Path> getCEMFolder() { return locateFiguraFolder().thenApply(p -> p.resolve("cem")); }
-    default CompletableFuture<Path> getCommonModulesFolder() { return locateFiguraFolder().thenApply(p -> p.resolve("common_modules")); }
-    default CompletableFuture<Path> getGuisFolder() { return locateFiguraFolder().thenApply(p -> p.resolve("guis")); }
+    default CompletableFuture<File> getAvatarsFolder() { return locateFiguraFolder().thenApply(f -> new File(f, "avatars")); }
+    default CompletableFuture<File> getCEMFolder() { return locateFiguraFolder().thenApply(f -> new File(f, "cem")); }
+    default CompletableFuture<File> getCommonModulesFolder() { return locateFiguraFolder().thenApply(f -> new File(f, "common_modules")); }
+    default CompletableFuture<File> getGuisFolder() { return locateFiguraFolder().thenApply(f -> new File(f, "guis")); }
 
     // Exception for the CompletableFuture to finish with if necessary
     class CouldNotLocateFolderError extends FiguraException {
