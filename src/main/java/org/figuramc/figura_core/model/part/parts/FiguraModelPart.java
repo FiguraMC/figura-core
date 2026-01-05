@@ -176,7 +176,7 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
         }
 
         // Get vertices
-        PartVertexData.Builder verticesBuilder = PartVertexData.builder(); // TODO fix this and make it use unboxed floats
+        PartVertexData.Builder verticesBuilder = PartVertexData.builder();
         for (ModuleMaterials.CubeData cubeData : materials.cubes) addVertices(verticesBuilder, cubeData);
         for (ModuleMaterials.MeshData meshData : materials.meshes) addVertices(verticesBuilder, meshData);
         vertices = verticesBuilder.build(allocationTracker);

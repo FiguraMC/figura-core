@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
 
 /**
- * TODO completely rework error reporting to use fancy FWL text thingies!
+ * Various forms of output to the console, to be implemented by the client.
  */
 public interface ConsoleOutput {
     /**
