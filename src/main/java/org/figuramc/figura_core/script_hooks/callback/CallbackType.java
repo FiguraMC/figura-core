@@ -1,12 +1,7 @@
 package org.figuramc.figura_core.script_hooks.callback;
 
 import org.figuramc.figura_core.script_hooks.callback.items.*;
-import org.figuramc.figura_core.util.functional.BiThrowingConsumer;
 import org.figuramc.memory_tracker.AllocationTracker;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.IntFunction;
 
 // Types that can be sent through callbacks; statically checked and converted.
 // Correlated through the generic to the corresponding CallbackItem.
@@ -111,10 +106,11 @@ public sealed interface CallbackType<T extends CallbackItem> {
         @Override public <Outside, E1 extends Throwable, E2 extends Throwable> MapView<K, V> toItem(ToItemVisitor<Outside, E1, E2> visitor, Outside outside) throws E1, E2 { return visitor.visit(this, outside); }
         @Override public <Outside, E1 extends Throwable, E2 extends Throwable> Outside fromItem(FromItemVisitor<Outside, E1, E2> visitor, MapView<K, V> item) throws E1, E2 { return visitor.visit(this, item); }
     }
-    record Func<I extends CallbackItem, O extends CallbackItem>(CallbackType<I> param, CallbackType<O> returnType) implements CallbackType<FuncView<I, O>> {
+    // SPECIAL CASE: Items of type Func cannot be passed between avatars!
+    record Func<I extends CallbackItem, O extends CallbackItem>(CallbackType<I> param, CallbackType<O> returnType) implements CallbackType<CallbackView<I, O>> {
         public static Func<CallbackItem, CallbackItem> ANY_TO_ANY = new Func<>(Any.INSTANCE, Any.INSTANCE);
-        @Override public <Outside, E1 extends Throwable, E2 extends Throwable> FuncView<I, O> toItem(ToItemVisitor<Outside, E1, E2> visitor, Outside outside) throws E1, E2 { return visitor.visit(this, outside); }
-        @Override public <Outside, E1 extends Throwable, E2 extends Throwable> Outside fromItem(FromItemVisitor<Outside, E1, E2> visitor, FuncView<I, O> item) throws E1, E2 { return visitor.visit(this, item); }
+        @Override public <Outside, E1 extends Throwable, E2 extends Throwable> CallbackView<I, O> toItem(ToItemVisitor<Outside, E1, E2> visitor, Outside outside) throws E1, E2 { return visitor.visit(this, outside); }
+        @Override public <Outside, E1 extends Throwable, E2 extends Throwable> Outside fromItem(FromItemVisitor<Outside, E1, E2> visitor, CallbackView<I, O> item) throws E1, E2 { return visitor.visit(this, item); }
     }
     record Optional<Item extends CallbackItem>(CallbackType<Item> inner) implements CallbackType<CallbackItem.Optional<Item>> {
         @Override public <Outside, E1 extends Throwable, E2 extends Throwable> CallbackItem.Optional<Item> toItem(ToItemVisitor<Outside, E1, E2> visitor, Outside outside) throws E1, E2 { return visitor.visit(this, outside); }
@@ -193,7 +189,7 @@ public sealed interface CallbackType<T extends CallbackItem> {
         // Generic
         <T extends CallbackItem> ListView<T> visit(List<T> list, Outside outside) throws E1, E2;
         <K extends CallbackItem, V extends CallbackItem> MapView<K, V> visit(Map<K, V> map, Outside outside) throws E1, E2;
-        <I extends CallbackItem, O extends CallbackItem> FuncView<I, O> visit(Func<I, O> func, Outside outside) throws E1, E2;
+        <I extends CallbackItem, O extends CallbackItem> CallbackView<I, O> visit(Func<I, O> func, Outside outside) throws E1, E2;
         <T extends CallbackItem> CallbackItem.Optional<T> visit(Optional<T> optional, Outside outside) throws E1, E2;
         // Tuples
         <A extends CallbackItem, B extends CallbackItem> CallbackItem.Tuple2<A, B> visit(Tuple2<A, B> tuple, Outside outside) throws E1, E2;
@@ -225,7 +221,7 @@ public sealed interface CallbackType<T extends CallbackItem> {
         // Generic
         <T extends CallbackItem> Outside visit(List<T> type, ListView<T> item) throws E1, E2;
         <K extends CallbackItem, V extends CallbackItem> Outside visit(Map<K, V> type, MapView<K, V> item) throws E1, E2;
-        <I extends CallbackItem, O extends CallbackItem> Outside visit(Func<I, O> type, FuncView<I, O> item) throws E1, E2;
+        <I extends CallbackItem, O extends CallbackItem> Outside visit(Func<I, O> type, CallbackView<I, O> item) throws E1, E2;
         <T extends CallbackItem> Outside visit(Optional<T> type, CallbackItem.Optional<T> item) throws E1, E2;
         // Tuples
         <TupleItem extends CallbackItem.Tuple> Outside visitTuple(Tuple<TupleItem> type, TupleItem item) throws E1, E2; // Allow a default impl for any tuple
@@ -262,7 +258,7 @@ public sealed interface CallbackType<T extends CallbackItem> {
 
         @Override public <T extends CallbackItem> String visit(List<T> type, ListView<T> ___) { return "[" + type.element.fromItem(this, null) + "]"; }
         @Override public <K extends CallbackItem, V extends CallbackItem> String visit(Map<K, V> type, MapView<K, V> ___) { return "{ " + type.key.fromItem(this, null) + " -> " + type.value.fromItem(this, null) + " }"; }
-        @Override public <I extends CallbackItem, O extends CallbackItem> String visit(Func<I, O> type, FuncView<I, O> ___) { return "(" + type.param.fromItem(this, null) + " -> " + type.returnType.fromItem(this, null) + ")"; }
+        @Override public <I extends CallbackItem, O extends CallbackItem> String visit(Func<I, O> type, CallbackView<I, O> ___) { return "(" + type.param.fromItem(this, null) + " -> " + type.returnType.fromItem(this, null) + ")"; }
         @Override public <T extends CallbackItem> String visit(Optional<T> type, CallbackItem.Optional<T> ___) { return type.inner.fromItem(this, null) + "?"; }
 
         @Override
@@ -298,7 +294,7 @@ public sealed interface CallbackType<T extends CallbackItem> {
         @Override public <K extends CallbackItem, V extends CallbackItem> Integer visit(Map<K, V> type, MapView<K, V> ___) {
             return AllocationTracker.OBJECT_SIZE + AllocationTracker.REFERENCE_SIZE * 2 + type.key.fromItem(this, null) + type.value.fromItem(this, null);
         }
-        @Override public <I extends CallbackItem, O extends CallbackItem> Integer visit(Func<I, O> type, FuncView<I, O> ___) {
+        @Override public <I extends CallbackItem, O extends CallbackItem> Integer visit(Func<I, O> type, CallbackView<I, O> ___) {
             return AllocationTracker.OBJECT_SIZE + AllocationTracker.REFERENCE_SIZE * 2 + type.param.fromItem(this, null) + type.returnType.fromItem(this, null);
         }
         @Override public <T extends CallbackItem> Integer visit(Optional<T> type, CallbackItem.Optional<T> ___) {
@@ -313,10 +309,4 @@ public sealed interface CallbackType<T extends CallbackItem> {
             return size;
         }
     }
-
-    // Helper aliases? idk
-    CallbackType<CallbackItem.Tuple2<CallbackItem.F32, CallbackItem.F32>> VEC2 = new Tuple2<>(F32.INSTANCE, F32.INSTANCE);
-    CallbackType<CallbackItem.Tuple3<CallbackItem.F32, CallbackItem.F32, CallbackItem.F32>> VEC3 = new Tuple3<>(F32.INSTANCE, F32.INSTANCE, F32.INSTANCE);
-    CallbackType<CallbackItem.Tuple4<CallbackItem.F32, CallbackItem.F32, CallbackItem.F32, CallbackItem.F32>> VEC4 = new Tuple4<>(F32.INSTANCE, F32.INSTANCE, F32.INSTANCE, F32.INSTANCE);
-
 }

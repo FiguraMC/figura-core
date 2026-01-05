@@ -1,6 +1,7 @@
 package org.figuramc.figura_core.model.rendering;
 
-import org.figuramc.figura_core.avatars.AvatarError;
+import org.figuramc.figura_core.avatars.errors.AvatarError;
+import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_core.minecraft_interop.FiguraConnectionPoint;
 import org.figuramc.figura_core.minecraft_interop.render.PartRenderer;
 import org.figuramc.figura_core.model.part.parts.FiguraModelPart;
@@ -40,9 +41,9 @@ public class RenderingRoot<T extends FiguraModelPart> {
     private @Nullable PartRenderer renderer;
 
     // Alloc tracker (saved)
-    private final @Nullable AllocationTracker<AvatarError> allocationTracker;
+    private final @Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker;
 
-    public RenderingRoot(T rootPart, @Nullable AllocationTracker<AvatarError> allocationTracker) throws AvatarError {
+    public RenderingRoot(T rootPart, @Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker) throws AvatarOutOfMemoryError {
         this.rootPart = rootPart;
         this.allocationTracker = allocationTracker;
         this.renderer = Objects.requireNonNull(FiguraConnectionPoint.PART_RENDERER_FACTORY.apply(this), "Null renderer was provided for RenderingRoot");
@@ -61,7 +62,7 @@ public class RenderingRoot<T extends FiguraModelPart> {
     // Figura-core shouldn't call this at all, unless we somehow know we're on the render thread.
     // Instead we should invalidate the renderer so it knows to recompute vertices.
     // Also may update the PartDataStruct[] and transformCount
-    public void rebuildVertices() throws AvatarError {
+    public void rebuildVertices() throws AvatarOutOfMemoryError {
         // Map figura render type -> buffer builder
         Map<FiguraRenderType, ByteBufferBuilder> bufferBuilders = new HashMap<>();
         // Recursively traverse the part
@@ -127,7 +128,7 @@ public class RenderingRoot<T extends FiguraModelPart> {
             @Nullable FiguraRenderType currentRenderType, // Current render type, if any
             int currentRenderTypePriority, // Parent's render type priority
             int[] currentId // The current ID for vertex weights stuff. Int array for mutability
-    ) throws AvatarError {
+    ) throws AvatarOutOfMemoryError {
         // Update render types if we can and this part has priority
         if (part.renderType != null && part.renderTypePriority >= currentRenderTypePriority) {
             currentRenderType = part.renderType;

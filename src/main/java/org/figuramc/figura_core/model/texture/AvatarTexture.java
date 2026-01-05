@@ -1,7 +1,9 @@
 package org.figuramc.figura_core.model.texture;
 
-import org.figuramc.figura_core.avatars.AvatarError;
+import org.figuramc.figura_core.avatars.errors.AvatarError;
 import org.figuramc.figura_core.avatars.components.Textures;
+import org.figuramc.figura_core.avatars.errors.AvatarInitError;
+import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_core.data.materials.ModuleMaterials;
 import org.figuramc.figura_core.minecraft_interop.texture.MinecraftTexture;
 import org.figuramc.figura_translations.Translatable;
@@ -22,7 +24,7 @@ public abstract class AvatarTexture {
             = Translatable.create("figura_core.error.loading.texture.invalid_png", String.class);
 
     // Create a texture and upload it.
-    public static AvatarTexture from(ModuleMaterials.TextureMaterials materials, @Nullable AllocationTracker<AvatarError> allocationTracker, Textures textureComponent, FiguraTextureAtlas.Builder atlasBuilder) throws AvatarError {
+    public static AvatarTexture from(ModuleMaterials.TextureMaterials materials, @Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker, Textures textureComponent, FiguraTextureAtlas.Builder atlasBuilder) throws AvatarInitError, AvatarOutOfMemoryError {
         switch (materials) {
             case ModuleMaterials.TextureMaterials.OwnedTexture owned -> {
                 if (owned.noAtlas()) {

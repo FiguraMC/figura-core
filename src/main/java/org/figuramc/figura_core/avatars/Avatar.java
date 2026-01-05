@@ -1,15 +1,19 @@
 package org.figuramc.figura_core.avatars;
 
 import org.figuramc.figura_core.avatars.components.ExternalText;
+import org.figuramc.figura_core.avatars.errors.AvatarError;
+import org.figuramc.figura_core.avatars.errors.AvatarInitError;
+import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_core.manage.AvatarManager;
 import org.figuramc.figura_core.minecraft_interop.FiguraConnectionPoint;
 import org.figuramc.figura_core.minecraft_interop.vanilla_parts.VanillaModel;
-import org.figuramc.figura_core.script_hooks.Event;
-import org.figuramc.figura_core.script_hooks.EventListener;
-import org.figuramc.figura_core.script_hooks.callback.items.CallbackItem;
+import org.figuramc.figura_core.script_hooks.timing.AvatarTimeTracker;
+import org.figuramc.figura_core.script_hooks.timing.ProfilingCategory;
+import org.figuramc.figura_core.script_hooks.timing.ScriptKillerDaemon;
 import org.figuramc.figura_core.text.FormattedText;
 import org.figuramc.figura_core.util.ListUtils;
 import org.figuramc.figura_core.util.enumlike.IdMap;
+import org.figuramc.figura_core.util.exception.FiguraException;
 import org.figuramc.figura_core.util.functional.ThrowingRunnable;
 import org.figuramc.figura_translations.Translatable;
 import org.figuramc.figura_translations.TranslatableItems;
@@ -23,7 +27,7 @@ public final class Avatar<K> {
 
     public final AvatarManager<K> manager;
     public final K key; // The key which accesses this Avatar in its corresponding AvatarSubManager<K>
-    public final @Nullable AllocationTracker<AvatarError> allocationTracker;
+    public final @Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker; // Tracks allocation
     public final List<AvatarModules.RuntimeModule> modules; // Runtime modules.
 
     // Thread safety
@@ -37,13 +41,6 @@ public final class Avatar<K> {
     private final IdMap<AvatarComponent.Type, AvatarComponent<?>> components; // Components, where ID -> component if present, null if not. Requires some unchecked sillies because of generics.
     private final @NotNull AvatarComponent<?>[] presentComponents; // Only the non-null components, used for iteration
 
-    // Event listeners
-    // Listeners for built-in events, indexed using the event's ID.
-    public final IdMap<Event<?, ?>, EventListener<?, ?>> eventListeners;
-    // Type-safe EventListener<T> getter from Event<T>
-    @SuppressWarnings("unchecked")
-    public <T extends CallbackItem, R extends CallbackItem> EventListener<T, R> getEventListener(Event<T, R> event) { return (EventListener<T, R>) eventListeners.get(event); }
-
     // Any error that's occurred in this avatar
     private @Nullable Throwable error;
 
@@ -53,7 +50,7 @@ public final class Avatar<K> {
     public @Nullable VanillaModel vanillaModel;
 
     // Constructor without the extra types
-    public Avatar(AvatarManager<K> manager, K key, AvatarModules loadTimeModules, @Nullable AllocationTracker<AvatarError> allocationTracker, Collection<AvatarComponent.Type<?>> componentTypes) throws AvatarError {
+    public Avatar(AvatarManager<K> manager, K key, AvatarModules loadTimeModules, @Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker, Collection<AvatarComponent.Type<?>> componentTypes) throws AvatarInitError {
         this(manager, key, loadTimeModules, allocationTracker, componentTypes, null);
     }
 
@@ -61,31 +58,39 @@ public final class Avatar<K> {
             // Identification
             AvatarManager<K> manager, K key,
             // Modules and tracking
-            AvatarModules loadTimeModules, @Nullable AllocationTracker<AvatarError> allocationTracker,
+            AvatarModules loadTimeModules, @Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker,
             // Set of component types
             Collection<AvatarComponent.Type<?>> componentTypes,
             // Various other info which may be used by some component types... not sure of a better way to handle this yet :(
             @Nullable VanillaModel vanillaModel
-    ) throws AvatarError {
-        // Set basic fields
-        this.manager = manager;
-        this.key = key;
-        this.allocationTracker = allocationTracker;
-        this.eventListeners = new IdMap<>(Event.class, e -> new EventListener<>(e.type, this));
-        // Add script runtimes to the set of components
-        componentTypes = new HashSet<>(componentTypes);
-        componentTypes.addAll(loadTimeModules.scriptRuntimeTypes());
-        // Set the extra helper fields
-        this.vanillaModel = vanillaModel;
-        // Construct all the provided component types
-        this.components = new IdMap<>(AvatarComponent.Type.class);
-        for (var ty : componentTypes) components.put(ty, ty.factory.apply(this, loadTimeModules));
-        // Create presentComponents array by removing null elements for faster iteration.
-        this.presentComponents = this.components.values().stream().filter(Objects::nonNull).toArray(AvatarComponent[]::new);
-        // Create runtime modules
-        this.modules = ListUtils.map(loadTimeModules.loadTimeModules(), loadTime -> new AvatarModules.RuntimeModule(this, loadTime, allocationTracker));
-        // Init the main module. This should be okay to run on an off-thread.
-        this.modules.getLast().initialize(this.modules);
+    ) throws AvatarInitError {
+        // Code here may throw AvatarInitError, which will prevent construction of the avatar at all
+        try {
+            // Set basic fields
+            this.manager = manager;
+            this.key = key;
+            this.allocationTracker = allocationTracker;
+            // Add script runtimes to the set of components
+            componentTypes = new HashSet<>(componentTypes);
+            componentTypes.addAll(loadTimeModules.scriptRuntimeTypes());
+            // Set the extra helper fields
+            this.vanillaModel = vanillaModel;
+            // Construct all the provided component types
+            this.components = new IdMap<>(AvatarComponent.Type.class);
+            for (var ty : componentTypes) components.put(ty, ty.factory.apply(this, loadTimeModules));
+            // Create presentComponents array by removing null elements for faster iteration.
+            this.presentComponents = this.components.values().stream().filter(Objects::nonNull).toArray(AvatarComponent[]::new);
+            // Create runtime modules
+            this.modules = ListUtils.map(loadTimeModules.loadTimeModules(), loadTime -> new AvatarModules.RuntimeModule(this, loadTime, allocationTracker));
+        } catch (AvatarOutOfMemoryError oom) {
+            // Out of memory
+            throw new AvatarInitError(FiguraException.INTERNAL_ERROR, new TranslatableItems.Items1<>("TODO OOM Errors"));
+        }
+        // Run startup code in the modules. Preliminary timeout of 5 seconds for the init script, TODO configurable
+        AvatarTimeTracker.getInstance().runTimed(this, ProfilingCategory.INITIALIZATION, 5_000_000_000L, () -> {
+            // This should be okay to run on an off-thread here, since it can't access world state
+            this.modules.getLast().initialize(this.modules);
+        });
     }
 
     public boolean isReady() {
@@ -130,21 +135,42 @@ public final class Avatar<K> {
         return Objects.requireNonNull(getComponent(type), "Asserted component was not present!");
     }
 
-    public void error(AvatarError reason) {
-        // Mark as errored
+    /**
+     * Erroring methods may be called by multiple threads, for example
+     * the daemon thread that kills avatars that are   taking too long
+     * So, we mark this as synchronized.
+     * @return true if this was the first error to occur, false otherwise
+     */
+    private synchronized boolean setError(Throwable reason) {
+        // Only take the first error
+        if (this.error != null) {
+            return false;
+        }
+        // Escaper should not be the first error
+        if (reason == AvatarError.ESCAPER) {
+            this.error = new AvatarError(AvatarError.INTERNAL_ERROR, "Escaper exception was thrown before any other exception");
+            return true;
+        }
+        // Set the error
         this.error = reason;
-        // Report the error to user(?) (Todo improve)
-        FiguraConnectionPoint.CONSOLE_OUTPUT.reportError(reason);
+        // Call onError for every component
+        for (AvatarComponent<?> component : presentComponents)
+            component.onError();
+        return true;
     }
 
+    // Differ only in the logging method
+    public void error(AvatarError reason) {
+        if (setError(reason))
+            FiguraConnectionPoint.CONSOLE_OUTPUT.reportError(reason);
+    }
     public void unexpectedError(Throwable reason) {
-        this.error = reason;
-        FiguraConnectionPoint.CONSOLE_OUTPUT.reportUnexpectedError(reason);
+        if (setError(reason))
+            FiguraConnectionPoint.CONSOLE_OUTPUT.reportUnexpectedError(reason);
     }
 
     // We want to use this function only when strictly necessary; for most usages, the fact
     // that an errored avatar acts like it has no components is good enough.
-    // An example where this is needed is during cross-avatar (or potentially cross-avatar) scripting calls.
     public boolean isErrored() {
         return error != null;
     }

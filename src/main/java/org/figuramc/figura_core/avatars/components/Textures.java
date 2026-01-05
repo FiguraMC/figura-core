@@ -2,8 +2,10 @@ package org.figuramc.figura_core.avatars.components;
 
 import org.figuramc.figura_core.avatars.Avatar;
 import org.figuramc.figura_core.avatars.AvatarComponent;
-import org.figuramc.figura_core.avatars.AvatarError;
+import org.figuramc.figura_core.avatars.errors.AvatarError;
 import org.figuramc.figura_core.avatars.AvatarModules;
+import org.figuramc.figura_core.avatars.errors.AvatarInitError;
+import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_core.data.materials.ModuleMaterials;
 import org.figuramc.figura_core.model.texture.AvatarTexture;
 import org.figuramc.figura_core.model.texture.FiguraTextureAtlas;
@@ -28,7 +30,7 @@ public class Textures implements AvatarComponent<Textures> {
     // Set this to true once all textures are uploaded
     private volatile boolean ready = false;
 
-    public Textures(Avatar<?> avatar, AvatarModules modules) throws AvatarError {
+    public Textures(Avatar<?> avatar, AvatarModules modules) throws AvatarInitError, AvatarOutOfMemoryError {
         FiguraTextureAtlas.Builder atlasBuilder = FiguraTextureAtlas.builder();
         textures = new ArrayList<>();
         for (var module : modules.loadTimeModules()) {

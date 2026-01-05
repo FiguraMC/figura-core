@@ -1,5 +1,6 @@
 package org.figuramc.figura_core.script_languages.lua.callback_types;
 
+import org.figuramc.figura_cobalt.LuaOOM;
 import org.figuramc.figura_cobalt.LuaUncatchableError;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaError;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaTable;
@@ -50,7 +51,7 @@ public final class LuaListView<T extends CallbackItem> extends ListView<T> {
         if (index < 0 || index >= length) throw new UnsupportedOperationException("TODO error on list out of bounds");
         try {
             return elementType.toItem(owningState.luaToCallbackItem, backingTable.rawget(index + 1));
-        } catch (LuaError | LuaUncatchableError e) {
+        } catch (LuaError | LuaOOM e) {
             // In case of conversion error: It's the fault of the one who provided the view, they should only have proper T values in the list
             throw new UnsupportedOperationException("TODO Error the LuaListView provider if incorrect element", e);
         }

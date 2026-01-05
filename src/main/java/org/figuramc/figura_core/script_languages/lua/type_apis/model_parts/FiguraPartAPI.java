@@ -1,8 +1,8 @@
 package org.figuramc.figura_core.script_languages.lua.type_apis.model_parts;
 
-import org.figuramc.figura_cobalt.LuaUncatchableError;
+import org.figuramc.figura_cobalt.LuaOOM;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.*;
-import org.figuramc.figura_core.avatars.AvatarError;
+import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaExpose;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaPassState;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaReturnSelf;
@@ -29,23 +29,23 @@ public class FiguraPartAPI {
 
     // Create new FiguraPart, optionally giving it a name
     @LuaExpose(name = "new") @LuaPassState
-    public static FiguraModelPart _new(LuaRuntime s) throws LuaUncatchableError {
+    public static FiguraModelPart _new(LuaRuntime s) throws LuaOOM {
         try {
             return new FiguraModelPart("", List.of(), s.avatar.allocationTracker);
-        } catch (AvatarError err) { throw new LuaUncatchableError(err); }
+        } catch (AvatarOutOfMemoryError err) { throw new LuaOOM(err); }
     }
     @LuaExpose(name = "new") @LuaPassState
-    public static FiguraModelPart _new(LuaRuntime s, LuaString name) throws LuaUncatchableError {
+    public static FiguraModelPart _new(LuaRuntime s, LuaString name) throws LuaOOM {
         try {
             return new FiguraModelPart(name.toJavaString(s.allocationTracker), List.of(), s.avatar.allocationTracker);
-        } catch (AvatarError err) { throw new LuaUncatchableError(err); }
+        } catch (AvatarOutOfMemoryError err) { throw new LuaOOM(err); }
     }
 
     // Add/remove children from this part
     @LuaExpose @LuaReturnSelf
-    public static void addChild(FiguraModelPart self, FiguraModelPart newChild) throws LuaUncatchableError {
+    public static void addChild(FiguraModelPart self, FiguraModelPart newChild) throws LuaOOM {
         try { self.addChild(newChild); }
-        catch (AvatarError e) { throw new LuaUncatchableError(e); }
+        catch (AvatarOutOfMemoryError e) { throw new LuaOOM(e); }
     }
     @LuaExpose @LuaReturnSelf
     public static void removeChild(FiguraModelPart self, FiguraModelPart childToRemove) {
@@ -55,35 +55,35 @@ public class FiguraPartAPI {
     // Get a child by name, or nil if it doesn't exist
     @LuaExpose
     public static @Nullable FiguraModelPart child(FiguraModelPart self, LuaString childName) {
-        return self.getChildByName(childName.toJavaStringNoAlloc());
+        return self.getChildByName(childName.toJavaString(null));
     }
 
     // Get a list-like table of all children
     @LuaExpose @LuaPassState
-    public static LuaTable children(LuaRuntime s, FiguraModelPart self) throws LuaError, LuaUncatchableError {
+    public static LuaTable children(LuaRuntime s, FiguraModelPart self) throws LuaError, LuaOOM {
         return s.listToTable(self.children, (r, child) -> wrap(child, r));
     }
 
     // Create a new text task on this part with the given Text object and return it
     @LuaExpose @LuaPassState
-    public static TextTask newText(LuaRuntime s, FiguraModelPart self, FormattedText text) throws LuaUncatchableError {
+    public static TextTask newText(LuaRuntime s, FiguraModelPart self, FormattedText text) throws LuaOOM {
         try {
             TextTask task = new TextTask(text, s.avatar.allocationTracker);
             self.addRenderTask(task);
             return task;
-        } catch (AvatarError avatarError) { throw new LuaUncatchableError(avatarError); }
+        } catch (AvatarOutOfMemoryError avatarError) { throw new LuaOOM(avatarError); }
     }
 
     // Make a shallow copy of this part, with no parent. We use "shallow" to make it clear what's going on.
     // Acts as a sensible default for :copy(nil, true, false, false, false)
     @LuaExpose @LuaPassState
-    public static FiguraModelPart shallowCopy(LuaRuntime s, FiguraModelPart self) throws LuaError, LuaUncatchableError {
+    public static FiguraModelPart shallowCopy(LuaRuntime s, FiguraModelPart self) throws LuaError, LuaOOM {
         return copy(s, self, Constants.NIL, true, false, false, false);
     }
 
     // Acts as a sometimes-sensible default for :copy(nil, true, true, true, true)
     @LuaExpose @LuaPassState
-    public static FiguraModelPart deepCopy(LuaRuntime s, FiguraModelPart self) throws LuaError, LuaUncatchableError {
+    public static FiguraModelPart deepCopy(LuaRuntime s, FiguraModelPart self) throws LuaError, LuaOOM {
         return copy(s, self, Constants.NIL, true, true, true, true);
     }
 
@@ -95,18 +95,18 @@ public class FiguraPartAPI {
             boolean deepCopyChildren,
             boolean deepCopyVertices,
             boolean deepCopyCallbackLists
-    ) throws LuaError, LuaUncatchableError {
+    ) throws LuaError, LuaOOM {
         try {
             String name = newName.optString(s, self.name);
             return new FiguraModelPart(name, self, deepCopyTransform, deepCopyChildren, deepCopyVertices, deepCopyCallbackLists, s.avatar.allocationTracker);
-        } catch (AvatarError e) {
-            throw new LuaUncatchableError(e); // Wrap avatar errors :P
+        } catch (AvatarOutOfMemoryError e) {
+            throw new LuaOOM(e); // Wrap avatar errors :P
         }
     }
 
     // Custom __index which fetches a child by name, or errors if it doesn't exist.
     @LuaExpose @LuaPassState
-    public static @NotNull FiguraModelPart __index(LuaRuntime s, FiguraModelPart self, LuaString key) throws LuaError, LuaUncatchableError {
+    public static @NotNull FiguraModelPart __index(LuaRuntime s, FiguraModelPart self, LuaString key) throws LuaError, LuaOOM {
         @Nullable FiguraModelPart maybeChild = child(self, key);
         if (maybeChild == null) throw new LuaError("Model part \"" + key + "\" does not exist.", s.allocationTracker);
         return maybeChild;

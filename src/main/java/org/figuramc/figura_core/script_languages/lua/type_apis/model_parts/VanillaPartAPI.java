@@ -1,5 +1,6 @@
 package org.figuramc.figura_core.script_languages.lua.type_apis.model_parts;
 
+import org.figuramc.figura_cobalt.LuaOOM;
 import org.figuramc.figura_cobalt.LuaUncatchableError;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaError;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaString;
@@ -39,7 +40,7 @@ public class VanillaPartAPI {
     @LuaExpose public static Vector3d storedPos(VanillaRendering.ScriptVanillaPart self) { return self.storedVanillaPosition.get(new Vector3d()); }
 
     // Child getter; since children can't be modified we don't need to worry about consistency with this one
-    @LuaExpose @LuaPassState public static LuaTable children(LuaRuntime s, VanillaRendering.ScriptVanillaPart self) throws LuaError, LuaUncatchableError {
+    @LuaExpose @LuaPassState public static LuaTable children(LuaRuntime s, VanillaRendering.ScriptVanillaPart self) throws LuaError, LuaOOM {
         LuaTable result = new LuaTable(s.allocationTracker);
         for (var entry : self.children.entrySet()) {
             result.rawset(entry.getKey(), wrap(entry.getValue(), s));
@@ -49,7 +50,7 @@ public class VanillaPartAPI {
 
     // Custom __index fetches a child
     @LuaExpose public static @Nullable VanillaRendering.ScriptVanillaPart __index(VanillaRendering.ScriptVanillaPart self, LuaString key) {
-        return self.getChildByName(key.toJavaStringNoAlloc());
+        return self.getChildByName(key.toJavaString(null));
     }
 
 }

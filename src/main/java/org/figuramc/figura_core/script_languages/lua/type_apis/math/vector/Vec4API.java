@@ -1,6 +1,6 @@
 package org.figuramc.figura_core.script_languages.lua.type_apis.math.vector;
 
-import org.figuramc.figura_cobalt.LuaUncatchableError;
+import org.figuramc.figura_cobalt.LuaOOM;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.*;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaExpose;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaPassState;
@@ -18,7 +18,7 @@ import static org.figuramc.figura_cobalt.org.squiddev.cobalt.Constants.TNUMBER;
 @LuaTypeAPI(typeName = "Vec4", wrappedClass = Vector4d.class)
 public class Vec4API {
 
-    public static LuaUserdata wrap(Vector4d vec, LuaRuntime state) throws LuaUncatchableError {
+    public static LuaUserdata wrap(Vector4d vec, LuaRuntime state) throws LuaOOM {
         if (state.allocationTracker != null)
             state.allocationTracker.track(vec, AllocationTracker.OBJECT_SIZE + AllocationTracker.DOUBLE_SIZE * 4);
         return new LuaUserdata(vec, state.figuraMetatables.vec4);
@@ -141,49 +141,49 @@ public class Vec4API {
 
     // Binary operator overloading.
     // Needs extra logic since we want to allow Vector + Vector and Vector + number.
-    @LuaExpose @LuaPassState public static Vector4d __add(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaUncatchableError {
+    @LuaExpose @LuaPassState public static Vector4d __add(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaOOM {
         if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector4d other)
             return new Vector4d(self).add(other);
         double num = unknown.checkDouble(s);
         return new Vector4d(self).add(num, num, num, num);
     }
-    @LuaExpose @LuaPassState public static Vector4d __sub(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaUncatchableError {
+    @LuaExpose @LuaPassState public static Vector4d __sub(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaOOM {
         if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector4d other)
             return new Vector4d(self).sub(other);
         double num = unknown.checkDouble(s);
         return new Vector4d(self).sub(num, num, num, num);
     }
-    @LuaExpose @LuaPassState public static Vector4d __mul(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaUncatchableError {
+    @LuaExpose @LuaPassState public static Vector4d __mul(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaOOM {
         if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector4d other)
             return new Vector4d(self).mul(other);
         double num = unknown.checkDouble(s);
         return new Vector4d(self).mul(num);
     }
-    @LuaExpose @LuaPassState public static Vector4d __div(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaUncatchableError {
+    @LuaExpose @LuaPassState public static Vector4d __div(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaOOM {
         if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector4d other)
             return new Vector4d(OperationHelper.div(self.x, other.x), OperationHelper.div(self.y, other.y), OperationHelper.div(self.z, other.z), OperationHelper.div(self.w, other.w));
         double num = unknown.checkDouble(s);
         return new Vector4d(OperationHelper.div(self.x, num), OperationHelper.div(self.y, num), OperationHelper.div(self.z, num), OperationHelper.div(self.w, num));
     }
-    @LuaExpose @LuaPassState public static Vector4d __mod(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaUncatchableError {
+    @LuaExpose @LuaPassState public static Vector4d __mod(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaOOM {
         if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector4d other)
             return new Vector4d(OperationHelper.mod(self.x, other.x), OperationHelper.mod(self.y, other.y), OperationHelper.mod(self.z, other.z), OperationHelper.mod(self.w, other.w));
         double num = unknown.checkDouble(s);
         return new Vector4d(OperationHelper.mod(self.x, num), OperationHelper.mod(self.y, num), OperationHelper.mod(self.z, num), OperationHelper.mod(self.w, num));
     }
-    @LuaExpose @LuaPassState public static boolean __eq(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaUncatchableError {
+    @LuaExpose @LuaPassState public static boolean __eq(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaOOM {
         if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector4d other)
             return self.equals(other);
         double num = unknown.checkDouble(s);
         return self.equals(num, num, num, num);
     }
-    @LuaExpose @LuaPassState public static boolean __lt(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaUncatchableError {
+    @LuaExpose @LuaPassState public static boolean __lt(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaOOM {
         if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector4d other)
             return self.x < other.x && self.y < other.y && self.z < other.z && self.w < other.w;
         double num = unknown.checkDouble(s);
         return self.x < num && self.y < num && self.z < num && self.w < num;
     }
-    @LuaExpose @LuaPassState public static boolean __le(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaUncatchableError {
+    @LuaExpose @LuaPassState public static boolean __le(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaOOM {
         if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector4d other)
             return self.x <= other.x && self.y <= other.y && self.z <= other.z && self.w <= other.w;
         double num = unknown.checkDouble(s);
@@ -196,7 +196,7 @@ public class Vec4API {
 
     // Swizzling! :D
 
-    @LuaExpose @LuaPassState public static LuaValue __index(LuaRuntime s, Vector4d self, LuaValue key) throws LuaError, LuaUncatchableError {
+    @LuaExpose @LuaPassState public static LuaValue __index(LuaRuntime s, Vector4d self, LuaValue key) throws LuaError, LuaOOM {
         // Numeric key, index it like an array
         if (key.type() == TNUMBER) {
             return switch (key.toInteger()) {
@@ -237,7 +237,7 @@ public class Vec4API {
         }
     }
 
-    @LuaExpose @LuaPassState public static void __newindex(LuaRuntime s, Vector4d self, LuaValue key, LuaValue value) throws LuaError, LuaUncatchableError {
+    @LuaExpose @LuaPassState public static void __newindex(LuaRuntime s, Vector4d self, LuaValue key, LuaValue value) throws LuaError, LuaOOM {
         // Numeric key, index like an array
         if (key.type() == TNUMBER) {
             switch (key.toInteger()) {
@@ -289,7 +289,7 @@ public class Vec4API {
             default -> throw InvalidSwizzleException.INSTANCE; // Signal to caller to return nil
         };
     }
-    private static void setSwizzle(Vector4d v, char c, double num, LuaState state) throws LuaError, LuaUncatchableError {
+    private static void setSwizzle(Vector4d v, char c, double num, LuaState state) throws LuaError, LuaOOM {
         switch (c) {
             case '_' -> {}
             case 'x', 'r', 'u' -> v.x = num;

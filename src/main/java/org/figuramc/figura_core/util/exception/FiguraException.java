@@ -18,5 +18,11 @@ public class FiguraException extends Exception {
     public <Items extends TranslatableItems> FiguraException(org.figuramc.figura_translations.Translatable<Items> translatable, Items items, Throwable cause) {
         super(translatable.translate(Language.EN_US, items), cause); // TODO make lang configurable :P
     }
+    public <T> FiguraException(Translatable<TranslatableItems.Items1<T>> translatable, T item) {
+        super(translatable.translate(Language.EN_US, new TranslatableItems.Items1<>(item))); // TODO make lang configurable
+    }
+    public <T> FiguraException(Translatable<TranslatableItems.Items1<T>> translatable, T item, Throwable cause) {
+        super(translatable.translate(Language.EN_US, new TranslatableItems.Items1<>(item)), cause); // TODO make lang configurable
+    }
 
 }

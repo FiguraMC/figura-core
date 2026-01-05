@@ -1,5 +1,6 @@
 package org.figuramc.figura_core.script_languages.lua.other_apis;
 
+import org.figuramc.figura_cobalt.LuaOOM;
 import org.figuramc.figura_cobalt.LuaUncatchableError;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.*;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.LibFunction;
@@ -12,7 +13,7 @@ import org.figuramc.figura_core.script_languages.lua.type_apis.model_parts.Vanil
  */
 public class VanillaTable {
 
-    public static LuaTable create(LuaRuntime state, VanillaRendering component) throws LuaError, LuaUncatchableError {
+    public static LuaTable create(LuaRuntime state, VanillaRendering component) throws LuaError, LuaOOM {
         LuaTable vanilla = new LuaTable(state.allocationTracker);
 
         // Simple getter/setter pairs:

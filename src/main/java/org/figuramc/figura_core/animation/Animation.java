@@ -1,7 +1,8 @@
 package org.figuramc.figura_core.animation;
 
-import org.figuramc.figura_core.avatars.AvatarError;
 import org.figuramc.figura_core.avatars.components.Molang;
+import org.figuramc.figura_core.avatars.errors.AvatarInitError;
+import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_core.data.materials.ModuleMaterials;
 import org.figuramc.figura_core.util.ListUtils;
 import org.figuramc.figura_core.util.MapUtils;
@@ -23,11 +24,11 @@ public class Animation {
     public final Map<String, TransformKeyframes> keyframesByPartPath;
 
     // Construct an animation from materials
-    public Animation(@Nullable String modelName, String animName, ModuleMaterials.AnimationMaterials materials, Molang molangState, @Nullable AllocationTracker<AvatarError> allocationTracker) throws AvatarError {
-        keyframesByPartPath = MapUtils.mapValues(materials.transformKeyframes(), (partName, transformMats) -> new TransformKeyframes(
-                ListUtils.map(transformMats.origin(), mats -> new Vec3Keyframe(modelName, animName, partName, mats, molangState, allocationTracker)),
-                ListUtils.map(transformMats.rotation(), mats -> new Vec3Keyframe(modelName, animName, partName, mats, molangState, allocationTracker)),
-                ListUtils.map(transformMats.scale(), mats -> new Vec3Keyframe(modelName, animName, partName, mats, molangState, allocationTracker))
+    public Animation(@Nullable String modelName, String animName, ModuleMaterials.AnimationMaterials materials, Molang molangState, @Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker) throws AvatarInitError, AvatarOutOfMemoryError {
+        keyframesByPartPath = MapUtils.<String, ModuleMaterials.TransformKeyframesMaterials, TransformKeyframes, AvatarInitError, AvatarOutOfMemoryError>mapValuesBiThrowing(materials.transformKeyframes(), (partName, transformMats) -> new TransformKeyframes(
+                ListUtils.<ModuleMaterials.TransformKeyframeMaterials, Vec3Keyframe, AvatarInitError, AvatarOutOfMemoryError>mapBiThrowing(transformMats.origin(), mats -> new Vec3Keyframe(modelName, animName, partName, mats, molangState, allocationTracker)),
+                ListUtils.<ModuleMaterials.TransformKeyframeMaterials, Vec3Keyframe, AvatarInitError, AvatarOutOfMemoryError>mapBiThrowing(transformMats.rotation(), mats -> new Vec3Keyframe(modelName, animName, partName, mats, molangState, allocationTracker)),
+                ListUtils.<ModuleMaterials.TransformKeyframeMaterials, Vec3Keyframe, AvatarInitError, AvatarOutOfMemoryError>mapBiThrowing(transformMats.scale(), mats -> new Vec3Keyframe(modelName, animName, partName, mats, molangState, allocationTracker))
         ));
 
         // Track all in one big track() call...

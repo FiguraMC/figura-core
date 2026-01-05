@@ -4,8 +4,9 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import org.figuramc.figura_core.avatars.AvatarError;
+import org.figuramc.figura_core.avatars.errors.AvatarError;
 import org.figuramc.figura_core.avatars.components.Molang;
+import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_core.util.JsonUtils;
 import org.figuramc.figura_core.util.ListUtils;
 import org.figuramc.figura_molang.compile.MolangCompileException;
@@ -47,8 +48,8 @@ public class FormattedText {
     /**
      * Parse text from JSON
      */
-    public FormattedText(JsonElement element, TextStyle parentStyle, @Nullable Molang molang) throws AvatarError, MolangCompileException { this(element, parentStyle, molang, new int[1]); }
-    private FormattedText(JsonElement element, TextStyle parentStyle, @Nullable Molang molang, int[] curCharIndex) throws AvatarError, MolangCompileException {
+    public FormattedText(JsonElement element, TextStyle parentStyle, @Nullable Molang molang) throws AvatarOutOfMemoryError, MolangCompileException { this(element, parentStyle, molang, new int[1]); }
+    private FormattedText(JsonElement element, TextStyle parentStyle, @Nullable Molang molang, int[] curCharIndex) throws AvatarOutOfMemoryError, MolangCompileException {
         switch (element) {
             case JsonPrimitive p -> {
                 codepoints = p.getAsString().codePoints().toArray();
@@ -59,7 +60,7 @@ public class FormattedText {
             case JsonArray array -> {
                 codepoints = new int[0];
                 style = parentStyle;
-                children = ListUtils.<JsonElement, FormattedText, AvatarError, MolangCompileException>mapBiThrowing(array, child -> new FormattedText(child, style, molang, curCharIndex));
+                children = ListUtils.<JsonElement, FormattedText, AvatarOutOfMemoryError, MolangCompileException>mapBiThrowing(array, child -> new FormattedText(child, style, molang, curCharIndex));
             }
             case JsonObject object -> {
                 codepoints = JsonUtils.getStringOrDefault(object, "text", "").codePoints().toArray();

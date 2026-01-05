@@ -1,11 +1,11 @@
 package org.figuramc.figura_core.script_languages.lua.callback_types.convert;
 
-import org.figuramc.figura_cobalt.LuaUncatchableError;
+import org.figuramc.figura_cobalt.LuaOOM;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.*;
 import org.figuramc.figura_core.script_hooks.callback.CallbackType;
 import org.figuramc.figura_core.script_hooks.callback.items.*;
 import org.figuramc.figura_core.script_languages.lua.LuaRuntime;
-import org.figuramc.figura_core.script_languages.lua.type_apis.callback.FuncViewAPI;
+import org.figuramc.figura_core.script_languages.lua.type_apis.callback.CallbackViewAPI;
 import org.figuramc.figura_core.script_languages.lua.type_apis.callback.ListViewAPI;
 import org.figuramc.figura_core.script_languages.lua.type_apis.callback.MapViewAPI;
 import org.figuramc.figura_core.script_languages.lua.type_apis.callback.StringViewAPI;
@@ -14,9 +14,7 @@ import org.figuramc.figura_core.script_languages.lua.type_apis.world.block.Block
 import org.figuramc.figura_core.script_languages.lua.type_apis.world.entity.EntityViewAPI;
 import org.figuramc.figura_core.script_languages.lua.type_apis.world.item.ItemStackViewAPI;
 
-import java.util.function.Function;
-
-public class CallbackItemToLua implements CallbackType.FromItemVisitor<LuaValue, LuaUncatchableError, RuntimeException> {
+public class CallbackItemToLua implements CallbackType.FromItemVisitor<LuaValue, LuaOOM, RuntimeException> {
 
     private final LuaRuntime state;
 
@@ -30,13 +28,13 @@ public class CallbackItemToLua implements CallbackType.FromItemVisitor<LuaValue,
     }
 
     @Override
-    public LuaValue visit(CallbackType.Opaque __, CallbackItem.Opaque item) throws LuaUncatchableError, RuntimeException {
+    public LuaValue visit(CallbackType.Opaque __, CallbackItem.Opaque item) throws LuaOOM, RuntimeException {
         if (item.value() instanceof LuaValue luaValue) return luaValue;
         throw new UnsupportedOperationException("TODO: Lua Opaque item api");
     }
 
     @Override
-    public LuaValue visit(CallbackType.Any __, CallbackItem item) throws LuaUncatchableError {
+    public LuaValue visit(CallbackType.Any __, CallbackItem item) throws LuaOOM {
         return switch (item) {
             // Primitive
             case CallbackItem.Unit unit -> Constants.NIL;
@@ -55,10 +53,10 @@ public class CallbackItemToLua implements CallbackType.FromItemVisitor<LuaValue,
             case WorldView<?> worldView -> WorldViewAPI.wrap(worldView, state);
             case ItemStackView<?> itemStackView -> ItemStackViewAPI.wrap(itemStackView, state);
             // Generic
-            case CallbackItem.Tuple tuple -> ValueFactory.listOf(state.allocationTracker, tuple.<LuaValue, LuaUncatchableError, RuntimeException>map(inner -> CallbackType.Any.INSTANCE.fromItem(this, inner), LuaValue[]::new));
+            case CallbackItem.Tuple tuple -> ValueFactory.listOf(state.allocationTracker, tuple.<LuaValue, LuaOOM, RuntimeException>map(inner -> CallbackType.Any.INSTANCE.fromItem(this, inner), LuaValue[]::new));
             case ListView<?> listView -> ListViewAPI.wrap(listView, state);
             case MapView<?, ?> mapView -> MapViewAPI.wrap(mapView, state);
-            case FuncView<?, ?> funcView -> FuncViewAPI.wrap(funcView, state);
+            case CallbackView<?, ?> callbackView -> CallbackViewAPI.wrap(callbackView, state);
             case CallbackItem.Optional<?> optional -> optional.value() == null ? Constants.NIL : CallbackType.Any.INSTANCE.fromItem(this, optional.value());
         };
     }
@@ -108,16 +106,16 @@ public class CallbackItemToLua implements CallbackType.FromItemVisitor<LuaValue,
     }
 
     @Override
-    public <K extends CallbackItem, V extends CallbackItem> LuaValue visit(CallbackType.Map<K, V> type, MapView<K, V> item) throws LuaUncatchableError, RuntimeException {
+    public <K extends CallbackItem, V extends CallbackItem> LuaValue visit(CallbackType.Map<K, V> type, MapView<K, V> item) throws LuaOOM, RuntimeException {
         throw new UnsupportedOperationException("TODO: Lua conversion for MapView");
     }
 
     @Override
-    public <I extends CallbackItem, O extends CallbackItem> LuaValue visit(CallbackType.Func<I, O> type, FuncView<I, O> item) throws LuaUncatchableError, RuntimeException {
-        return FuncViewAPI.wrap(item, state);
+    public <I extends CallbackItem, O extends CallbackItem> LuaValue visit(CallbackType.Func<I, O> type, CallbackView<I, O> item) throws LuaOOM, RuntimeException {
+        return CallbackViewAPI.wrap(item, state);
     }
 
-    public <T extends CallbackItem> LuaValue visit(CallbackType.Optional<T> optional, CallbackItem.Optional<T> item) throws LuaUncatchableError {
+    public <T extends CallbackItem> LuaValue visit(CallbackType.Optional<T> optional, CallbackItem.Optional<T> item) throws LuaOOM {
         T val = item.value();
         // Null -> nil
         return val == null ? Constants.NIL : optional.inner().fromItem(this, val);
@@ -125,19 +123,19 @@ public class CallbackItemToLua implements CallbackType.FromItemVisitor<LuaValue,
 
     // Tuples
     @Override
-    public <TupleItem extends CallbackItem.Tuple> LuaValue visitTuple(CallbackType.Tuple<TupleItem> type, TupleItem item) throws LuaUncatchableError, RuntimeException {
+    public <TupleItem extends CallbackItem.Tuple> LuaValue visitTuple(CallbackType.Tuple<TupleItem> type, TupleItem item) throws LuaOOM, RuntimeException {
         throw new UnsupportedOperationException("visitTuple is not supported on this visitor; instead we impl each tuple separately for type safety.");
     }
 
     @Override
-    public <A extends CallbackItem, B extends CallbackItem> LuaValue visit(CallbackType.Tuple2<A, B> type, CallbackItem.Tuple2<A, B> item) throws LuaUncatchableError, RuntimeException {
+    public <A extends CallbackItem, B extends CallbackItem> LuaValue visit(CallbackType.Tuple2<A, B> type, CallbackItem.Tuple2<A, B> item) throws LuaOOM, RuntimeException {
         return ValueFactory.listOf(state.allocationTracker,
                 type.a().fromItem(this, item.a()),
                 type.b().fromItem(this, item.b())
         );
     }
     @Override
-    public <A extends CallbackItem, B extends CallbackItem, C extends CallbackItem> LuaValue visit(CallbackType.Tuple3<A, B, C> type, CallbackItem.Tuple3<A, B, C> item) throws LuaUncatchableError, RuntimeException {
+    public <A extends CallbackItem, B extends CallbackItem, C extends CallbackItem> LuaValue visit(CallbackType.Tuple3<A, B, C> type, CallbackItem.Tuple3<A, B, C> item) throws LuaOOM, RuntimeException {
         return ValueFactory.listOf(state.allocationTracker,
                 type.a().fromItem(this, item.a()),
                 type.b().fromItem(this, item.b()),
@@ -145,7 +143,7 @@ public class CallbackItemToLua implements CallbackType.FromItemVisitor<LuaValue,
         );
     }
     @Override
-    public <A extends CallbackItem, B extends CallbackItem, C extends CallbackItem, D extends CallbackItem> LuaValue visit(CallbackType.Tuple4<A, B, C, D> type, CallbackItem.Tuple4<A, B, C, D> item) throws LuaUncatchableError, RuntimeException {
+    public <A extends CallbackItem, B extends CallbackItem, C extends CallbackItem, D extends CallbackItem> LuaValue visit(CallbackType.Tuple4<A, B, C, D> type, CallbackItem.Tuple4<A, B, C, D> item) throws LuaOOM, RuntimeException {
         return ValueFactory.listOf(state.allocationTracker,
                 type.a().fromItem(this, item.a()),
                 type.b().fromItem(this, item.b()),
@@ -154,7 +152,7 @@ public class CallbackItemToLua implements CallbackType.FromItemVisitor<LuaValue,
         );
     }
     @Override
-    public <A extends CallbackItem, B extends CallbackItem, C extends CallbackItem, D extends CallbackItem, E extends CallbackItem> LuaValue visit(CallbackType.Tuple5<A, B, C, D, E> type, CallbackItem.Tuple5<A, B, C, D, E> item) throws LuaUncatchableError, RuntimeException {
+    public <A extends CallbackItem, B extends CallbackItem, C extends CallbackItem, D extends CallbackItem, E extends CallbackItem> LuaValue visit(CallbackType.Tuple5<A, B, C, D, E> type, CallbackItem.Tuple5<A, B, C, D, E> item) throws LuaOOM, RuntimeException {
         return ValueFactory.listOf(state.allocationTracker,
                 type.a().fromItem(this, item.a()),
                 type.b().fromItem(this, item.b()),
@@ -164,7 +162,7 @@ public class CallbackItemToLua implements CallbackType.FromItemVisitor<LuaValue,
         );
     }
     @Override
-    public <A extends CallbackItem, B extends CallbackItem, C extends CallbackItem, D extends CallbackItem, E extends CallbackItem, F extends CallbackItem> LuaValue visit(CallbackType.Tuple6<A, B, C, D, E, F> type, CallbackItem.Tuple6<A, B, C, D, E, F> item) throws LuaUncatchableError, RuntimeException {
+    public <A extends CallbackItem, B extends CallbackItem, C extends CallbackItem, D extends CallbackItem, E extends CallbackItem, F extends CallbackItem> LuaValue visit(CallbackType.Tuple6<A, B, C, D, E, F> type, CallbackItem.Tuple6<A, B, C, D, E, F> item) throws LuaOOM, RuntimeException {
         return ValueFactory.listOf(state.allocationTracker,
                 type.a().fromItem(this, item.a()),
                 type.b().fromItem(this, item.b()),
@@ -175,7 +173,7 @@ public class CallbackItemToLua implements CallbackType.FromItemVisitor<LuaValue,
         );
     }
     @Override
-    public <A extends CallbackItem, B extends CallbackItem, C extends CallbackItem, D extends CallbackItem, E extends CallbackItem, F extends CallbackItem, G extends CallbackItem> LuaValue visit(CallbackType.Tuple7<A, B, C, D, E, F, G> type, CallbackItem.Tuple7<A, B, C, D, E, F, G> item) throws LuaUncatchableError, RuntimeException {
+    public <A extends CallbackItem, B extends CallbackItem, C extends CallbackItem, D extends CallbackItem, E extends CallbackItem, F extends CallbackItem, G extends CallbackItem> LuaValue visit(CallbackType.Tuple7<A, B, C, D, E, F, G> type, CallbackItem.Tuple7<A, B, C, D, E, F, G> item) throws LuaOOM, RuntimeException {
         return ValueFactory.listOf(state.allocationTracker,
                 type.a().fromItem(this, item.a()),
                 type.b().fromItem(this, item.b()),
@@ -187,7 +185,7 @@ public class CallbackItemToLua implements CallbackType.FromItemVisitor<LuaValue,
         );
     }
     @Override
-    public <A extends CallbackItem, B extends CallbackItem, C extends CallbackItem, D extends CallbackItem, E extends CallbackItem, F extends CallbackItem, G extends CallbackItem, H extends CallbackItem> LuaValue visit(CallbackType.Tuple8<A, B, C, D, E, F, G, H> type, CallbackItem.Tuple8<A, B, C, D, E, F, G, H> item) throws LuaUncatchableError, RuntimeException {
+    public <A extends CallbackItem, B extends CallbackItem, C extends CallbackItem, D extends CallbackItem, E extends CallbackItem, F extends CallbackItem, G extends CallbackItem, H extends CallbackItem> LuaValue visit(CallbackType.Tuple8<A, B, C, D, E, F, G, H> type, CallbackItem.Tuple8<A, B, C, D, E, F, G, H> item) throws LuaOOM, RuntimeException {
         return ValueFactory.listOf(state.allocationTracker,
                 type.a().fromItem(this, item.a()),
                 type.b().fromItem(this, item.b()),

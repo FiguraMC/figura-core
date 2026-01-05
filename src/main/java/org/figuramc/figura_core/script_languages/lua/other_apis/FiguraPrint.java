@@ -1,5 +1,6 @@
 package org.figuramc.figura_core.script_languages.lua.other_apis;
 
+import org.figuramc.figura_cobalt.LuaOOM;
 import org.figuramc.figura_cobalt.LuaUncatchableError;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.*;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.LibFunction;
@@ -14,7 +15,7 @@ import java.util.UUID;
 
 public class FiguraPrint {
 
-    public static void init(LuaRuntime state) throws LuaUncatchableError {
+    public static void init(LuaRuntime state) throws LuaOOM {
 
         state.globals().rawset("printToLog", LibFunction.create((s, arg) -> {
             String message = arg.toJavaString(state.allocationTracker);

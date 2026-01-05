@@ -1,5 +1,6 @@
 package org.figuramc.figura_core.script_languages.lua.other_apis;
 
+import org.figuramc.figura_cobalt.LuaOOM;
 import org.figuramc.figura_cobalt.LuaUncatchableError;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.Constants;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaError;
@@ -27,7 +28,7 @@ import java.util.UUID;
  */
 public class ManagerTable {
 
-    public static LuaTable create(LuaRuntime state, @NotNull ManagerAccess managerAccess) throws LuaUncatchableError {
+    public static LuaTable create(LuaRuntime state, @NotNull ManagerAccess managerAccess) throws LuaOOM {
         LuaTable manager = new LuaTable(state.allocationTracker);
 
         // Fetch avatars
@@ -60,7 +61,7 @@ public class ManagerTable {
     }
 
     // Recursive helper for avatar-fetching and generating the tables
-    private static LuaTable fetchAvatarsRecurse(LuaRuntime s, DataTree<String, ManagerAccess.AvatarListEntry> tree) throws LuaError, LuaUncatchableError {
+    private static LuaTable fetchAvatarsRecurse(LuaRuntime s, DataTree<String, ManagerAccess.AvatarListEntry> tree) throws LuaOOM {
         LuaTable result = new LuaTable(s.allocationTracker);
         for (var nodeChild : tree.nodeChildren.entrySet())
             result.rawset(nodeChild.getKey(), fetchAvatarsRecurse(s, nodeChild.getValue()));

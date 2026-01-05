@@ -1,5 +1,6 @@
 package org.figuramc.figura_core.script_languages.lua;
 
+import org.figuramc.figura_cobalt.LuaOOM;
 import org.figuramc.figura_cobalt.LuaUncatchableError;
 import org.figuramc.figura_cobalt.cc.tweaked.cobalt.internal.unwind.SuspendedAction;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.*;
@@ -9,10 +10,12 @@ import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.Dispatch;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.LibFunction;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.LuaClosure;
 import org.figuramc.figura_core.avatars.Avatar;
-import org.figuramc.figura_core.avatars.AvatarError;
 import org.figuramc.figura_core.avatars.AvatarModules;
-import org.figuramc.figura_core.script_hooks.callback.items.FuncView;
-import org.figuramc.figura_core.script_languages.lua.type_apis.callback.FuncViewAPI;
+import org.figuramc.figura_core.avatars.errors.AvatarError;
+import org.figuramc.figura_core.avatars.errors.AvatarInitError;
+import org.figuramc.figura_core.script_hooks.callback.items.CallbackView;
+import org.figuramc.figura_core.script_languages.lua.errors.LuaAvatarError;
+import org.figuramc.figura_core.script_languages.lua.type_apis.callback.CallbackViewAPI;
 import org.figuramc.figura_core.util.IOUtils;
 import org.figuramc.figura_translations.Translatable;
 import org.figuramc.figura_translations.TranslatableItems;
@@ -27,14 +30,14 @@ import java.util.Objects;
 public class FiguraRequire {
 
     // Helpful constants
-    public static final LuaString REQUIRE_KEY = LuaString.valueOfNoAlloc("figura_require");
-    public static final LuaString LOADED_KEY = LuaString.valueOfNoAlloc("figura_loaded");
+    public static final LuaString REQUIRE_KEY = LuaString.valueOf(null, "figura_require");
+    public static final LuaString LOADED_KEY = LuaString.valueOf(null, "figura_loaded");
 
     // Lua Script "%s" failed to compile: \n%s
     private static final Translatable<TranslatableItems.Items2<String, String>> COMPILE_ERROR
             = Translatable.create("figura_core.error.script.lua.compile_error", String.class, String.class);
 
-    public static LuaValue createRequire(LuaRuntime state, LuaTable _ENV, AvatarModules.LoadTimeModule module) throws LuaError, LuaUncatchableError, AvatarError {
+    public static LuaValue createRequire(LuaRuntime state, LuaTable _ENV, AvatarModules.LoadTimeModule module) throws LuaError, LuaOOM, LuaUncatchableError, AvatarInitError {
 
         int index = module.index;
 
@@ -54,7 +57,7 @@ public class FiguraRequire {
                 LuaClosure closure = LoadState.load(state, new ByteArrayInputStream(code), "@" + name, _ENV);
                 functionStorage.rawset(name, closure);
             } catch (CompileException ex) {
-                throw new AvatarError(COMPILE_ERROR, new TranslatableItems.Items2<>(name, ex.getMessage()), ex);
+                throw new AvatarInitError(COMPILE_ERROR, new TranslatableItems.Items2<>(name, ex.getMessage()), ex);
             }
         }
         for (var entry : module.dependencyIndices.entrySet()) {
@@ -71,11 +74,11 @@ public class FiguraRequire {
                 try {
                     dependency.initialize(runtimeModules);
                 } catch (AvatarError e) {
-                    throw new LuaUncatchableError(e);
+                    throw new LuaAvatarError(e);
                 }
                 // Grab its callbacks, put them in the table
                 for (var apiEntry : dependency.callbacks.entrySet()) {
-                    tab.rawset(apiEntry.getKey(), FuncViewAPI.wrap(new FuncView<>(apiEntry.getValue()), (LuaRuntime) s));
+                    tab.rawset(apiEntry.getKey(), CallbackViewAPI.wrap(new CallbackView<>(apiEntry.getValue()), (LuaRuntime) s));
                 }
                 return tab;
             }));

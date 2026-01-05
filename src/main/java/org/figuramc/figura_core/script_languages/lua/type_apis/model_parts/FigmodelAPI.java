@@ -18,7 +18,7 @@ public class FigmodelAPI {
 
     @LuaExpose
     public static @Nullable AnimationInstance animation(FigmodelModelPart self, LuaString animName) {
-        return self.animation(animName.toJavaStringNoAlloc());
+        return self.animation(animName.toJavaString(null));
     }
 
 }

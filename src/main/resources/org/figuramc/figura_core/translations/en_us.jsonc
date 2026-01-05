@@ -32,6 +32,8 @@
 
   // Script errors
   "figura_core.error.script.unknown_language": "Unknown script language \"%s\". Currently, the only supported language is \"lua\".",
+
+  // Lua
   "figura_core.error.script.lua.no_main": "For a module with language = \"lua\", you must have a file \"scripts/main.lua\".",
   "figura_core.error.script.lua.compile_error": "Lua Script \"%s\" failed to compile: \n%s.",
   "figura_core.error.script.lua.incorrect_callback_return": "Callback function %s expected to return %s, but it returned %s.",

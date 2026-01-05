@@ -1,5 +1,6 @@
 package org.figuramc.figura_core.script_languages.lua.type_apis.callback;
 
+import org.figuramc.figura_cobalt.LuaOOM;
 import org.figuramc.figura_cobalt.LuaUncatchableError;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.Constants;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaTable;
@@ -31,11 +32,11 @@ public class ListViewAPI {
     @LuaExpose public static int length(ListView<?> self) { return self.length(); }
 
     @LuaExpose @LuaPassState
-    public static LuaValue copy(LuaRuntime s, ListView<?> self) throws LuaUncatchableError {
+    public static LuaValue copy(LuaRuntime s, ListView<?> self) throws LuaOOM {
         return copyImpl(s, self);
     }
 
-    private static <T extends CallbackItem> LuaValue copyImpl(LuaRuntime state, ListView<T> view) throws LuaUncatchableError {
+    private static <T extends CallbackItem> LuaValue copyImpl(LuaRuntime state, ListView<T> view) throws LuaOOM {
         // Be sure to synchronize so it can't be revoked in the middle of copying
         synchronized (view) {
             if (view.isRevoked()) return Constants.NIL;

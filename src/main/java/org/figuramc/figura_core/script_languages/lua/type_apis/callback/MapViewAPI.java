@@ -1,5 +1,6 @@
 package org.figuramc.figura_core.script_languages.lua.type_apis.callback;
 
+import org.figuramc.figura_cobalt.LuaOOM;
 import org.figuramc.figura_cobalt.LuaUncatchableError;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.*;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaExpose;
@@ -28,11 +29,11 @@ public class MapViewAPI {
     @LuaExpose public static int size(MapView<?, ?> self) { return self.size(); }
 
     @LuaExpose @LuaPassState
-    public static LuaValue copy(LuaRuntime s, MapView<?, ?> self) throws LuaError, LuaUncatchableError {
+    public static LuaValue copy(LuaRuntime s, MapView<?, ?> self) throws LuaError, LuaOOM {
         return copyImpl(s, self);
     }
 
-    private static <K extends CallbackItem, V extends CallbackItem> LuaValue copyImpl(LuaRuntime state, MapView<K, V> view) throws LuaError, LuaUncatchableError {
+    private static <K extends CallbackItem, V extends CallbackItem> LuaValue copyImpl(LuaRuntime state, MapView<K, V> view) throws LuaError, LuaOOM {
         synchronized (view) {
             LuaTable res = new LuaTable(state.allocationTracker);
             if (view.isRevoked()) return Constants.NIL;

@@ -1,5 +1,6 @@
 package org.figuramc.figura_core.script_languages.lua;
 
+import org.figuramc.figura_cobalt.LuaOOM;
 import org.figuramc.figura_cobalt.LuaUncatchableError;
 import org.figuramc.figura_cobalt.cc.tweaked.cobalt.internal.unwind.SuspendedAction;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.*;
@@ -30,7 +31,7 @@ public class FiguraMetatables {
     public final LuaTable stringView; // StringView
     public final LuaTable listView; // ListView
     public final LuaTable mapView; // MapView
-    public final LuaTable funcView; // FuncView
+    public final LuaTable callbackView; // ScriptCallback
 
     // Minecraft callback items
     public final LuaTable entityView;
@@ -66,7 +67,7 @@ public class FiguraMetatables {
     public final LuaTable avatarListEntry;
 
 
-    public FiguraMetatables(LuaRuntime state) throws LuaError, LuaUncatchableError {
+    public FiguraMetatables(LuaRuntime state) throws LuaError, LuaOOM {
         // General
         eventListener = API__EventListener.createMetatable(state);
 
@@ -75,7 +76,7 @@ public class FiguraMetatables {
         stringView = API__StringView.createMetatable(state);
         listView = API__ListView.createMetatable(state);
         mapView = API__MapView.createMetatable(state);
-        funcView = API__FuncView.createMetatable(state);
+        callbackView = API__CallbackView.createMetatable(state);
 
         // Minecraft items
         entityView = API__Entity.createMetatable(state);
@@ -111,10 +112,10 @@ public class FiguraMetatables {
     }
 
     // Add all the type metatables, with PascalCase keys, to the given table
-    public void addTypesTo(LuaTable table) throws LuaUncatchableError {
+    public void addTypesTo(LuaTable table) throws LuaOOM {
         table.rawset("EventListener", eventListener);
 
-        table.rawset("Callback", funcView);
+        table.rawset("Callback", callbackView);
         table.rawset("CallbackType", callbackType);
         table.rawset("StringView", stringView);
         table.rawset("ListView", listView);
@@ -138,19 +139,19 @@ public class FiguraMetatables {
     }
 
     // Helpers to ensure safe use
-    public static void setupIndexing(LuaState state, LuaTable metatable) throws LuaError, LuaUncatchableError {
+    public static void setupIndexing(LuaState state, LuaTable metatable) throws LuaError, LuaOOM {
         setupIndexingImpl(state, metatable, null, null);
     }
 
-    public static void setupIndexingWithSuperclass(LuaState state, LuaTable metatable, @NotNull LuaTable superclassMetatable) throws LuaError, LuaUncatchableError {
+    public static void setupIndexingWithSuperclass(LuaState state, LuaTable metatable, @NotNull LuaTable superclassMetatable) throws LuaError, LuaOOM {
         setupIndexingImpl(state, metatable, Objects.requireNonNull(superclassMetatable), null);
     }
 
-    public static void setupIndexingWithCustomIndexer(LuaState state, LuaTable metatable, @NotNull LuaFunction customIndexer) throws LuaError, LuaUncatchableError {
+    public static void setupIndexingWithCustomIndexer(LuaState state, LuaTable metatable, @NotNull LuaFunction customIndexer) throws LuaError, LuaOOM {
         setupIndexingImpl(state, metatable, null, Objects.requireNonNull(customIndexer));
     }
 
-    public static void setupIndexingWithSuperclassAndCustomIndexer(LuaState state, LuaTable metatable, @NotNull LuaTable superclassMetatable, @NotNull LuaFunction customIndexer) throws LuaError, LuaUncatchableError {
+    public static void setupIndexingWithSuperclassAndCustomIndexer(LuaState state, LuaTable metatable, @NotNull LuaTable superclassMetatable, @NotNull LuaFunction customIndexer) throws LuaError, LuaOOM {
         setupIndexingImpl(state, metatable, Objects.requireNonNull(superclassMetatable), Objects.requireNonNull(customIndexer));
     }
 
@@ -158,7 +159,7 @@ public class FiguraMetatables {
     // and also deals with any custom __index implementations.
     // Make sure to call this on EVERY created metatable, even ones without superclasses, so that indexing works as it should.
     // This should also be the last thing called in the class, I think. (Maybe it doesn't matter...?)
-    private static void setupIndexingImpl(LuaState state, LuaTable thisMetatable, @Nullable LuaTable superclassMetatable, @Nullable LuaFunction customIndexer) throws LuaError, LuaUncatchableError {
+    private static void setupIndexingImpl(LuaState state, LuaTable thisMetatable, @Nullable LuaTable superclassMetatable, @Nullable LuaFunction customIndexer) throws LuaError, LuaOOM {
         // If there's no superclass metatable, and no custom indexer, just make it simple.
         if (superclassMetatable == null && customIndexer == null) {
             thisMetatable.rawset(INDEX, thisMetatable); // Set __index to itself, and we're done
@@ -227,7 +228,7 @@ public class FiguraMetatables {
         }
     }
 
-    private static void forEach(LuaTable table, BiThrowingBiConsumer<LuaValue, LuaValue, LuaError, LuaUncatchableError> consumer) throws LuaError, LuaUncatchableError {
+    private static void forEach(LuaTable table, BiThrowingBiConsumer<LuaValue, LuaValue, LuaError, LuaOOM> consumer) throws LuaError, LuaOOM {
         LuaValue k = Constants.NIL;
         while ( true ) {
             Varargs n = table.next(k);

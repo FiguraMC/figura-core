@@ -1,5 +1,6 @@
 package org.figuramc.figura_core.script_languages.lua.other_apis;
 
+import org.figuramc.figura_cobalt.LuaOOM;
 import org.figuramc.figura_cobalt.LuaUncatchableError;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.ErrorFactory;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaError;
@@ -18,7 +19,7 @@ import org.joml.Vector4d;
  */
 public class FiguraMath {
 
-    public static void init(LuaState state) throws LuaError, LuaUncatchableError {
+    public static void init(LuaState state) throws LuaError, LuaOOM, LuaUncatchableError {
 
         // Run math.lua
         LuaRuntime.runAssetFile(state, "math");

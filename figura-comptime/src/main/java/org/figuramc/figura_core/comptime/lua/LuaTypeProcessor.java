@@ -1,6 +1,7 @@
 package org.figuramc.figura_core.comptime.lua;
 
 import com.google.auto.service.AutoService;
+import org.figuramc.figura_cobalt.cc.tweaked.cobalt.internal.unwind.AutoUnwind;
 import org.figuramc.figura_core.comptime.lua.annotations.*;
 
 import javax.annotation.processing.*;
@@ -88,7 +89,7 @@ public class LuaTypeProcessor extends AbstractProcessor {
                     output.append("import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaBoolean;\n");
                     output.append("import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaString;\n");
                     output.append("import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaError;\n");
-                    output.append("import org.figuramc.figura_cobalt.LuaUncatchableError;\n");
+                    output.append("import org.figuramc.figura_cobalt.LuaOOM;\n");
                     output.append("import org.figuramc.figura_cobalt.org.squiddev.cobalt.ErrorFactory;\n");
                     output.append("import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.LibFunction;\n\n");
                     output.append("import org.figuramc.figura_core.script_languages.lua.FiguraMetatables;\n");
@@ -104,9 +105,9 @@ public class LuaTypeProcessor extends AbstractProcessor {
                     // createMetatable method
                     if (luaTypeAPI.hasSuperclass()) {
                         // If there's a superclass, add a param to the signature for it
-                        output.append("    public static LuaTable createMetatable(LuaRuntime state, @NotNull LuaTable superclassMetatable) throws LuaError, LuaUncatchableError {\n");
+                        output.append("    public static LuaTable createMetatable(LuaRuntime state, @NotNull LuaTable superclassMetatable) throws LuaError, LuaOOM {\n");
                     } else {
-                        output.append("    public static LuaTable createMetatable(LuaRuntime state) throws LuaError, LuaUncatchableError {\n");
+                        output.append("    public static LuaTable createMetatable(LuaRuntime state) throws LuaError, LuaOOM {\n");
                     }
 
                     output.append("        LuaTable metatable = new LuaTable(state.allocationTracker);\n");
@@ -145,12 +146,19 @@ public class LuaTypeProcessor extends AbstractProcessor {
                             continue;
                         }
 
-                        // Check if it's a LuaDirect method
+                        // Check if it's a LuaDirect or LuaUnwind method, both have similar handling
                         if (entry.getValue().getFirst().getAnnotation(LuaDirect.class) != null) {
                             // If so, wire it directly and continue.
                             if (entry.getValue().size() > 1) throw new RuntimeException("Methods annotated with @LuaDirect cannot be overloads!");
                             var method = entry.getValue().getFirst();
                             output.append("        metatable.rawset(\"" + methodName + "\", LibFunction.createV(" + clazz.getQualifiedName() + "::" + method.getSimpleName() + "));\n");
+                            continue;
+                        } else if (entry.getValue().getFirst().getAnnotation(LuaUnwind.class) != null) {
+                            if (entry.getValue().getFirst().getAnnotation(AutoUnwind.class) == null)
+                                throw new RuntimeException("Method annotated with @LuaUnwind should also annotate with Cobalt's @AutoUnwind");
+                            if (entry.getValue().size() > 1) throw new RuntimeException("Methods annotated with @LuaUnwind cannot be overloads!");
+                            var method = entry.getValue().getFirst();
+                            output.append("        metatable.rawset(\"" + methodName + "\", LibFunction.createS(" + clazz.getQualifiedName() + "::" + method.getSimpleName() + "));\n");
                             continue;
                         }
 
@@ -186,7 +194,7 @@ public class LuaTypeProcessor extends AbstractProcessor {
 
                     // End createMetatable method with some final setup
 
-                    output.append("        metatable.rawset(Constants.NAME, LuaString.valueOfNoAlloc(\"" + typeName + "\"));\n"); // Set __name
+                    output.append("        metatable.rawset(Constants.NAME, LuaString.valueOf(null, \"" + typeName + "\"));\n"); // Set __name
 
                     // Set up indexing
                     if (luaTypeAPI.hasSuperclass()) {

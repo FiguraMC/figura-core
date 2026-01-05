@@ -32,6 +32,6 @@ public class LuaStringView extends StringView {
     @Override
     public synchronized String copy() {
         if (isRevoked()) return null;
-        return string.toJavaStringNoAlloc();
+        return string.toJavaString(null);
     }
 }

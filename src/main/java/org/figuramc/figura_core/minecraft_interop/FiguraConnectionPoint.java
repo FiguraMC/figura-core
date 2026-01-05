@@ -1,8 +1,9 @@
 package org.figuramc.figura_core.minecraft_interop;
 
 import org.figuramc.figura_core.avatars.AvatarComponent;
-import org.figuramc.figura_core.avatars.AvatarError;
+import org.figuramc.figura_core.avatars.errors.AvatarError;
 import org.figuramc.figura_core.avatars.components.*;
+import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_core.minecraft_interop.game_data.GameDataProvider;
 import org.figuramc.figura_core.minecraft_interop.game_data.entity.EntityPose;
 import org.figuramc.figura_core.minecraft_interop.game_data.item.ItemRarity;
@@ -26,7 +27,7 @@ public class FiguraConnectionPoint {
 
     // Global instances of various singleton interfaces should be given implementations.
     public static MinecraftTextureProvider TEXTURE_PROVIDER = null;
-    public static ThrowingFunction<RenderingRoot<?>, PartRenderer, AvatarError> PART_RENDERER_FACTORY = null;
+    public static ThrowingFunction<RenderingRoot<?>, PartRenderer, AvatarOutOfMemoryError> PART_RENDERER_FACTORY = null;
     public static GameDataProvider GAME_DATA_PROVIDER = null;
     public static ConsoleOutput CONSOLE_OUTPUT = null;
     public static PathProvider PATH_PROVIDER = null;
@@ -38,11 +39,13 @@ public class FiguraConnectionPoint {
     public static void finishInit() {
         ReflectionUtils.ensureInitialized(Event.class);
         ReflectionUtils.ensureInitialized(
-                CemSelfDeleter.class, CustomItems.class, EntityRoot.class,
-                EntityUser.class, HudRoot.class, Molang.class,
+                AvatarEvents.class, AvatarProfiling.class,
+                CemSelfDeleter.class, CustomItems.class,
+                EntityRoot.class, EntityUser.class, ExternalText.class,
+                HudRoot.class,
+                ManagerAccess.class, Materials.class, Molang.class,
                 Textures.class, VanillaRendering.class,
 
-                ManagerAccess.class,
                 LuaRuntime.class
         );
         ReflectionUtils.ensureInitialized(ShaderHookPoint.class);

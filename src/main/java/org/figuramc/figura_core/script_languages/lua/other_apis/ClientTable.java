@@ -1,5 +1,6 @@
 package org.figuramc.figura_core.script_languages.lua.other_apis;
 
+import org.figuramc.figura_cobalt.LuaOOM;
 import org.figuramc.figura_cobalt.LuaUncatchableError;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaDouble;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaError;
@@ -15,7 +16,7 @@ import org.joml.Vector2d;
  */
 public class ClientTable {
 
-    public static LuaTable create(LuaRuntime state) throws LuaError, LuaUncatchableError {
+    public static LuaTable create(LuaRuntime state) throws LuaError, LuaOOM {
         LuaTable client = new LuaTable(state.allocationTracker);
 
         // Since scaled values are much more useful, we prioritize those and prefix non-scaled values with "raw".

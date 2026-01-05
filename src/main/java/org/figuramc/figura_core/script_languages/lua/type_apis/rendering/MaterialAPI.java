@@ -1,5 +1,6 @@
 package org.figuramc.figura_core.script_languages.lua.type_apis.rendering;
 
+import org.figuramc.figura_cobalt.LuaOOM;
 import org.figuramc.figura_cobalt.LuaUncatchableError;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.*;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaExpose;
@@ -25,7 +26,7 @@ public class MaterialAPI {
     // Parse the options table to create a render type.
     @LuaExpose(name = "new")
     @LuaPassState
-    public static FiguraRenderType _new(LuaRuntime s, LuaTable options) throws LuaError, LuaUncatchableError {
+    public static FiguraRenderType _new(LuaRuntime s, LuaTable options) throws LuaError, LuaOOM {
         // Priority
         int priority = options.rawget("priority") instanceof LuaNumber n ? n.toInteger() : 0;
         // Shader

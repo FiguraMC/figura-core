@@ -2,9 +2,8 @@ package org.figuramc.figura_core.avatars.components;
 
 import org.figuramc.figura_core.avatars.Avatar;
 import org.figuramc.figura_core.avatars.AvatarComponent;
-import org.figuramc.figura_core.avatars.AvatarError;
 import org.figuramc.figura_core.avatars.AvatarModules;
-import org.figuramc.figura_core.minecraft_interop.game_data.entity.MinecraftEntity;
+import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_core.minecraft_interop.vanilla_parts.VanillaModel;
 import org.figuramc.figura_core.minecraft_interop.vanilla_parts.VanillaPart;
 import org.figuramc.figura_core.model.part.PartTransform;
@@ -17,7 +16,6 @@ import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -29,7 +27,7 @@ public class VanillaRendering implements AvatarComponent<VanillaRendering> {
     public static final Type<VanillaRendering> TYPE = new Type<>(VanillaRendering::new);
     public Type<VanillaRendering> getType() { return TYPE; }
 
-    private final AllocationTracker<AvatarError> allocationTracker;
+    private final AllocationTracker<AvatarOutOfMemoryError> allocationTracker;
 
     // Helpful toggle to hide all model parts from appearing, but still render them (so mimics and such are still updated)
     public boolean hideAllModelParts;
@@ -40,7 +38,7 @@ public class VanillaRendering implements AvatarComponent<VanillaRendering> {
     public final Map<String, ScriptVanillaPart> nameToScriptPart = new HashMap<>();
 
     // Requires a vanilla model to create it
-    public VanillaRendering(Avatar<?> avatar, AvatarModules modules) throws AvatarError {
+    public VanillaRendering(Avatar<?> avatar, AvatarModules modules) throws AvatarOutOfMemoryError {
         allocationTracker = avatar.allocationTracker;
         VanillaModel model = avatar.vanillaModel;
         if (model == null) throw new IllegalStateException("Attempt to construct Avatar that has VanillaRendering component without a VanillaModel");
@@ -68,7 +66,7 @@ public class VanillaRendering implements AvatarComponent<VanillaRendering> {
         // Script-provided values for how to transform the vanilla part
         public final PartTransform figuraTransform;
 
-        public ScriptVanillaPart(VanillaPart part, @Nullable AllocationTracker<AvatarError> allocationTracker) throws AvatarError {
+        public ScriptVanillaPart(VanillaPart part, @Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker) throws AvatarOutOfMemoryError {
             this.part = part;
             this.figuraTransform = new PartTransform(allocationTracker);
         }

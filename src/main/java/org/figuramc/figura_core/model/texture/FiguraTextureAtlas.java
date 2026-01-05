@@ -1,6 +1,8 @@
 package org.figuramc.figura_core.model.texture;
 
-import org.figuramc.figura_core.avatars.AvatarError;
+import org.figuramc.figura_core.avatars.errors.AvatarError;
+import org.figuramc.figura_core.avatars.errors.AvatarInitError;
+import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_core.minecraft_interop.FiguraConnectionPoint;
 import org.figuramc.figura_core.minecraft_interop.texture.OwnedMinecraftTexture;
 import org.figuramc.figura_core.util.ListUtils;
@@ -24,7 +26,7 @@ public class FiguraTextureAtlas extends StandaloneAvatarTexture {
     /**
      * Create and upload the atlas.
      */
-    private static FiguraTextureAtlas create(int totalWidth, int totalHeight, List<TextureRectangle> rectangles, @Nullable AllocationTracker<AvatarError> allocationTracker) throws AvatarError {
+    private static FiguraTextureAtlas create(int totalWidth, int totalHeight, List<TextureRectangle> rectangles, @Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker) throws AvatarInitError, AvatarOutOfMemoryError {
         // Create the backing texture.
         // TODO consider moving power of 2 stuff into the generation process itself?
         int width = MathUtils.smallestEncompassingPowerOfTwo(totalWidth);
@@ -40,7 +42,7 @@ public class FiguraTextureAtlas extends StandaloneAvatarTexture {
                 tex = FiguraConnectionPoint.TEXTURE_PROVIDER.createTextureFromPng(rectangle.data);
                 atlas.paste(tex, rectangle.getX(), rectangle.getY(), 0, 0, tex.width(), tex.height());
             } catch (IOException invalidPng) {
-                throw new AvatarError(AvatarTexture.INVALID_PNG, new TranslatableItems.Items1<>(rectangle.name), invalidPng);
+                throw new AvatarInitError(AvatarTexture.INVALID_PNG, new TranslatableItems.Items1<>(rectangle.name), invalidPng);
             } finally {
                 if (tex != null) tex.destroy();
                 rectangle.name = null;
@@ -67,7 +69,7 @@ public class FiguraTextureAtlas extends StandaloneAvatarTexture {
         // Get back a TextureRectangle.
         // Later, once you call .build(), the rectangle will be updated to have
         // its "x" and "y" values set.
-        public TextureRectangle insert(String texName, byte[] png) throws AvatarError {
+        public TextureRectangle insert(String texName, byte[] png) throws AvatarInitError {
             TextureRectangle rect = new TextureRectangle(texName, png);
             rectangles.add(rect);
             return rect;
@@ -76,7 +78,7 @@ public class FiguraTextureAtlas extends StandaloneAvatarTexture {
         /**
          * Create and upload the atlas. If there are no textures to atlas, returns null.
          */
-        public @Nullable FiguraTextureAtlas build(@Nullable AllocationTracker<AvatarError> allocationTracker) throws AvatarError {
+        public @Nullable FiguraTextureAtlas build(@Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker) throws AvatarInitError, AvatarOutOfMemoryError {
             if (rectangles.isEmpty()) return null;
 
             // Guess a width as sqrt(sum(rectangle areas))
@@ -142,18 +144,18 @@ public class FiguraTextureAtlas extends StandaloneAvatarTexture {
         private int x = -1, y = -1;
         private final int width, height;
 
-        private TextureRectangle(String texName, byte[] png) throws AvatarError {
+        private TextureRectangle(String texName, byte[] png) throws AvatarInitError {
             try {
                 this.name = texName;
                 PngSize size = PngSize.fromByteArray(png);
                 if (size.width() < 1 || size.height() < 1) {
-                    throw new AvatarError(AvatarTexture.INVALID_PNG, new TranslatableItems.Items1<>(texName));
+                    throw new AvatarInitError(AvatarTexture.INVALID_PNG, new TranslatableItems.Items1<>(texName));
                 }
                 this.width = size.width();
                 this.height = size.height();
                 this.data = png;
             } catch (IOException ioException) {
-                throw new AvatarError(AvatarTexture.INVALID_PNG, new TranslatableItems.Items1<>(texName));
+                throw new AvatarInitError(AvatarTexture.INVALID_PNG, new TranslatableItems.Items1<>(texName));
             }
         }
         public int getX() { return x; }

@@ -1,5 +1,6 @@
 package org.figuramc.figura_core.script_languages.lua.callback_types;
 
+import org.figuramc.figura_cobalt.LuaOOM;
 import org.figuramc.figura_cobalt.LuaUncatchableError;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.*;
 import org.figuramc.figura_core.script_hooks.callback.CallbackType;
@@ -49,7 +50,7 @@ public final class LuaMapView<K extends CallbackItem, V extends CallbackItem> ex
             LuaValue luaValue = backingTable.rawget(luaKey);
             if (luaValue.isNil() && valueType != CallbackType.Unit.INSTANCE) return null;
             return valueType.toItem(owningState.luaToCallbackItem, luaValue);
-        } catch (LuaError | LuaUncatchableError err) {
+        } catch (LuaError | LuaOOM err) {
             // In case of conversion error: It's the fault of the one who provided the view, they should only have proper V values in the map
             throw new UnsupportedOperationException("TODO Error the LuaMapView provider if incorrect element", err);
         }
@@ -64,7 +65,7 @@ public final class LuaMapView<K extends CallbackItem, V extends CallbackItem> ex
                 keys.add(keyType.toItem(owningState.luaToCallbackItem, k));
             }
             return keys;
-        } catch (LuaError | LuaUncatchableError err) {
+        } catch (LuaError | LuaOOM err) {
             // In case of conversion error; Fault lies with the one who provided the view, they should have provided proper K keys in the map
             throw new UnsupportedOperationException("TODO Error the LuaMapView provider if incorrect element", err);
         }

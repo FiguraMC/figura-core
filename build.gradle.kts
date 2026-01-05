@@ -4,9 +4,6 @@ plugins {
     id("cobalt-instrumentation") version "1.0-SNAPSHOT"
 }
 
-tasks.cobaltInstrumentation { dependsOn(*tasks.withType<JavaCompile>().toTypedArray()) }
-tasks.jar { dependsOn(tasks.cobaltInstrumentation) }
-
 group = "org.figuramc"
 version = "1.0-SNAPSHOT"
 
@@ -34,10 +31,6 @@ dependencies {
 
 java {
     withSourcesJar()
-
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
 }
 
 publishing {

@@ -1,5 +1,6 @@
 package org.figuramc.figura_core.script_languages.lua.type_apis.callback;
 
+import org.figuramc.figura_cobalt.LuaOOM;
 import org.figuramc.figura_cobalt.LuaUncatchableError;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.Constants;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaString;
@@ -27,7 +28,7 @@ public class StringViewAPI {
     @LuaExpose public static int length(StringView self) { return self.length(); }
 
     @LuaExpose @LuaPassState
-    public static LuaValue copy(LuaRuntime s, StringView self) throws LuaUncatchableError {
+    public static LuaValue copy(LuaRuntime s, StringView self) throws LuaOOM {
         String copy = self.copy();
         return copy == null ? Constants.NIL : LuaString.valueOf(s.allocationTracker, copy);
     }

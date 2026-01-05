@@ -1,5 +1,8 @@
 package org.figuramc.figura_core.avatars;
 
+import org.figuramc.figura_core.avatars.components.ScriptRuntimeComponent;
+import org.figuramc.figura_core.avatars.errors.AvatarError;
+import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_core.data.importer.v1.ModuleImporter;
 import org.figuramc.figura_core.data.importer.ModuleImportingException;
 import org.figuramc.figura_core.data.materials.ModuleMaterials;
@@ -13,7 +16,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.*;
 
 // Tracks all modules in an avatar, including the main module and its dependencies.
@@ -104,7 +106,7 @@ public record AvatarModules(List<LoadTimeModule> loadTimeModules, Collection<Ava
                 + AllocationTracker.INT_SIZE
                 + AllocationTracker.BOOLEAN_SIZE * 2;
 
-        public RuntimeModule(Avatar<?> avatar, LoadTimeModule loadTime, @Nullable AllocationTracker<AvatarError> allocationTracker) throws AvatarError {
+        public RuntimeModule(Avatar<?> avatar, LoadTimeModule loadTime, @Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker) throws AvatarOutOfMemoryError {
             this.index = loadTime.index;
             this.autoInitializeDependencies = loadTime.materials.metadata().autoRequireDependencies();
             this.api = new HashMap<>(loadTime.materials.metadata().api());

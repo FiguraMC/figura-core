@@ -1,7 +1,8 @@
 package org.figuramc.figura_core.animation;
 
-import org.figuramc.figura_core.avatars.AvatarError;
 import org.figuramc.figura_core.avatars.components.Molang;
+import org.figuramc.figura_core.avatars.errors.AvatarInitError;
+import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_core.data.materials.ModuleMaterials;
 import org.figuramc.figura_molang.CompiledMolang;
 import org.figuramc.figura_molang.compile.MolangCompileException;
@@ -30,7 +31,7 @@ public class Vec3Keyframe implements Comparable<Vec3Keyframe> {
             + AllocationTracker.REFERENCE_SIZE * 4;
 
     // Animation name for error reporting
-    public Vec3Keyframe(@Nullable String modelName, String animName, String partName, ModuleMaterials.TransformKeyframeMaterials materials, @NotNull Molang molangState, @Nullable AllocationTracker<AvatarError> allocationTracker) throws AvatarError {
+    public Vec3Keyframe(@Nullable String modelName, String animName, String partName, ModuleMaterials.TransformKeyframeMaterials materials, @NotNull Molang molangState, @Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker) throws AvatarInitError, AvatarOutOfMemoryError {
         this.time = materials.time();
         Float x = tryParseFloat(materials.x());
         Float y = tryParseFloat(materials.y());
@@ -65,15 +66,15 @@ public class Vec3Keyframe implements Comparable<Vec3Keyframe> {
         try { return Float.parseFloat(str); }
         catch (NumberFormatException e) { return null; }
     }
-    private static AnimFloatSupplier supplierFromMolang(@Nullable String modelName, String animName, String partName, float time, Molang molang, String code) throws AvatarError {
+    private static AnimFloatSupplier supplierFromMolang(@Nullable String modelName, String animName, String partName, float time, Molang molang, String code) throws AvatarInitError, AvatarOutOfMemoryError {
         try {
             CompiledMolang<?> compiled = molang.compileAnimExpr(code);
             if (compiled.returnCount != 1)
-                throw new AvatarError(INVALID_MOLANG_RETURN_COUNT, new TranslatableItems.Items5<>(modelName, animName, partName, time, compiled.returnCount));
+                throw new AvatarInitError(INVALID_MOLANG_RETURN_COUNT, new TranslatableItems.Items5<>(modelName, animName, partName, time, compiled.returnCount));
             // ARGUMENTS: (anim_time)
             return instance -> compiled.evaluate(instance.getTime()).get(0);
         } catch (MolangCompileException compileFail) {
-            throw new AvatarError(INVALID_MOLANG, new TranslatableItems.Items5<>(modelName, animName, partName, time, compileFail.getMessage()));
+            throw new AvatarInitError(INVALID_MOLANG, new TranslatableItems.Items5<>(modelName, animName, partName, time, compileFail.getMessage()));
         }
     }
 

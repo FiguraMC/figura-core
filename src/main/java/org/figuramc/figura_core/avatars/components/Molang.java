@@ -1,13 +1,11 @@
 package org.figuramc.figura_core.avatars.components;
 
-import org.figuramc.figura_core.animation.AnimationInstance;
 import org.figuramc.figura_core.avatars.Avatar;
 import org.figuramc.figura_core.avatars.AvatarComponent;
-import org.figuramc.figura_core.avatars.AvatarError;
+import org.figuramc.figura_core.avatars.errors.AvatarError;
 import org.figuramc.figura_core.avatars.AvatarModules;
+import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_core.script_languages.molang.AllMolangQueries;
-import org.figuramc.figura_core.util.data_structures.NullEmptyStack;
-import org.figuramc.figura_core.util.functional.ThrowingSupplier;
 import org.figuramc.figura_molang.CompiledMolang;
 import org.figuramc.figura_molang.MolangInstance;
 import org.figuramc.figura_molang.compile.MolangCompileException;
@@ -15,7 +13,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Stack;
 
 /**
  * Item used as the Actor for an avatar's molang states.
@@ -27,12 +24,12 @@ public class Molang implements AvatarComponent<Molang> {
     public Type<Molang> getType() { return TYPE; }
 
     // The molang instance
-    private final MolangInstance<Molang, AvatarError> molangInstance;
+    private final MolangInstance<Molang, AvatarOutOfMemoryError> molangInstance;
 
     // The entity which has the avatar equipped, if any
     private final @Nullable EntityUser entityUser;
 
-    public Molang(Avatar<?> avatar, AvatarModules modules) throws AvatarError {
+    public Molang(Avatar<?> avatar, AvatarModules modules) throws AvatarOutOfMemoryError {
         this.entityUser = avatar.getComponent(EntityUser.TYPE);
         this.molangInstance = new MolangInstance<>(this, avatar.allocationTracker, AllMolangQueries.getAvatarQueries());
     }
@@ -41,11 +38,11 @@ public class Molang implements AvatarComponent<Molang> {
     private static final List<String> ANIMATION_CONTEXT_VARS = List.of("anim_time");
     private static final List<String> TEXT_EXPRESSION_VARS = List.of("char_index");
 
-    public CompiledMolang<Molang> compileAnimExpr(String source) throws MolangCompileException, AvatarError {
+    public CompiledMolang<Molang> compileAnimExpr(String source) throws MolangCompileException, AvatarOutOfMemoryError {
         return molangInstance.compile(source, ANIMATION_CONTEXT_VARS, Map.of());
     }
 
-    public CompiledMolang<Molang> compileTextExpr(String source, int startCharIndex, int charCount) throws MolangCompileException, AvatarError {
+    public CompiledMolang<Molang> compileTextExpr(String source, int startCharIndex, int charCount) throws MolangCompileException, AvatarOutOfMemoryError {
         return molangInstance.compile(source, TEXT_EXPRESSION_VARS, Map.of(
                 "start_char_index", new float[] { startCharIndex },
                 "char_count", new float[] { charCount }

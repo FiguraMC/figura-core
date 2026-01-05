@@ -2,8 +2,10 @@ package org.figuramc.figura_core.avatars.components;
 
 import org.figuramc.figura_core.avatars.Avatar;
 import org.figuramc.figura_core.avatars.AvatarComponent;
-import org.figuramc.figura_core.avatars.AvatarError;
+import org.figuramc.figura_core.avatars.errors.AvatarError;
 import org.figuramc.figura_core.avatars.AvatarModules;
+import org.figuramc.figura_core.avatars.errors.AvatarInitError;
+import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_core.minecraft_interop.FiguraConnectionPoint;
 import org.figuramc.figura_core.minecraft_interop.ItemRenderContext;
 import org.figuramc.figura_core.minecraft_interop.game_data.MinecraftIdentifier;
@@ -32,7 +34,7 @@ public class CustomItems implements AvatarComponent<CustomItems> {
      */
     private final List<PartEntry> customItems;
 
-    public CustomItems(Avatar<?> avatar, AvatarModules modules) throws AvatarError {
+    public CustomItems(Avatar<?> avatar, AvatarModules modules) throws AvatarInitError, AvatarOutOfMemoryError {
         // Fetch components
         Textures textures = avatar.assertComponent(Textures.TYPE);
         Materials materials = avatar.assertComponent(Materials.TYPE);

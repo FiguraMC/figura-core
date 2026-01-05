@@ -2,12 +2,13 @@ package org.figuramc.figura_core.model.part.parts;
 
 import org.figuramc.figura_core.animation.Animation;
 import org.figuramc.figura_core.animation.AnimationInstance;
-import org.figuramc.figura_core.avatars.AvatarError;
 import org.figuramc.figura_core.avatars.AvatarModules;
 import org.figuramc.figura_core.avatars.components.Materials;
 import org.figuramc.figura_core.avatars.components.Molang;
 import org.figuramc.figura_core.avatars.components.Textures;
 import org.figuramc.figura_core.avatars.components.VanillaRendering;
+import org.figuramc.figura_core.avatars.errors.AvatarInitError;
+import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_core.data.materials.ModuleMaterials;
 import org.figuramc.figura_core.model.texture.AvatarTexture;
 import org.figuramc.figura_core.util.MapUtils;
@@ -27,9 +28,11 @@ public class FigmodelModelPart extends FiguraModelPart {
     // Map to textures; these may be the same object reference as other textures.
     private final Map<String, AvatarTexture> textures;
 
-    public FigmodelModelPart(String name, AvatarModules.LoadTimeModule module, ModuleMaterials.FigmodelMaterials materials, @Nullable AllocationTracker<AvatarError> allocationTracker, Textures texturesComponent, Materials materialsComponent, Molang molangState, @Nullable VanillaRendering vanillaComponent) throws AvatarError {
+    public FigmodelModelPart(String name, AvatarModules.LoadTimeModule module, ModuleMaterials.FigmodelMaterials materials, @Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker, Textures texturesComponent, Materials materialsComponent, Molang molangState, @Nullable VanillaRendering vanillaComponent) throws AvatarInitError, AvatarOutOfMemoryError {
         super(name, module, materials, allocationTracker, texturesComponent, materialsComponent, molangState, vanillaComponent);
-        animations = MapUtils.mapValues(materials.animations, (animName, animMats) -> new AnimationInstance(new Animation(name, animName, animMats, molangState, allocationTracker), this, allocationTracker));
+        animations = MapUtils.<String, ModuleMaterials.AnimationMaterials, AnimationInstance, AvatarInitError, AvatarOutOfMemoryError>mapValuesBiThrowing(
+                materials.animations, (animName, animMats) -> new AnimationInstance(new Animation(name, animName, animMats, molangState, allocationTracker), this, allocationTracker)
+        );
         textures = MapUtils.mapValues(materials.textures, texIndex -> texturesComponent.getTexture(module.index, texIndex));
 
         if (allocationTracker != null) {

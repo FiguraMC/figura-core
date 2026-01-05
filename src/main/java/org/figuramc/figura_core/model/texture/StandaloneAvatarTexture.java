@@ -1,6 +1,8 @@
 package org.figuramc.figura_core.model.texture;
 
-import org.figuramc.figura_core.avatars.AvatarError;
+import org.figuramc.figura_core.avatars.errors.AvatarError;
+import org.figuramc.figura_core.avatars.errors.AvatarInitError;
+import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_core.data.materials.ModuleMaterials;
 import org.figuramc.figura_core.minecraft_interop.FiguraConnectionPoint;
 import org.figuramc.figura_core.minecraft_interop.texture.OwnedMinecraftTexture;
@@ -24,7 +26,7 @@ public class StandaloneAvatarTexture extends AvatarTexture {
     }
 
     // Create the texture (do not upload it yet, since this must be done on the render thread)
-    public static StandaloneAvatarTexture create(ModuleMaterials.TextureMaterials.OwnedTexture materials, @Nullable AllocationTracker<AvatarError> allocationTracker) throws AvatarError {
+    public static StandaloneAvatarTexture create(ModuleMaterials.TextureMaterials.OwnedTexture materials, @Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker) throws AvatarInitError, AvatarOutOfMemoryError {
         try {
             byte[] pngBytes = materials.data();
             // TODO check size of PNG and prevent OOM early if too big
@@ -32,7 +34,7 @@ public class StandaloneAvatarTexture extends AvatarTexture {
             if (allocationTracker != null) allocationTracker.track(backingTexture, 4 * backingTexture.width() * backingTexture.height());
             return new StandaloneAvatarTexture(backingTexture);
         } catch (IOException invalidPng) {
-            throw new AvatarError(AvatarTexture.INVALID_PNG, new TranslatableItems.Items1<>(materials.name()), invalidPng);
+            throw new AvatarInitError(AvatarTexture.INVALID_PNG, new TranslatableItems.Items1<>(materials.name()), invalidPng);
         }
     }
 

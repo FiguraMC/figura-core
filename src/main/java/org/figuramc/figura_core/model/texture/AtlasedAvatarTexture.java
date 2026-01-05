@@ -1,7 +1,9 @@
 package org.figuramc.figura_core.model.texture;
 
-import org.figuramc.figura_core.avatars.AvatarError;
+import org.figuramc.figura_core.avatars.errors.AvatarError;
 import org.figuramc.figura_core.avatars.components.Textures;
+import org.figuramc.figura_core.avatars.errors.AvatarInitError;
+import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_core.data.materials.ModuleMaterials;
 import org.figuramc.figura_core.minecraft_interop.texture.MinecraftTexture;
 import org.joml.Vector4f;
@@ -20,7 +22,7 @@ public class AtlasedAvatarTexture extends AvatarTexture {
     // This is because the atlas doesn't yet exist when the atlased texture is created.
     private final Textures texturesComponent;
 
-    public AtlasedAvatarTexture(Textures texturesComponent, ModuleMaterials.TextureMaterials.OwnedTexture materials, FiguraTextureAtlas.Builder atlasBuilder) throws AvatarError {
+    public AtlasedAvatarTexture(Textures texturesComponent, ModuleMaterials.TextureMaterials.OwnedTexture materials, FiguraTextureAtlas.Builder atlasBuilder) throws AvatarInitError, AvatarOutOfMemoryError {
         this.texturesComponent = texturesComponent;
         this.locationInAtlas = atlasBuilder.insert(materials.name(), materials.data());
     }

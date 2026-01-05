@@ -1,5 +1,6 @@
 package org.figuramc.figura_core.script_hooks.callback.items;
 
+import org.figuramc.figura_core.script_hooks.callback.ScriptCallback;
 import org.figuramc.figura_core.util.functional.BiThrowingConsumer;
 import org.figuramc.figura_core.util.functional.BiThrowingFunction;
 import org.jetbrains.annotations.Nullable;
@@ -11,6 +12,14 @@ import java.util.function.IntFunction;
  * This includes between Avatars, and from Java into an Avatar (Like calling an event).
  * It also can be used for translation between modules in different languages.
  * However, not all items support sending across Avatars, as it could lead to memory-hostage issues.
+ *
+ * Many things need to be considered to keep inter-avatar data sharing safe; one of which is Views.
+ * Without a view system, arbitrarily-sized types which are passed between Avatars can create issues with memory ownership.
+ * - Avatar A allocates a List
+ * - Avatar A exposes the List to Avatar B
+ * - Avatar B saves it in a global variable
+ * - The List cannot be garbage collected even if A stops referring to it, so A's memory is permanently held hostage by B.
+ * Situations like this necessitate something like a View, to make it possible to defend against these memory-hostage attacks.
  */
 public sealed interface CallbackItem permits
         // Primitives
@@ -22,7 +31,7 @@ public sealed interface CallbackItem permits
         // Generics
         CallbackItem.Optional,
         // Generics with many implementations
-        ListView, StringView, MapView, FuncView
+        ListView, StringView, MapView, CallbackView
 {
 
     // Simple constant-sized primitives

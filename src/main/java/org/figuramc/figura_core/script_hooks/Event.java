@@ -1,6 +1,7 @@
 package org.figuramc.figura_core.script_hooks;
 
 import org.figuramc.figura_core.script_hooks.callback.CallbackType;
+import org.figuramc.figura_core.script_hooks.callback.ScriptCallback;
 import org.figuramc.figura_core.script_hooks.callback.items.*;
 import org.figuramc.figura_core.util.enumlike.EnumLike;
 
@@ -41,7 +42,7 @@ public final class Event<Args extends CallbackItem, ReturnType extends CallbackI
 
     // Render events run on the main thread during entity extraction, and return callbacks
     // to run at an unspecified time on the render thread.
-    private static final CallbackType.Tuple2<CallbackItem.Optional<FuncView<CallbackItem, CallbackItem.Unit>>, CallbackItem> RENDER_EVENT_RETURN_TYPE
+    private static final CallbackType.Tuple2<CallbackItem.Optional<CallbackView<CallbackItem, CallbackItem.Unit>>, CallbackItem> RENDER_EVENT_RETURN_TYPE
             = new CallbackType.Tuple2<>(new CallbackType.Optional<>(new CallbackType.Func<>(CallbackType.Any.INSTANCE, CallbackType.Unit.INSTANCE)), CallbackType.Any.INSTANCE);
 
     // (tickDelta: f32) -> (Option<Any -> ()>, Any)
@@ -49,21 +50,21 @@ public final class Event<Args extends CallbackItem, ReturnType extends CallbackI
     // It runs near the beginning of the frame because we want an injection point early enough to modify the camera and other per-frame things without being a frame late.
     public static final Event<
             CallbackItem.F32,
-            CallbackItem.Tuple2<CallbackItem.Optional<FuncView<CallbackItem, CallbackItem.Unit>>, CallbackItem>
+            CallbackItem.Tuple2<CallbackItem.Optional<CallbackView<CallbackItem, CallbackItem.Unit>>, CallbackItem>
     > CLIENT_RENDER = new Event<>("client_render", CallbackType.F32.INSTANCE, RENDER_EVENT_RETURN_TYPE);
     // (tickDelta: f32, World) -> (Option<Any -> ()>, Any)
     // Runs just before the world is rendered, but after things like the camera are set up by client_render.
     // This is useful if you want to READ per-frame values like the targeted entity after they've been set up.
     public static final Event<
             CallbackItem.Tuple2<CallbackItem.F32, WorldView<?>>,
-            CallbackItem.Tuple2<CallbackItem.Optional<FuncView<CallbackItem, CallbackItem.Unit>>, CallbackItem>
+            CallbackItem.Tuple2<CallbackItem.Optional<CallbackView<CallbackItem, CallbackItem.Unit>>, CallbackItem>
     > WORLD_RENDER = new Event<>("world_render", new CallbackType.Tuple2<>(CallbackType.F32.INSTANCE, CallbackType.World.INSTANCE), RENDER_EVENT_RETURN_TYPE);
     // (tickDelta: f32, Entity, World) -> (Option<Any -> ()>, Any)
     // Runs during entity rendering, at a point after the entity's vanilla model has been posed, but before its vanilla model been drawn.
     // This is to give the avatar a chance to both read the vanilla model's pose and write to it before it's drawn this frame.
     public static final Event<
             CallbackItem.Tuple3<CallbackItem.F32, EntityView<?>, WorldView<?>>,
-            CallbackItem.Tuple2<CallbackItem.Optional<FuncView<CallbackItem, CallbackItem.Unit>>, CallbackItem>
+            CallbackItem.Tuple2<CallbackItem.Optional<CallbackView<CallbackItem, CallbackItem.Unit>>, CallbackItem>
     > ENTITY_RENDER = new Event<>("entity_render", new CallbackType.Tuple3<>(CallbackType.F32.INSTANCE, CallbackType.Entity.INSTANCE, CallbackType.World.INSTANCE), RENDER_EVENT_RETURN_TYPE);
 
     // ----- Input Events -----
@@ -73,7 +74,7 @@ public final class Event<Args extends CallbackItem, ReturnType extends CallbackI
     // If you call the 'cancel' callback argument, the normal operation will be canceled.
     public static final Event<CallbackItem.Tuple4<
             CallbackItem.I32, CallbackItem.I32, CallbackItem.I32,
-            FuncView<CallbackItem.Unit, CallbackItem.Unit>
+            CallbackView<CallbackItem.Unit, CallbackItem.Unit>
     >, CallbackItem.Unit> MOUSE_PRESS = new Event<>("mouse_press", new CallbackType.Tuple4<>(
             CallbackType.I32.INSTANCE, CallbackType.I32.INSTANCE, CallbackType.I32.INSTANCE,
             new CallbackType.Func<>(CallbackType.Unit.INSTANCE, CallbackType.Unit.INSTANCE)
@@ -83,7 +84,7 @@ public final class Event<Args extends CallbackItem, ReturnType extends CallbackI
     // If you call the 'cancel' callback argument, the normal operation will be canceled.
     public static final Event<CallbackItem.Tuple3<
             CallbackItem.F64, CallbackItem.F64,
-            FuncView<CallbackItem.Unit, CallbackItem.Unit>
+            CallbackView<CallbackItem.Unit, CallbackItem.Unit>
     >, CallbackItem.Unit> MOUSE_MOVE = new Event<>("mouse_move", new CallbackType.Tuple3<>(
             CallbackType.F64.INSTANCE, CallbackType.F64.INSTANCE,
             new CallbackType.Func<>(CallbackType.Unit.INSTANCE, CallbackType.Unit.INSTANCE)
@@ -93,7 +94,7 @@ public final class Event<Args extends CallbackItem, ReturnType extends CallbackI
     // If you call the 'cancel' callback argument, the normal operation will be canceled.
     public static final Event<CallbackItem.Tuple2<
             CallbackItem.Bool,
-            FuncView<CallbackItem.Unit, CallbackItem.Unit>
+            CallbackView<CallbackItem.Unit, CallbackItem.Unit>
     >, CallbackItem.Unit> MOUSE_SCROLL = new Event<>("mouse_scroll", new CallbackType.Tuple2<>(
             CallbackType.Bool.INSTANCE,
             new CallbackType.Func<>(CallbackType.Unit.INSTANCE, CallbackType.Unit.INSTANCE)
@@ -103,7 +104,7 @@ public final class Event<Args extends CallbackItem, ReturnType extends CallbackI
     // If you call the 'cancel' callback argument, the normal operation will be canceled.
     public static final Event<CallbackItem.Tuple4<
             CallbackItem.I32, CallbackItem.I32, CallbackItem.I32,
-            FuncView<CallbackItem.Unit, CallbackItem.Unit>
+            CallbackView<CallbackItem.Unit, CallbackItem.Unit>
     >, CallbackItem.Unit> KEY_PRESS = new Event<>("key_press", new CallbackType.Tuple4<>(
             CallbackType.I32.INSTANCE, CallbackType.I32.INSTANCE, CallbackType.I32.INSTANCE,
             new CallbackType.Func<>(CallbackType.Unit.INSTANCE, CallbackType.Unit.INSTANCE)
@@ -113,7 +114,7 @@ public final class Event<Args extends CallbackItem, ReturnType extends CallbackI
     // If you call the 'cancel' callback argument, the normal operation will be canceled.
     public static final Event<CallbackItem.Tuple2<
             StringView,
-            FuncView<CallbackItem.Unit, CallbackItem.Unit>
+            CallbackView<CallbackItem.Unit, CallbackItem.Unit>
     >, CallbackItem.Unit> CHAR_TYPED = new Event<>("char_typed", new CallbackType.Tuple2<>(
             CallbackType.Str.INSTANCE,
             new CallbackType.Func<>(CallbackType.Unit.INSTANCE, CallbackType.Unit.INSTANCE)

@@ -1,6 +1,7 @@
 package org.figuramc.figura_core.model.rendering;
 
-import org.figuramc.figura_core.avatars.AvatarError;
+import org.figuramc.figura_core.avatars.errors.AvatarError;
+import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_core.data.materials.ModuleMaterials;
 import org.figuramc.figura_core.minecraft_interop.texture.MinecraftTexture;
 import org.figuramc.figura_core.model.rendering.shader.BuiltinShader;
@@ -25,7 +26,7 @@ public record FiguraRenderType(int priority, FiguraShader shader, List<@Nullable
     // Lower priority values will render first, higher priority values render later.
 
     // Create from materials
-    public static FiguraRenderType from(ModuleMaterials.MaterialMaterials mats, List<AvatarTexture> textures, @Nullable AllocationTracker<AvatarError> allocTracker) throws AvatarError {
+    public static FiguraRenderType from(ModuleMaterials.MaterialMaterials mats, List<AvatarTexture> textures, @Nullable AllocationTracker<AvatarOutOfMemoryError> allocTracker) throws AvatarOutOfMemoryError {
         if (!(mats.shader() instanceof Either.Left(var builtin))) throw new IllegalStateException("Custom shaders are TODO");
         return switch (builtin) {
             case BASIC -> {

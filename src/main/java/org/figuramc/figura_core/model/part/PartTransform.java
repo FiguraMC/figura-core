@@ -1,8 +1,9 @@
 package org.figuramc.figura_core.model.part;
 
 import org.figuramc.figura_core.animation.Animator;
-import org.figuramc.figura_core.avatars.AvatarError;
+import org.figuramc.figura_core.avatars.errors.AvatarError;
 import org.figuramc.figura_core.avatars.components.VanillaRendering;
+import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_core.util.data_structures.FiguraTransformStack;
 import org.figuramc.memory_tracker.AllocationTracker;
 import org.jetbrains.annotations.Nullable;
@@ -53,15 +54,15 @@ public class PartTransform {
             + AllocationTracker.MAT3F_SIZE
             + AllocationTracker.MAT4F_SIZE;
     // Alloc state, for any future updates
-    private final @Nullable AllocationTracker.State<AvatarError> allocState;
-    public PartTransform(@Nullable AllocationTracker<AvatarError> allocationTracker) throws AvatarError {
+    private final @Nullable AllocationTracker.State<AvatarOutOfMemoryError> allocState;
+    public PartTransform(@Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker) throws AvatarOutOfMemoryError {
         if (allocationTracker != null) {
             this.allocState = allocationTracker.track(this, SIZE_ESTIMATE);
         } else this.allocState = null;
     }
 
     // Copy constructor.
-    public PartTransform(PartTransform transform, @Nullable AllocationTracker<AvatarError> allocationTracker) throws AvatarError {
+    public PartTransform(PartTransform transform, @Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker) throws AvatarOutOfMemoryError {
         this.origin.set(transform.origin);
         this.rotation.set(transform.rotation);
         this.scale.set(transform.scale);
@@ -126,7 +127,7 @@ public class PartTransform {
 
     public void setMimicPart(@Nullable VanillaRendering.ScriptVanillaPart mimicPart) { this.mimicPart = mimicPart; }
 
-    public void addAnimator(Animator animator) throws AvatarError {
+    public void addAnimator(Animator animator) throws AvatarOutOfMemoryError {
         if (animators == null)
             animators = new ArrayList<>(1);
         animators.add(animator);

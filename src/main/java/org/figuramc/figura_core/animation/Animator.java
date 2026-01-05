@@ -1,6 +1,7 @@
 package org.figuramc.figura_core.animation;
 
-import org.figuramc.figura_core.avatars.AvatarError;
+import org.figuramc.figura_core.avatars.errors.AvatarError;
+import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_core.model.part.PartTransform;
 import org.figuramc.figura_core.util.MathUtils;
 import org.figuramc.memory_tracker.AllocationTracker;
@@ -47,9 +48,9 @@ public class Animator {
             + AllocationTracker.VEC3F_SIZE * 3
             + AllocationTracker.BYTE_SIZE * 2;
 
-    private final @Nullable AllocationTracker.State<AvatarError> allocState;
+    private final @Nullable AllocationTracker.State<AvatarOutOfMemoryError> allocState;
 
-    public Animator(AnimationInstance instance, Animation.TransformKeyframes keyframes, @Nullable AllocationTracker<AvatarError> allocationTracker) throws AvatarError {
+    public Animator(AnimationInstance instance, Animation.TransformKeyframes keyframes, @Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker) throws AvatarOutOfMemoryError {
         this.instance = instance;
         this.keyframes = keyframes;
         // Detect which keyframe channels are in use, set up accordingly
@@ -111,7 +112,7 @@ public class Animator {
 
     // PartTransform and Animator REFERENCE EACH OTHER!
     // This is so that Animator can mark PartTransform as dirty, and PartTransform can query Animator for its values!
-    public void addTransform(PartTransform transform) throws AvatarError {
+    public void addTransform(PartTransform transform) throws AvatarOutOfMemoryError {
         if (allocState != null) allocState.changeSize(AllocationTracker.REFERENCE_SIZE);
         this.transforms.add(transform);
     }

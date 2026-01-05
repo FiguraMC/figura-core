@@ -1,6 +1,7 @@
 package org.figuramc.figura_core.model.part.tasks;
 
-import org.figuramc.figura_core.avatars.AvatarError;
+import org.figuramc.figura_core.avatars.errors.AvatarError;
+import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_core.model.part.PartTransform;
 import org.figuramc.figura_core.model.part.Transformable;
 import org.figuramc.memory_tracker.AllocationTracker;
@@ -17,16 +18,16 @@ public abstract sealed class RenderTask<Self extends RenderTask<Self>> implement
 
     public final PartTransform transform;
 
-    public RenderTask(@Nullable AllocationTracker<AvatarError> allocationTracker) throws AvatarError {
+    public RenderTask(@Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker) throws AvatarOutOfMemoryError {
         this.transform = new PartTransform(allocationTracker);
     }
 
     // Copy constructor
-    public RenderTask(RenderTask<Self> task, @Nullable AllocationTracker<AvatarError> allocationTracker) throws AvatarError {
+    public RenderTask(RenderTask<Self> task, @Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker) throws AvatarOutOfMemoryError {
         this.transform = new PartTransform(task.transform, allocationTracker);
     }
 
-    public abstract Self copy(@Nullable AllocationTracker<AvatarError> allocationTracker) throws AvatarError;
+    public abstract Self copy(@Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker) throws AvatarOutOfMemoryError;
 
     @Override
     public PartTransform getTransform() {

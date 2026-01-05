@@ -1,11 +1,12 @@
 package org.figuramc.figura_core.model.part.parts;
 
-import org.figuramc.figura_core.avatars.AvatarError;
 import org.figuramc.figura_core.avatars.AvatarModules;
 import org.figuramc.figura_core.avatars.components.Materials;
 import org.figuramc.figura_core.avatars.components.Molang;
 import org.figuramc.figura_core.avatars.components.Textures;
 import org.figuramc.figura_core.avatars.components.VanillaRendering;
+import org.figuramc.figura_core.avatars.errors.AvatarInitError;
+import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_core.data.materials.ModuleMaterials;
 import org.figuramc.figura_core.model.part.PartTransform;
 import org.figuramc.figura_core.model.part.RiggedHierarchy;
@@ -57,10 +58,10 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
             preRenderCallbacks, midRenderCallbacks, postRenderCallbacks;
 
     // Alloc tracker state
-    private final @Nullable AllocationTracker.State<AvatarError> allocState;
+    private final @Nullable AllocationTracker.State<AvatarOutOfMemoryError> allocState;
 
     // Construct a simple empty wrapper part around the given children
-    public FiguraModelPart(String name, List<FiguraModelPart> children, @Nullable AllocationTracker<AvatarError> allocationTracker) throws AvatarError {
+    public FiguraModelPart(String name, List<FiguraModelPart> children, @Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker) throws AvatarOutOfMemoryError {
         this.name = name;
         this.transform = new PartTransform(allocationTracker);
         this.children = new ArrayList<>(children);
@@ -88,8 +89,8 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
             boolean deepCopyChildren, // Whether to deep-copy the children. These args will be propagated to those children as they're deep-copied.
             boolean deepCopyVertices,
             boolean deepCopyCallbackLists, // Whether to deep-copy the callback lists
-            @Nullable AllocationTracker<AvatarError> allocationTracker
-    ) throws AvatarError {
+            @Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker
+    ) throws AvatarOutOfMemoryError {
         this.name = newName;
         // Transform:
         this.transform = deepCopyTransform ? new PartTransform(part.transform, allocationTracker) : part.transform;
@@ -132,7 +133,7 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
     }
 
     // Vanilla parameter is used for mimics
-    public FiguraModelPart(String name, AvatarModules.LoadTimeModule module, ModuleMaterials.ModelPartMaterials materials, @Nullable AllocationTracker<AvatarError> allocationTracker, Textures texturesComponent, Materials materialsComponent, Molang molang, @Nullable VanillaRendering vanillaComponent) throws AvatarError {
+    public FiguraModelPart(String name, AvatarModules.LoadTimeModule module, ModuleMaterials.ModelPartMaterials materials, @Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker, Textures texturesComponent, Materials materialsComponent, Molang molang, @Nullable VanillaRendering vanillaComponent) throws AvatarInitError, AvatarOutOfMemoryError {
         this.name = name;
         // If both zero, skip setting it
         transform = new PartTransform(allocationTracker);
@@ -153,7 +154,7 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
         }
 
         // Get children
-        children = MapUtils.mapEntries(materials.children, (childName, mat) -> switch (mat) {
+        children = MapUtils.<String, ModuleMaterials.ModelPartMaterials, FiguraModelPart, AvatarInitError, AvatarOutOfMemoryError>mapEntriesBiThrowing(materials.children, (childName, mat) -> switch (mat) {
             case ModuleMaterials.FigmodelMaterials figmodelMaterials -> new FigmodelModelPart(childName, module, figmodelMaterials, allocationTracker, texturesComponent, materialsComponent, molang, vanillaComponent);
             default -> new FiguraModelPart(childName, module, mat, allocationTracker, texturesComponent, materialsComponent, molang, vanillaComponent);
         });
@@ -190,7 +191,7 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
     }
 
     // Construct by extruding a texture
-    public FiguraModelPart(String name, AvatarTexture texture, @Nullable AllocationTracker<AvatarError> allocationTracker) throws AvatarError {
+    public FiguraModelPart(String name, AvatarTexture texture, @Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker) throws AvatarOutOfMemoryError {
         this.name = name;
         this.transform = new PartTransform(allocationTracker);
         this.renderType = FiguraRenderType.basic(0, texture, null, null, null);
@@ -489,7 +490,7 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
 
     // Script-y functions
 
-    public void addChild(FiguraModelPart child) throws AvatarError {
+    public void addChild(FiguraModelPart child) throws AvatarOutOfMemoryError {
         if (this.allocState != null) this.allocState.changeSize(AllocationTracker.REFERENCE_SIZE);
         QueuedSetters.handle(() -> this.children.add(child));
     }
@@ -501,7 +502,7 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
         });
     }
 
-    public void addRenderTask(RenderTask<?> task) throws AvatarError {
+    public void addRenderTask(RenderTask<?> task) throws AvatarOutOfMemoryError {
         if (this.allocState != null) this.allocState.changeSize(AllocationTracker.REFERENCE_SIZE);
         QueuedSetters.handle(() -> this.renderTasks.add(task));
     }

@@ -4,8 +4,9 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import org.figuramc.figura_core.avatars.AvatarError;
+import org.figuramc.figura_core.avatars.errors.AvatarError;
 import org.figuramc.figura_core.avatars.components.Molang;
+import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_molang.compile.MolangCompileException;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -110,7 +111,7 @@ public class TextStyle {
         public Builder outlineColor(StyleElementProvider<Vector4f> outlineColor) { this.outlineColor = outlineColor; return this; }
     }
 
-    public static TextStyle parseJson(TextStyle parent, JsonObject object, @Nullable Molang molang, int startCharIndex, int charCount) throws AvatarError, MolangCompileException {
+    public static TextStyle parseJson(TextStyle parent, JsonObject object, @Nullable Molang molang, int startCharIndex, int charCount) throws AvatarOutOfMemoryError, MolangCompileException {
         return new TextStyle(
                 parent,
                 parseBoolean(object.get("bold"), molang, startCharIndex, charCount),
@@ -134,7 +135,7 @@ public class TextStyle {
     // TODO better errors for invalid inputs
 
     @Contract("!null, _, _, _ -> !null")
-    private static @Nullable StyleElementProvider<Boolean> parseBoolean(@Nullable JsonElement e, @Nullable Molang molang, int startCharIndex, int charCount) throws AvatarError, MolangCompileException {
+    private static @Nullable StyleElementProvider<Boolean> parseBoolean(@Nullable JsonElement e, @Nullable Molang molang, int startCharIndex, int charCount) throws AvatarOutOfMemoryError, MolangCompileException {
         if (e == null) return null;
         if (!(e instanceof JsonPrimitive p)) throw new IllegalArgumentException("Should be primitive");
         if (p.isBoolean()) return p.getAsBoolean() ? StyleElementProvider.Constant.TRUE : StyleElementProvider.Constant.FALSE;
@@ -149,7 +150,7 @@ public class TextStyle {
     }
 
     @Contract("!null, _, _, _ -> !null")
-    private static @Nullable StyleElementProvider<Float> parseFloat(@Nullable JsonElement e, @Nullable Molang molang, int startCharIndex, int charCount) throws AvatarError, MolangCompileException {
+    private static @Nullable StyleElementProvider<Float> parseFloat(@Nullable JsonElement e, @Nullable Molang molang, int startCharIndex, int charCount) throws AvatarOutOfMemoryError, MolangCompileException {
         if (e == null) return null;
         if (!(e instanceof JsonPrimitive p)) throw new IllegalArgumentException("Should be primitive");
         if (p.isNumber()) return new StyleElementProvider.Constant<>(p.getAsFloat());
@@ -164,7 +165,7 @@ public class TextStyle {
     }
 
     @Contract("!null, _, _, _ -> !null")
-    private static @Nullable StyleElementProvider<Vector2f> parseVec2(@Nullable JsonElement e, @Nullable Molang molang, int startCharIndex, int charCount) throws AvatarError, MolangCompileException {
+    private static @Nullable StyleElementProvider<Vector2f> parseVec2(@Nullable JsonElement e, @Nullable Molang molang, int startCharIndex, int charCount) throws AvatarOutOfMemoryError, MolangCompileException {
         if (e == null) return null;
         // Accept array of 2 float elements
         if (e instanceof JsonArray arr) {
@@ -199,7 +200,7 @@ public class TextStyle {
     }
 
     @Contract("!null, _, _, _ -> !null")
-    private static @Nullable StyleElementProvider<Vector4f> parseVec4(@Nullable JsonElement e, @Nullable Molang molang, int startCharIndex, int charCount) throws AvatarError, MolangCompileException {
+    private static @Nullable StyleElementProvider<Vector4f> parseVec4(@Nullable JsonElement e, @Nullable Molang molang, int startCharIndex, int charCount) throws AvatarOutOfMemoryError, MolangCompileException {
         if (e == null) return null;
         // Accept array of 4 float elements
         if (e instanceof JsonArray arr) {

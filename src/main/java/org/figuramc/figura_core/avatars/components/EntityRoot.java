@@ -2,8 +2,10 @@ package org.figuramc.figura_core.avatars.components;
 
 import org.figuramc.figura_core.avatars.Avatar;
 import org.figuramc.figura_core.avatars.AvatarComponent;
-import org.figuramc.figura_core.avatars.AvatarError;
+import org.figuramc.figura_core.avatars.errors.AvatarError;
 import org.figuramc.figura_core.avatars.AvatarModules;
+import org.figuramc.figura_core.avatars.errors.AvatarInitError;
+import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_core.model.part.parts.FiguraModelPart;
 import org.figuramc.figura_core.model.rendering.RenderingRoot;
 import org.figuramc.memory_tracker.AllocationTracker;
@@ -21,8 +23,8 @@ public class EntityRoot implements AvatarComponent<EntityRoot> {
     public final @Nullable FiguraModelPart[] rootByModule;
 
     // Vanilla rendering parameter if possible, this will allow mimics to work
-    public EntityRoot(Avatar<?> avatar, AvatarModules modules) throws AvatarError {
-        @Nullable AllocationTracker<AvatarError> allocationTracker = avatar.allocationTracker;
+    public EntityRoot(Avatar<?> avatar, AvatarModules modules) throws AvatarInitError, AvatarOutOfMemoryError {
+        @Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker = avatar.allocationTracker;
         Textures texturesComponent = avatar.assertComponent(Textures.TYPE);
         Materials materialsComponent = avatar.assertComponent(Materials.TYPE);
         Molang molang = avatar.assertComponent(Molang.TYPE);

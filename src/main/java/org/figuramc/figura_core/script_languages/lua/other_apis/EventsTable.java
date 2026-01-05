@@ -1,5 +1,6 @@
 package org.figuramc.figura_core.script_languages.lua.other_apis;
 
+import org.figuramc.figura_cobalt.LuaOOM;
 import org.figuramc.figura_cobalt.LuaUncatchableError;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.Constants;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaError;
@@ -19,7 +20,8 @@ import java.util.Map;
  */
 public class EventsTable {
 
-    public static LuaTable create(LuaRuntime state, Map<Event<?, ?>, EventListener<?, ?>> eventListeners) throws LuaError, LuaUncatchableError {
+    public static LuaTable create(LuaRuntime state, Map<Event<?, ?>, EventListener<?, ?>> eventListeners) throws LuaError, LuaOOM {
+
         // Create tables and set up meta-stuff
         LuaTable events = new LuaTable(state.allocationTracker); // Dummy table, which has metatable __index and __newindex
         LuaTable byName = new LuaTable(state.allocationTracker); // Backing table used as __index and for __newindex registration

@@ -1,5 +1,6 @@
 package org.figuramc.figura_core.util;
 
+import org.figuramc.figura_core.util.functional.BiThrowingBiFunction;
 import org.figuramc.figura_core.util.functional.ThrowingBiFunction;
 import org.figuramc.figura_core.util.functional.ThrowingFunction;
 
@@ -35,6 +36,14 @@ public class MapUtils {
         return result;
     }
 
+    public static <K, V1, V2, E1 extends Throwable, E2 extends Throwable> HashMap<K, V2> mapValuesBiThrowing(Map<K, V1> map, BiThrowingBiFunction<K, V1, V2, E1, E2> func) throws E1, E2 {
+        HashMap<K, V2> result = new HashMap<>();
+        for (Map.Entry<K, V1> entry : map.entrySet())
+            result.put(entry.getKey(), func.apply(entry.getKey(), entry.getValue()));
+        return result;
+    }
+
+
     public static <K1, K2, V, E extends Throwable> HashMap<K2, V> mapKeys(Map<K1, V> map, ThrowingFunction<K1, K2, E> func) throws E {
         HashMap<K2, V> result = new HashMap<>();
         for (Map.Entry<K1, V> entry : map.entrySet())
@@ -48,6 +57,14 @@ public class MapUtils {
             result.add(func.apply(entry.getKey(), entry.getValue()));
         return result;
     }
+
+    public static <K, V, T, E1 extends Throwable, E2 extends Throwable> ArrayList<T> mapEntriesBiThrowing(Map<K, V> map, BiThrowingBiFunction<K, V, T, E1, E2> func) throws E1, E2 {
+        ArrayList<T> result = new ArrayList<>(map.size());
+        for (Map.Entry<K, V> entry : map.entrySet())
+            result.add(func.apply(entry.getKey(), entry.getValue()));
+        return result;
+    }
+
 
 
     public static <K, V> LinkedHashMap<K, List<V>> merge(Iterable<Map<K, V>> maps) {

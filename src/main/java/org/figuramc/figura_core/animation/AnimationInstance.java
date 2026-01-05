@@ -1,6 +1,7 @@
 package org.figuramc.figura_core.animation;
 
-import org.figuramc.figura_core.avatars.AvatarError;
+import org.figuramc.figura_core.avatars.errors.AvatarError;
+import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_core.model.part.RiggedHierarchy;
 import org.figuramc.memory_tracker.AllocationTracker;
 import org.jetbrains.annotations.Nullable;
@@ -25,7 +26,7 @@ public class AnimationInstance {
             + AllocationTracker.FLOAT_SIZE * 2;
 
     // Bind the Animation to a RiggedHierarchy, within an Animations component
-    public AnimationInstance(Animation animation, RiggedHierarchy<?> root, @Nullable AllocationTracker<AvatarError> allocationTracker) throws AvatarError {
+    public AnimationInstance(Animation animation, RiggedHierarchy<?> root, @Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker) throws AvatarOutOfMemoryError {
         animators = new Animator[animation.keyframesByPartPath.size()];
         int i = 0;
         for (var entry : animation.keyframesByPartPath.entrySet()) {

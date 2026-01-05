@@ -20,6 +20,7 @@ public class CallbackTypeAPI {
 
     // Non-generic types are constants
     @LuaConstant public static LuaValue UNIT(LuaState state, LuaTable metatable) { return new LuaUserdata(CallbackType.Unit.INSTANCE, metatable); }
+    @LuaConstant public static LuaValue OPAQUE(LuaState state, LuaTable metatable) { return new LuaUserdata(CallbackType.Opaque.INSTANCE, metatable); }
     @LuaConstant public static LuaValue ANY(LuaState state, LuaTable metatable) { return new LuaUserdata(CallbackType.Any.INSTANCE, metatable); }
     @LuaConstant public static LuaValue BOOL(LuaState state, LuaTable metatable) { return new LuaUserdata(CallbackType.Bool.INSTANCE, metatable); }
     @LuaConstant public static LuaValue F32(LuaState state, LuaTable metatable) { return new LuaUserdata(CallbackType.F32.INSTANCE, metatable); }
@@ -29,5 +30,9 @@ public class CallbackTypeAPI {
     // Generics are functions over types
     @LuaExpose public static CallbackType<?> List(CallbackType<?> elemType) { return new CallbackType.List<>(elemType); }
     @LuaExpose public static CallbackType<?> Map(CallbackType<?> keyType, CallbackType<?> valueType) { return new CallbackType.Map<>(keyType, valueType); }
+    @LuaExpose public static CallbackType<?> Func(CallbackType<?> inputType, CallbackType<?> outputType) { return new CallbackType.Func<>(inputType, outputType); }
+    @LuaExpose public static CallbackType<?> Optional(CallbackType<?> innerType) { return new CallbackType.Optional<>(innerType); }
+
+    // TODO Tuples
 
 }

@@ -1,4 +1,8 @@
-package org.figuramc.figura_core.avatars;
+package org.figuramc.figura_core.avatars.components;
+
+import org.figuramc.figura_core.avatars.AvatarComponent;
+import org.figuramc.figura_core.avatars.AvatarModules;
+import org.figuramc.figura_core.avatars.errors.AvatarError;
 
 public interface ScriptRuntimeComponent<Self extends AvatarComponent<Self>> extends AvatarComponent<Self> {
 
