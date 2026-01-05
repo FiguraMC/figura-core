@@ -20,17 +20,13 @@ import java.util.Map;
  */
 public class Molang implements AvatarComponent<Molang> {
 
-    public static final Type<Molang> TYPE = new Type<>(Molang::new, EntityUser.TYPE); // Depends on entity user being updated before it
+    public static final Type<Molang> TYPE = new Type<>(Molang::new); // Depends on entity user being updated before it
     public Type<Molang> getType() { return TYPE; }
 
     // The molang instance
     private final MolangInstance<Molang, AvatarOutOfMemoryError> molangInstance;
 
-    // The entity which has the avatar equipped, if any
-    private final @Nullable EntityUser entityUser;
-
     public Molang(Avatar<?> avatar, AvatarModules modules) throws AvatarOutOfMemoryError {
-        this.entityUser = avatar.getComponent(EntityUser.TYPE);
         this.molangInstance = new MolangInstance<>(this, avatar.allocationTracker, AllMolangQueries.getAvatarQueries());
     }
 

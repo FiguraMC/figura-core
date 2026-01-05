@@ -41,7 +41,7 @@ public class FiguraConnectionPoint {
         ReflectionUtils.ensureInitialized(
                 AvatarEvents.class, AvatarProfiling.class,
                 CemSelfDeleter.class, CustomItems.class,
-                EntityRoot.class, EntityUser.class, ExternalText.class,
+                EntityRoot.class, ExternalText.class,
                 HudRoot.class,
                 ManagerAccess.class, Materials.class, Molang.class,
                 Textures.class, VanillaRendering.class,

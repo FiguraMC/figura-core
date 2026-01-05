@@ -183,6 +183,7 @@ public final class Avatar<K> {
 
     // Run at the end of each client tick.
     // It just ticks each component in the order they were added to the Avatar.
+    // Should run on the main thread!
     public void tick() {
         if (isErrored()) return; // Don't tick if errored
         for (AvatarComponent<?> component : presentComponents) {

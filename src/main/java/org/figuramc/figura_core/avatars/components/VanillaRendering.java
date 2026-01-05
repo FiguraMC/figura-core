@@ -20,7 +20,6 @@ import java.util.Map;
 
 /**
  * Component that manages the vanilla entity's rendering for this avatar.
- * Requires an EntityUser component.
  */
 public class VanillaRendering implements AvatarComponent<VanillaRendering> {
 
