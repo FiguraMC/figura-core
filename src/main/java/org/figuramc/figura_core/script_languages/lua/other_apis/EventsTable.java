@@ -2,10 +2,7 @@ package org.figuramc.figura_core.script_languages.lua.other_apis;
 
 import org.figuramc.figura_cobalt.LuaOOM;
 import org.figuramc.figura_cobalt.LuaUncatchableError;
-import org.figuramc.figura_cobalt.org.squiddev.cobalt.Constants;
-import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaError;
-import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaTable;
-import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaValue;
+import org.figuramc.figura_cobalt.org.squiddev.cobalt.*;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.LibFunction;
 import org.figuramc.figura_core.script_hooks.Event;
 import org.figuramc.figura_core.script_hooks.EventListener;
@@ -32,8 +29,7 @@ public class EventsTable {
             LuaValue event = byName.rawget(name);
             if (event.isNil()) { throw new LuaError("Event named \"" + name + "\" does not exist", s.allocationTracker); }
             EventListener<?, ?> eventListener = event.checkUserdata(s, EventListener.class);
-            EventListenerAPI.registerImpl((LuaRuntime) s, eventListener, func);
-            return Constants.NIL;
+            return LuaInteger.valueOf(EventListenerAPI.registerImpl((LuaRuntime) s, eventListener, func));
         }));
 
         // Fill in the backing table with the built-in listeners provided

@@ -38,11 +38,13 @@ public class EventListenerAPI {
     // -------- LUA API -------- //
 
     @LuaExpose @LuaPassState
-    public static void register(LuaRuntime s, EventListener<?, ?> self, LuaValue arg) {
-        registerImpl(s, self, arg);
+    public static long register(LuaRuntime s, EventListener<?, ?> self, LuaValue arg) {
+        return registerImpl(s, self, arg);
     }
-
-    // TODO add a method to de-register a function. Maybe :register() returns a token which is later passed to :remove()?
+    @LuaExpose @LuaPassState
+    public static void remove(LuaRuntime s, EventListener<?, ?> self, long callbackId) {
+        removeImpl(s, self, callbackId);
+    }
 
     // General call. Will use invoke() if owner, or queue() if non-owner. Generally what you want.
     @LuaExpose @LuaDirect
@@ -133,9 +135,14 @@ public class EventListenerAPI {
     // -------- HELPER METHODS FOR GENERIC SAFETY -------- //
 
 
-    public static <T extends CallbackItem, R extends CallbackItem> void registerImpl(LuaRuntime s, EventListener<T, R> listener, LuaValue func) {
+    public static <T extends CallbackItem, R extends CallbackItem> long registerImpl(LuaRuntime s, EventListener<T, R> listener, LuaValue func) {
+        if (!isOwningAvatar(s, listener)) return -1;
+        return listener.registerCallback(new LuaCallback<>(listener.funcType, s, func));
+    }
+
+    public static <T extends CallbackItem, R extends CallbackItem> void removeImpl(LuaRuntime s, EventListener<T, R> listener, long callbackId) {
         if (!isOwningAvatar(s, listener)) return;
-        listener.registerCallback(new LuaCallback<>(listener.funcType, s, func));
+        listener.removeCallback(callbackId);
     }
 
     // Convert from Lua Varargs into I

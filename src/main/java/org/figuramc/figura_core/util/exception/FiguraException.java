@@ -12,6 +12,7 @@ public class FiguraException extends Exception {
     public static final Translatable<TranslatableItems.Items1<String>> INTERNAL_ERROR = Translatable.create("figura_core.error.internal", String.class);
     public static final Translatable<TranslatableItems.Items1<String>> LITERAL = Translatable.create("figura_core.translation.literal", String.class);
 
+
     public <Items extends TranslatableItems> FiguraException(org.figuramc.figura_translations.Translatable<Items> translatable, Items items) {
         super(translatable.translate(Language.EN_US, items)); // TODO make lang configurable :P
     }

@@ -11,6 +11,8 @@ import org.figuramc.figura_core.model.rendering.vertex.FiguraVertexFormat;
 import org.figuramc.figura_core.util.MapUtils;
 import org.figuramc.figura_core.util.data_structures.ByteBufferBuilder;
 import org.figuramc.figura_core.util.data_structures.FiguraTransformStack;
+import org.figuramc.figura_translations.Translatable;
+import org.figuramc.figura_translations.TranslatableItems;
 import org.figuramc.memory_tracker.AllocationTracker;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -62,7 +64,7 @@ public class RenderingRoot<T extends FiguraModelPart> {
     // Figura-core shouldn't call this at all, unless we somehow know we're on the render thread.
     // Instead we should invalidate the renderer so it knows to recompute vertices.
     // Also may update the PartDataStruct[] and transformCount
-    public void rebuildVertices() throws AvatarOutOfMemoryError {
+    public void rebuildVertices() throws AvatarOutOfMemoryError, AvatarError {
         // Map figura render type -> buffer builder
         Map<FiguraRenderType, ByteBufferBuilder> bufferBuilders = new HashMap<>();
         // Recursively traverse the part
@@ -128,7 +130,7 @@ public class RenderingRoot<T extends FiguraModelPart> {
             @Nullable FiguraRenderType currentRenderType, // Current render type, if any
             int currentRenderTypePriority, // Parent's render type priority
             int[] currentId // The current ID for vertex weights stuff. Int array for mutability
-    ) throws AvatarOutOfMemoryError {
+    ) throws AvatarOutOfMemoryError, AvatarError {
         // Update render types if we can and this part has priority
         if (part.renderType != null && part.renderTypePriority >= currentRenderTypePriority) {
             currentRenderType = part.renderType;
@@ -168,12 +170,16 @@ public class RenderingRoot<T extends FiguraModelPart> {
                                     .push(part.vertices.riggingWeights[i*4+1])
                                     .push(part.vertices.riggingWeights[i*4+2])
                                     .push(part.vertices.riggingWeights[i*4+3]);
-                            case 2 -> buffer
-                                    // TODO ensure this char-cast doesn't overflow from large id! Error if it does.
+                            case 2 -> {
+                                if (0 > id || id > 0xff00) {
+                                    throw new AvatarError(TOO_MANY_GROUPS, id);
+                                }
+                                buffer
                                     .pushUnsignedShort(part.vertices.riggingOffsets[i*4] == -1 ? Character.MAX_VALUE : (char) (id + part.vertices.riggingOffsets[i*4]))
                                     .pushUnsignedShort(part.vertices.riggingOffsets[i*4+1] == -1 ? Character.MAX_VALUE : (char) (id + part.vertices.riggingOffsets[i*4+1]))
                                     .pushUnsignedShort(part.vertices.riggingOffsets[i*4+2] == -1 ? Character.MAX_VALUE : (char) (id + part.vertices.riggingOffsets[i*4+2]))
                                     .pushUnsignedShort(part.vertices.riggingOffsets[i*4+3] == -1 ? Character.MAX_VALUE : (char) (id + part.vertices.riggingOffsets[i*4+3]));
+                            }
                             case 3 -> buffer
                                     .pushFloat(part.vertices.uvs[i*2])
                                     .pushFloat(part.vertices.uvs[i*2+1]);
@@ -247,4 +253,5 @@ public class RenderingRoot<T extends FiguraModelPart> {
     }
 
 
+    private static final Translatable<TranslatableItems.Items1<Integer>> TOO_MANY_GROUPS = Translatable.create("figura_core.error.too_many_groups", Integer.class);
 }
