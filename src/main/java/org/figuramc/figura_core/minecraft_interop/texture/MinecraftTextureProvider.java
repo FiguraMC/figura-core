@@ -1,5 +1,8 @@
 package org.figuramc.figura_core.minecraft_interop.texture;
 
+import org.figuramc.figura_core.data.materials.ModuleMaterials;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.IOException;
 
 /**
@@ -20,4 +23,13 @@ public interface MinecraftTextureProvider {
      */
     OwnedMinecraftTexture createTextureFromPng(byte[] pngBytes) throws IOException;
 
+    //TODO cool description
+    @Nullable
+    OwnedMinecraftTexture getVanillaTexture(ModuleMaterials.TextureMaterials.VanillaTexture vanilla) throws IOException;
+
+    /**
+     * Returns a reference to one of the renderer's builtin textures. Used in shaders.
+     */
+    @Nullable
+    GpuMinecraftTexture getBuiltinTexture(ModuleMaterials.BuiltinTextureBinding builtin);
 }

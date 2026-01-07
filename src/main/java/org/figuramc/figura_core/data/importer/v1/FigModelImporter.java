@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.figuramc.figura_core.data.importer.ModuleImportingException;
 import org.figuramc.figura_core.data.materials.ModuleMaterials;
+import org.figuramc.figura_core.minecraft_interop.game_data.MinecraftIdentifier;
 import org.figuramc.figura_core.util.IOUtils;
 import org.figuramc.figura_core.util.JsonUtils;
 import org.figuramc.figura_core.util.ListUtils;
@@ -103,7 +104,10 @@ public class FigModelImporter {
             // First, check if it's a vanilla texture:
             @Nullable String vanillaTextureOverride = JsonUtils.getStringOrDefault(texture, "vanilla_texture_override", null);
             if (vanillaTextureOverride != null && !vanillaTextureOverride.isBlank()) {
-                allTextures.add(new ModuleMaterials.TextureMaterials.VanillaTexture(vanillaTextureOverride));
+                // Parse into a MinecraftIdentifier.
+                var identifier = MinecraftIdentifier.parse(vanillaTextureOverride);
+                // TODO: check for invalid identifiers if (identifier == null)
+                allTextures.add(new ModuleMaterials.TextureMaterials.VanillaTexture(identifier));
                 mapping[i] = new ModelLocalTexture(name, allTextures.size() - 1, uvSize, emissiveFriendIndex, normalFriendIndex, specularFriendIndex, new Mutable<>());
                 continue;
             }

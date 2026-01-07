@@ -1,5 +1,6 @@
 package org.figuramc.figura_core.data.materials;
 
+import org.figuramc.figura_core.minecraft_interop.game_data.MinecraftIdentifier;
 import org.figuramc.figura_core.script_hooks.callback.CallbackType;
 import org.figuramc.figura_core.util.data_structures.DataTree;
 import org.figuramc.figura_core.util.data_structures.Either;
@@ -65,7 +66,7 @@ public record ModuleMaterials(
     public sealed interface TextureMaterials {
         @Nullable String name(); // Only use if this is a standalone texture!
         record OwnedTexture(@Nullable String name, @Nullable @NoSerialize String location, byte[] data, boolean noAtlas) implements TextureMaterials {}
-        record VanillaTexture(String resourceLocation) implements TextureMaterials { @Override public String name() { return null; }}
+        record VanillaTexture(MinecraftIdentifier resourceLocation) implements TextureMaterials { @Override public String name() { return null; }}
     }
 
     // MATERIALS

@@ -3,7 +3,9 @@ package org.figuramc.figura_core.model.rendering;
 import org.figuramc.figura_core.avatars.errors.AvatarError;
 import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_core.data.materials.ModuleMaterials;
+import org.figuramc.figura_core.minecraft_interop.FiguraConnectionPoint;
 import org.figuramc.figura_core.minecraft_interop.texture.MinecraftTexture;
+import org.figuramc.figura_core.minecraft_interop.texture.MinecraftTextureProvider;
 import org.figuramc.figura_core.model.rendering.shader.BuiltinShader;
 import org.figuramc.figura_core.model.rendering.shader.FiguraShader;
 import org.figuramc.figura_core.model.texture.AvatarTexture;
@@ -45,7 +47,9 @@ public record FiguraRenderType(int priority, FiguraShader shader, List<@Nullable
         return switch (binding) {
             case null -> null;
             case Either.Left(var builtin) -> {
-                yield null; // TODO
+                var tex = FiguraConnectionPoint.TEXTURE_PROVIDER.getBuiltinTexture(builtin);
+                if (tex == null) yield null;
+                yield new TextureBinding(tex, new Vector4f(0.0f, 0.0f, 1.0f, 1.0f));
             }
             case Either.Right(var texIndex) -> {
                 var tex = textures.get(texIndex);
