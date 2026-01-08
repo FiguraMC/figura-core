@@ -20,7 +20,7 @@ import java.util.Map;
  */
 public class Molang implements AvatarComponent<Molang> {
 
-    public static final Type<Molang> TYPE = new Type<>(Molang::new); // Depends on entity user being updated before it
+    public static final Type<Molang> TYPE = new Type<>("MOLANG", Molang::new); // Depends on entity user being updated before it
     public Type<Molang> getType() { return TYPE; }
 
     // The molang instance

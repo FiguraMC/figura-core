@@ -4,9 +4,8 @@ import org.figuramc.figura_core.util.enumlike.EnumLike;
 
 public class EquipmentSlot extends EnumLike {
 
-    public final String name;
     public EquipmentSlot(String name) {
-        this.name = name;
+        super(name);
     }
 
     public static final EquipmentSlot MAINHAND = new EquipmentSlot("MAINHAND");
@@ -17,11 +16,5 @@ public class EquipmentSlot extends EnumLike {
     public static final EquipmentSlot HEAD = new EquipmentSlot("HEAD");
     public static final EquipmentSlot BODY = new EquipmentSlot("BODY");
     public static final EquipmentSlot SADDLE = new EquipmentSlot("SADDLE");
-
-    @Override
-    @Deprecated
-    public String toString() {
-        return "EquipmentSlot[" + name + "]";
-    }
 
 }

@@ -1,11 +1,11 @@
 package org.figuramc.figura_core.minecraft_interop;
 
 import org.figuramc.figura_core.avatars.AvatarComponent;
-import org.figuramc.figura_core.avatars.errors.AvatarError;
 import org.figuramc.figura_core.avatars.components.*;
 import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_core.minecraft_interop.game_data.GameDataProvider;
 import org.figuramc.figura_core.minecraft_interop.game_data.entity.EntityPose;
+import org.figuramc.figura_core.minecraft_interop.game_data.item.EquipmentSlot;
 import org.figuramc.figura_core.minecraft_interop.game_data.item.ItemRarity;
 import org.figuramc.figura_core.minecraft_interop.game_data.item.ItemUseAction;
 import org.figuramc.figura_core.minecraft_interop.render.PartRenderer;
@@ -49,7 +49,7 @@ public class FiguraConnectionPoint {
                 LuaRuntime.class
         );
         ReflectionUtils.ensureInitialized(ShaderHookPoint.class);
-        ReflectionUtils.ensureInitialized(EntityPose.class, ItemRarity.class, ItemUseAction.class);
+        ReflectionUtils.ensureInitialized(EntityPose.class, EquipmentSlot.class, ItemRarity.class, ItemUseAction.class);
 
         // TODO let addons construct extra EnumLike instances here
 
@@ -57,6 +57,7 @@ public class FiguraConnectionPoint {
         EnumLike.freeze(AvatarComponent.Type.class);
         EnumLike.freeze(ShaderHookPoint.class);
         EnumLike.freeze(EntityPose.class);
+        EnumLike.freeze(EquipmentSlot.class);
         EnumLike.freeze(ItemRarity.class);
         EnumLike.freeze(ItemUseAction.class);
         FiguraTranslations.registerTranslationResources("org/figuramc/figura_core/translations/");

@@ -4,9 +4,8 @@ import org.figuramc.figura_core.util.enumlike.EnumLike;
 
 public class ItemUseAction extends EnumLike {
 
-    public final String name;
     public ItemUseAction(String name) {
-        this.name = name;
+        super(name);
     }
 
     public static final ItemUseAction NONE = new ItemUseAction("NONE");
@@ -21,11 +20,5 @@ public class ItemUseAction extends EnumLike {
     public static final ItemUseAction BRUSH = new ItemUseAction("BRUSH");
     public static final ItemUseAction BUNDLE = new ItemUseAction("BUNDLE");
     public static final ItemUseAction SPEAR = new ItemUseAction("SPEAR");
-
-    @Override
-    @Deprecated
-    public String toString() {
-        return "ItemUseAction[" + name + "]";
-    }
 
 }

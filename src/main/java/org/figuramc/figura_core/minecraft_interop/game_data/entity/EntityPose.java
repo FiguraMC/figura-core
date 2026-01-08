@@ -4,10 +4,8 @@ import org.figuramc.figura_core.util.enumlike.EnumLike;
 
 public class EntityPose extends EnumLike {
 
-    public final String name;
-
     public EntityPose(String name) {
-        this.name = name;
+        super(name);
     }
 
     public static final EntityPose STANDING = new EntityPose("STANDING");
@@ -29,9 +27,4 @@ public class EntityPose extends EnumLike {
     public static final EntityPose SHOOTING = new EntityPose("SHOOTING");
     public static final EntityPose INHALING = new EntityPose("INHALING");
 
-    @Override
-    @Deprecated
-    public String toString() {
-        return "EntityPose[" + name + "]";
-    }
 }

@@ -18,7 +18,7 @@ public class CemSelfDeleter implements AvatarComponent<CemSelfDeleter> {
     private final Avatar<UUID> self;
     private MinecraftEntity entity = null;
 
-    public static final Type<CemSelfDeleter> TYPE = new Type<>(CemSelfDeleter::new);
+    public static final Type<CemSelfDeleter> TYPE = new Type<>("CEM_SELF_DELETER", CemSelfDeleter::new);
     public Type<CemSelfDeleter> getType() { return TYPE; }
 
     @SuppressWarnings("unchecked") // We verify the key type

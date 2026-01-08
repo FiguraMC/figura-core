@@ -13,7 +13,7 @@ import org.figuramc.figura_core.util.enumlike.IdMap;
  */
 public class AvatarEvents implements AvatarComponent<AvatarEvents> {
 
-    public static final Type<AvatarEvents> TYPE = new Type<>(AvatarEvents::new);
+    public static final Type<AvatarEvents> TYPE = new Type<>("AVATAR_EVENTS", AvatarEvents::new);
 
     // Listeners for built-in events, indexed using the event's ID.
     // When getting items, use the type-safe getEventListener() function instead.

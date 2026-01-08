@@ -114,7 +114,8 @@ public class LuaTypeProcessor extends AbstractProcessor {
 
                     // Look for @LuaConstant methods and set them up
                     for (Element enclosed : clazz.getEnclosedElements()) {
-                        if (enclosed.getAnnotation(LuaConstant.class) == null) continue; // Only process @LuaConstant methods
+                        if (enclosed.getAnnotation(LuaConstant.class) == null)
+                            continue; // Only process @LuaConstant methods
                         if (enclosed.getKind() != ElementKind.METHOD) continue;
                         // Write value to the metatable!
                         output.append("        metatable.rawset(\"" + enclosed.getSimpleName() + "\", " + clazz.getQualifiedName() + "." + enclosed.getSimpleName() + "(state, metatable));\n");
@@ -136,13 +137,43 @@ public class LuaTypeProcessor extends AbstractProcessor {
                     }
 
                     boolean hasCustomIndex = false;
+                    boolean hasDynamicFields = false;
+
+                    // Code for dynamic fields indexer looks like
+                    // LibFunction.create((state, object, key) -> {
+                    //     LuaRuntime s = (LuaRuntime) state;
+                    //     <ClassName> self = (ClassName) object;
+                    //     return switch (key.checkString(s)) {
+                    //         case <mapKey> -> <mapValue>
+                    //     };
+                    // }
+                    Map<String, String> dynamicFieldsIndexCases = new LinkedHashMap<>();
 
                     // For each method, add it to the code.
                     for (var entry : methodsByName.entrySet()) {
                         String methodName = entry.getKey();
                         // Save __index for later
                         if (methodName.equals("__index")) {
+                            if (hasDynamicFields) throw new RuntimeException("Class cannot have both @LuaDynamicField and a custom __index impl!");
                             hasCustomIndex = true;
+                            continue;
+                        }
+
+                        // Check if this is a dynamic field
+                        if (entry.getValue().getFirst().getAnnotation(LuaDynamicField.class) != null) {
+                            if (hasCustomIndex) throw new RuntimeException("Class cannot have both @LuaDynamicField and a custom __index impl!");
+                            hasDynamicFields = true;
+                            // Ensure it's not an overload
+                            if (entry.getValue().size() > 1) throw new RuntimeException("Methods annotated with @LuaDynamicField cannot be overloads!");
+                            // Add it to the dynamic fields map
+                            var method = entry.getValue().getFirst();
+                            String implExpr = clazz.getQualifiedName() + "." + method.getSimpleName() + "(";
+                            if (method.getAnnotation(LuaPassState.class) != null)
+                                implExpr += "s, ";
+                            implExpr += "self)";
+                            implExpr = convertDynamicFieldToLua(method.getReturnType(), implExpr, methodName, generatedClassName, typeUtils, elementUtils);
+                            String old = dynamicFieldsIndexCases.put(methodName, implExpr);
+                            if (old != null) throw new RuntimeException("Multiple @LuaDynamicField with the same name \"" + methodName + "\"");
                             continue;
                         }
 
@@ -153,7 +184,8 @@ public class LuaTypeProcessor extends AbstractProcessor {
                             var method = entry.getValue().getFirst();
                             output.append("        metatable.rawset(\"" + methodName + "\", LibFunction.createV(" + clazz.getQualifiedName() + "::" + method.getSimpleName() + "));\n");
                             continue;
-                        } else if (entry.getValue().getFirst().getAnnotation(LuaUnwind.class) != null) {
+                        }
+                        if (entry.getValue().getFirst().getAnnotation(LuaUnwind.class) != null) {
                             if (entry.getValue().getFirst().getAnnotation(AutoUnwind.class) == null)
                                 throw new RuntimeException("Method annotated with @LuaUnwind should also annotate with Cobalt's @AutoUnwind");
                             if (entry.getValue().size() > 1) throw new RuntimeException("Methods annotated with @LuaUnwind cannot be overloads!");
@@ -181,7 +213,6 @@ public class LuaTypeProcessor extends AbstractProcessor {
                         boolean isInstanceMethod = Objects.requireNonNull(isInstanceMethodTemp);
 
                         // Call rawset() on the metatable with a lambda
-
                         output.append("        metatable.rawset(\"" + methodName + "\", ");
                         writeLuaLambda(
                                 output, "            ",
@@ -207,6 +238,18 @@ public class LuaTypeProcessor extends AbstractProcessor {
                                     typeUtils, elementUtils
                             );
                             output.append(");\n");
+                        } else if (hasDynamicFields) {
+                            output.append("        FiguraMetatables.setupIndexingWithSuperclassAndCustomIndexer(state, metatable, superclassMetatable, LibFunction.create((state2, object, key) -> {\n");
+                            output.append("            LuaRuntime s = (LuaRuntime) state2;\n");
+                            String qualifiedName = ((TypeElement) ((DeclaredType) userdataClass.asType()).asElement()).getQualifiedName().toString();
+                            output.append("            " + qualifiedName + " self = object.checkUserdata(s, " + qualifiedName + ".class);\n");
+                            output.append("            return switch (key.checkString(s)) {\n");
+                            for (var entry : dynamicFieldsIndexCases.entrySet()) {
+                                output.append("                case \"" + entry.getKey() + "\" -> " + entry.getValue() + "\n");
+                            }
+                            output.append("                default -> { throw new LuaError(\"Unknown field: \\\" + key.checkString(s) + \\\"\", s.allocationTracker); }\n");
+                            output.append("            };\n");
+                            output.append("        }));\n");
                         } else {
                             output.append("        FiguraMetatables.setupIndexingWithSuperclass(state, metatable, superclassMetatable);\n");
                         }
@@ -220,6 +263,18 @@ public class LuaTypeProcessor extends AbstractProcessor {
                                     typeUtils, elementUtils
                             );
                             output.append(");\n");
+                        } else if (hasDynamicFields) {
+                            output.append("        FiguraMetatables.setupIndexingWithCustomIndexer(state, metatable, LibFunction.create((state2, object, key) -> {\n");
+                            output.append("            LuaRuntime s = (LuaRuntime) state2;\n");
+                            String qualifiedName = ((TypeElement) ((DeclaredType) userdataClass.asType()).asElement()).getQualifiedName().toString();
+                            output.append("            " + qualifiedName + " self = object.checkUserdata(s, " + qualifiedName + ".class);\n");
+                            output.append("            return switch (key.checkString(s)) {\n");
+                            for (var entry : dynamicFieldsIndexCases.entrySet()) {
+                                output.append("                case \"" + entry.getKey() + "\" -> " + entry.getValue() + "\n");
+                            }
+                            output.append("                default -> { throw new LuaError(\"Unknown field: \\\" + key.checkString(s) + \\\"\", s.allocationTracker); }\n");
+                            output.append("            };\n");
+                            output.append("        }));\n");
                         } else {
                             output.append("        FiguraMetatables.setupIndexing(state, metatable);\n");
                         }
@@ -306,6 +361,20 @@ public class LuaTypeProcessor extends AbstractProcessor {
                             output.append(indent).append("        args.arg(" + (i + 1 + argOffset) + ").checkFunction(s)");
                         } else if (typeUtils.isSameType(elementUtils.getTypeElement("java.lang.String").asType(), param.asType())) {
                             output.append(indent).append("        args.arg(" + (i + 1 + argOffset) + ").checkString(s)");
+                        } else if (typeUtils.isSubtype(param.asType(), elementUtils.getTypeElement("org.figuramc.figura_core.util.enumlike.EnumLike").asType())) {
+                            // If the param is a subtype of EnumLike, then parse it as a string using EnumLike.byName()
+                            // First find the direct subclass of EnumLike by iterating upwards
+                            TypeMirror paramType = param.asType();
+                            TypeMirror superType = typeUtils.directSupertypes(paramType).getFirst();
+                            while (!typeUtils.isSameType(superType, elementUtils.getTypeElement("org.figuramc.figura_core.util.enumlike.EnumLike").asType())) {
+                                paramType = superType;
+                                superType = typeUtils.directSupertypes(param.asType()).getFirst();
+                            }
+                            // Call LuaRuntime stringToEnum to check and/or error
+                            output.append(indent).append("        ")
+                                    .append("((LuaRuntime) s).stringToEnum(" + ((TypeElement) ((DeclaredType) paramType).asElement()).getQualifiedName() + ".class, ")
+                                    .append("args.arg(" + (i + 1 + argOffset) + ").checkString(s)")
+                                    .append(")");
                         } else {
                             // If it's none of those built-ins, assume it's a userdata type.
                             output.append(indent).append("        args.arg(" + (i + 1 + argOffset) + ").checkUserdata(s, " + ((TypeElement) ((DeclaredType) param.asType()).asElement()).getQualifiedName() + ".class)");
@@ -328,16 +397,18 @@ public class LuaTypeProcessor extends AbstractProcessor {
                 case FLOAT, DOUBLE, LONG -> output.append(indent).append("    yield LuaDouble.valueOf(result);\n");
                 case INT -> output.append(indent).append("    yield LuaInteger.valueOf(result);\n");
                 case DECLARED -> {
-                    // Check for built-in supported types.
-                    if (typeUtils.isSubtype(method.getReturnType(), elementUtils.getTypeElement("org.figuramc.figura_cobalt.org.squiddev.cobalt.Varargs").asType())) {
-                        // If it's a subtype of Varargs, return it immediately.
-                        output.append(indent).append("    yield result;\n");
-                        break;
-                    }
+
                     // If it's null at runtime here, yield nil.
                     output.append(indent).append("    if (result == null) yield Constants.NIL;\n");
 
-                    if (typeUtils.isSameType(elementUtils.getTypeElement("java.lang.String").asType(), method.getReturnType())) {
+                    // Check for builtin types:
+                    if (typeUtils.isSubtype(method.getReturnType(), elementUtils.getTypeElement("org.figuramc.figura_cobalt.org.squiddev.cobalt.Varargs").asType())) {
+                        // If it's a subtype of Varargs, return it immediately.
+                        output.append(indent).append("    yield result;\n");
+                    } else if (typeUtils.isSubtype(method.getReturnType(), elementUtils.getTypeElement("org.figuramc.figura_core.util.enumlike.EnumLike").asType())) {
+                        // If it's a subtype of EnumType, return its name as a string
+                        output.append(indent).append("    yield LuaString.valueOf(s.allocationTracker, result.name);\n");
+                    } else if (typeUtils.isSameType(elementUtils.getTypeElement("java.lang.String").asType(), method.getReturnType())) {
                         // If it's a string, convert to a LuaString.
                         output.append(indent).append("    yield LuaString.valueOf(s.allocationTracker, result);\n");
                     } else {
@@ -373,6 +444,46 @@ public class LuaTypeProcessor extends AbstractProcessor {
         output.append(indent).append("default -> throw ErrorFactory.argCountError(s, \"" + totalName + "\", " + totalArgCount + expectedArgCounts + ");\n");
         // End switch and createV
         output.append(indent.substring(4)).append("})");
+    }
+
+    // Output a switch branch for dynamic fields
+    private String convertDynamicFieldToLua(TypeMirror javaType, String expr, String fieldName, String generatedClassName, Types typeUtils, Elements elementUtils) {
+        return switch (javaType.getKind()) {
+            case BOOLEAN -> "LuaBoolean.valueOf(" + expr + ");";
+            case FLOAT, DOUBLE, LONG -> "LuaDouble.valueOf(" + expr + ");";
+            case INT -> "LuaInteger.valueOf(" + expr + ");";
+            case DECLARED -> {
+                String s = "{ var result = (" + expr + "); if (result == null) yield Constants.NIL; ";
+                // Check for builtin types:
+                if (typeUtils.isSubtype(javaType, elementUtils.getTypeElement("org.figuramc.figura_cobalt.org.squiddev.cobalt.Varargs").asType())) {
+                    // If it's a subtype of Varargs, return it immediately.
+                    s += "yield result; }";
+                } else if (typeUtils.isSubtype(javaType, elementUtils.getTypeElement("org.figuramc.figura_core.util.enumlike.EnumLike").asType())) {
+                    // If it's a subtype of EnumType, return its name as a string
+                    s += "yield LuaString.valueOf(s.allocationTracker, result.name); }";
+                } else if (typeUtils.isSameType(javaType, elementUtils.getTypeElement("java.lang.String").asType())) {
+                    // If it's a string, convert to a LuaString.
+                    s += "yield LuaString.valueOf(s.allocationTracker, result); }";
+                } else {
+                    // If it's not a built-in, assume it's a userdata type...
+                    TypeMirror returnType = typeUtils.erasure(javaType);
+                    TypeMirror apiType = null;
+                    for (int i = 0; i < apiMap.size(); i++) {
+                        if (typeUtils.isSameType(returnType, apiMap.get(i)[0])) {
+                            apiType = apiMap.get(i)[1];
+                            break;
+                        }
+                    }
+                    if (apiType == null) throw new RuntimeException("Attempt to return unexpected type \"" + javaType + "\" for dynamic field \"" + fieldName + "\" in class \"" + generatedClassName + "\"");
+
+                    // Call the api class's wrap() method
+                    s += "yield " + ((TypeElement) typeUtils.asElement(apiType)).getQualifiedName() + ".wrap(result, s); }";
+                }
+
+                yield s;
+            }
+            default -> throw new RuntimeException("Unrecognized type for Lua dynamic field conversion: " + javaType);
+        };
     }
 
 

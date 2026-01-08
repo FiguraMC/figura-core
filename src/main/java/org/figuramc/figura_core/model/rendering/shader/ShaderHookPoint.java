@@ -11,22 +11,21 @@ import java.util.List;
 public class ShaderHookPoint extends EnumLike {
 
     // All vertex hooks:
-    public static final ShaderHookPoint PART_SPACE_HOOK = new ShaderHookPoint(Stage.VERTEX, "figura_part_space_hook",
+    public static final ShaderHookPoint PART_SPACE_HOOK = new ShaderHookPoint(Stage.VERTEX, "FIGURA_PART_SPACE_HOOK",
             List.of("inout vec3", "inout vec3", "inout vec3"), "void", null);
-    public static final ShaderHookPoint MODEL_SPACE_HOOK = new ShaderHookPoint(Stage.VERTEX, "figura_model_space_hook",
+    public static final ShaderHookPoint MODEL_SPACE_HOOK = new ShaderHookPoint(Stage.VERTEX, "FIGURA_MODEL_SPACE_HOOK",
             List.of("inout vec4", "inout vec3", "inout vec3", "inout vec4", "inout vec2"), "void", null);
 
     // All fragment hooks:
 
     public final Stage stage;
-    public final String name;
     public final List<String> paramTypes;
     public final String returnType;
     public final String defaultImpl; // Default GLSL implementing the hook
 
     public ShaderHookPoint(Stage stage, String name, List<String> paramTypes, String returnType, @Nullable String defaultReturnValue) {
+        super(name);
         this.stage = stage;
-        this.name = name;
         this.paramTypes = paramTypes;
         this.returnType = returnType;
         // Create the default impl for the hook point

@@ -27,10 +27,12 @@ import org.figuramc.figura_core.script_languages.lua.errors.LuaEscaper;
 import org.figuramc.figura_core.script_languages.lua.other_apis.*;
 import org.figuramc.figura_core.script_languages.lua.type_apis.model_parts.FiguraPartAPI;
 import org.figuramc.figura_core.script_languages.lua.type_apis.rendering.TextureAPI;
+import org.figuramc.figura_core.util.enumlike.EnumLike;
 import org.figuramc.figura_core.util.exception.FiguraException;
 import org.figuramc.figura_core.util.functional.BiThrowingBiFunction;
 import org.figuramc.figura_translations.TranslatableItems;
 import org.figuramc.memory_tracker.DelegateAllocationTracker;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayInputStream;
@@ -43,7 +45,7 @@ import java.util.Map;
 
 public class LuaRuntime extends LuaState implements ScriptRuntimeComponent<LuaRuntime> {
 
-    public static final Type<LuaRuntime> TYPE = new Type<>(LuaRuntime::create, AvatarEvents.TYPE, Textures.TYPE, Molang.TYPE, VanillaRendering.TYPE, EntityRoot.TYPE, HudRoot.TYPE, ManagerAccess.TYPE);
+    public static final Type<LuaRuntime> TYPE = new Type<>("LUA_RUNTIME", LuaRuntime::create, AvatarEvents.TYPE, Textures.TYPE, Molang.TYPE, VanillaRendering.TYPE, EntityRoot.TYPE, HudRoot.TYPE, ManagerAccess.TYPE);
 
     // Map each module index to its environment, so we can initialize them
     private final Map<Integer, LuaTable> moduleEnvironments = new IdentityHashMap<>();
@@ -231,5 +233,21 @@ public class LuaRuntime extends LuaState implements ScriptRuntimeComponent<LuaRu
         for (String item : items) tab.rawset(i++, LuaString.valueOf(allocationTracker, item));
         return tab;
     }
+
+    // Calls toString() on each item
+    public LuaTable stringifyListToTable(List<?> items) throws LuaOOM {
+        LuaTable tab = new LuaTable(items.size(), 0, allocationTracker);
+        int i = 1;
+        for (Object item : items) tab.rawset(i++, LuaString.valueOf(allocationTracker, item.toString()));
+        return tab;
+    }
+
+    // Try to convert a String into an EnumLike, or error on failure
+    public <E extends EnumLike> @NotNull E stringToEnum(Class<E> clazz, String string) throws LuaError, LuaOOM {
+        @Nullable E res =  EnumLike.byName(clazz, string);
+        if (res == null) throw new LuaError("String \"" + string + "\" is not a member of enum " + clazz.getSimpleName(), allocationTracker); // TODO translate
+        return res;
+    }
+
 
 }

@@ -1,34 +1,29 @@
 package org.figuramc.figura_core.minecraft_interop.game_data.item;
 
 import org.figuramc.figura_core.minecraft_interop.game_data.MinecraftIdentifier;
-import org.figuramc.figura_core.minecraft_interop.game_data.block.MinecraftBlockState;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
 public interface MinecraftItemStack {
 
-    MinecraftIdentifier getIdentifier(); // Identifier for the item type
-
+    MinecraftIdentifier getId();
     List<MinecraftIdentifier> getTags();
-    // maybe? List<String> getEnchantments();
 
-//    MinecraftItemStack copy(); // TODO should this exist? What use is there in an ideal world to "copy" an item stack? We also don't know how much memory this might use.
-    MinecraftBlockState getBlockState();
+    // TODO: Conversion to a block is tricky since a MinecraftBlockState requires a world.
+    //       Should items have an attached world? Should we take a world as a param when converting item to block?
 
-    // TODO: NBT DISCUSSION
-//    Object getTag();
+    String getName();
+    String getStackString(); // No real exact definition atm, only really useful for debug stuff...
 
     ItemUseAction getUseAction();
-    String getName();
     ItemRarity getRarity();
-    String toStackString();
-    @Nullable EquipmentSlot getEquipmentSlot();
+    @Nullable EquipmentSlot getEquipmentSlot(); // TODO Should we make this nullable, or have a "none" slot?
 
     int getCount();
-    int getDamage();
-    int getPopTime();
-    int getMaxDamage();
+    int getDurability();
+    int getMaxDurability();
+    int getPopTime(); // Do we need this?
     int getRepairCost();
     int getUseDuration();
 
@@ -40,4 +35,5 @@ public interface MinecraftItemStack {
     boolean isStackable();
     boolean isArmor();
     boolean isTool();
+
 }

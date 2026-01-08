@@ -18,7 +18,7 @@ import java.util.List;
  */
 public class Materials implements AvatarComponent<Materials> {
 
-    public static final Type<Materials> TYPE = new Type<>(Materials::new, Textures.TYPE);
+    public static final Type<Materials> TYPE = new Type<>("MATERIALS", Materials::new, Textures.TYPE);
     public Type<Materials> getType() { return TYPE; }
 
     private final List<List<FiguraRenderType>> materials; // materials[moduleIndex][materialIndex]

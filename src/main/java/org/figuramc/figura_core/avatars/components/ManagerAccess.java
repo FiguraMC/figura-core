@@ -21,7 +21,7 @@ import java.nio.file.Path;
  */
 public class ManagerAccess implements AvatarComponent<ManagerAccess> {
 
-    public static final Type<ManagerAccess> TYPE = new Type<>(ManagerAccess::new);
+    public static final Type<ManagerAccess> TYPE = new Type<>("MANAGER_ACCESS", ManagerAccess::new);
 
     public ManagerAccess(Avatar<?> avatar, AvatarModules modules) {}
 

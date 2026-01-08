@@ -20,7 +20,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public class Textures implements AvatarComponent<Textures> {
 
-    public static final Type<Textures> TYPE = new Type<>(Textures::new);
+    public static final Type<Textures> TYPE = new Type<>("TEXTURES", Textures::new);
     public Type<Textures> getType() { return TYPE; }
 
     // The atlas texture. Textures which don't opt out of being atlased go in here to keep things more efficient.

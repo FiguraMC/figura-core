@@ -13,15 +13,10 @@ import java.util.LinkedHashMap;
  */
 public final class Event<Args extends CallbackItem, ReturnType extends CallbackItem> extends EnumLike {
 
-    public final String name;
     public final CallbackType.Func<Args, ReturnType> type; // The type of the event signature
 
-    public static final LinkedHashMap<String, Event<?, ?>> EVENTS_BY_NAME = new LinkedHashMap<>();
-
     public Event(String name, CallbackType<Args> paramType, CallbackType<ReturnType> returnType) {
-        if (EVENTS_BY_NAME.put(name, this) != null)
-            throw new IllegalArgumentException("Event named \"" + name + "\" already exists! Please use some kind of disambiguation!");
-        this.name = name;
+        super(name);
         this.type = new CallbackType.Func<>(paramType, returnType);
     }
 
@@ -30,13 +25,13 @@ public final class Event<Args extends CallbackItem, ReturnType extends CallbackI
     // () -> ()
     // Runs at the END of every client tick.
     // This is so when rendering, avatars have the most recent information to go off of (since values were updated during this tick)
-    public static final Event<CallbackItem.Unit, CallbackItem.Unit> CLIENT_TICK = new Event<>("client_tick", CallbackType.Unit.INSTANCE, CallbackType.Unit.INSTANCE);
+    public static final Event<CallbackItem.Unit, CallbackItem.Unit> CLIENT_TICK = new Event<>("CLIENT_TICK", CallbackType.Unit.INSTANCE, CallbackType.Unit.INSTANCE);
     // World -> ()
     // Runs at the END of every world tick.
-    public static final Event<WorldView<?>, CallbackItem.Unit> WORLD_TICK = new Event<>("world_tick", CallbackType.World.INSTANCE, CallbackType.Unit.INSTANCE);
+    public static final Event<WorldView<?>, CallbackItem.Unit> WORLD_TICK = new Event<>("WORLD_TICK", CallbackType.World.INSTANCE, CallbackType.Unit.INSTANCE);
     // Entity, World -> ()
     // Runs AFTER the entity associated with the avatar is ticked.
-    public static final Event<CallbackItem.Tuple2<EntityView<?>, WorldView<?>>, CallbackItem.Unit> ENTITY_TICK = new Event<>("entity_tick", new CallbackType.Tuple2<>(CallbackType.Entity.INSTANCE, CallbackType.World.INSTANCE), CallbackType.Unit.INSTANCE);
+    public static final Event<CallbackItem.Tuple2<EntityView<?>, WorldView<?>>, CallbackItem.Unit> ENTITY_TICK = new Event<>("ENTITY_TICK", new CallbackType.Tuple2<>(CallbackType.Entity.INSTANCE, CallbackType.World.INSTANCE), CallbackType.Unit.INSTANCE);
 
     // ----- RENDER EVENTS -----
 
@@ -51,21 +46,21 @@ public final class Event<Args extends CallbackItem, ReturnType extends CallbackI
     public static final Event<
             CallbackItem.F32,
             CallbackItem.Tuple2<CallbackItem.Optional<CallbackView<CallbackItem, CallbackItem.Unit>>, CallbackItem>
-    > CLIENT_RENDER = new Event<>("client_render", CallbackType.F32.INSTANCE, RENDER_EVENT_RETURN_TYPE);
+    > CLIENT_RENDER = new Event<>("CLIENT_RENDER", CallbackType.F32.INSTANCE, RENDER_EVENT_RETURN_TYPE);
     // (tickDelta: f32, World) -> (Option<Any -> ()>, Any)
     // Runs just before the world is rendered, but after things like the camera are set up by client_render.
     // This is useful if you want to READ per-frame values like the targeted entity after they've been set up.
     public static final Event<
             CallbackItem.Tuple2<CallbackItem.F32, WorldView<?>>,
             CallbackItem.Tuple2<CallbackItem.Optional<CallbackView<CallbackItem, CallbackItem.Unit>>, CallbackItem>
-    > WORLD_RENDER = new Event<>("world_render", new CallbackType.Tuple2<>(CallbackType.F32.INSTANCE, CallbackType.World.INSTANCE), RENDER_EVENT_RETURN_TYPE);
+    > WORLD_RENDER = new Event<>("WORLD_RENDER", new CallbackType.Tuple2<>(CallbackType.F32.INSTANCE, CallbackType.World.INSTANCE), RENDER_EVENT_RETURN_TYPE);
     // (tickDelta: f32, Entity, World) -> (Option<Any -> ()>, Any)
     // Runs during entity rendering, at a point after the entity's vanilla model has been posed, but before its vanilla model been drawn.
     // This is to give the avatar a chance to both read the vanilla model's pose and write to it before it's drawn this frame.
     public static final Event<
             CallbackItem.Tuple3<CallbackItem.F32, EntityView<?>, WorldView<?>>,
             CallbackItem.Tuple2<CallbackItem.Optional<CallbackView<CallbackItem, CallbackItem.Unit>>, CallbackItem>
-    > ENTITY_RENDER = new Event<>("entity_render", new CallbackType.Tuple3<>(CallbackType.F32.INSTANCE, CallbackType.Entity.INSTANCE, CallbackType.World.INSTANCE), RENDER_EVENT_RETURN_TYPE);
+    > ENTITY_RENDER = new Event<>("ENTITY_RENDER", new CallbackType.Tuple3<>(CallbackType.F32.INSTANCE, CallbackType.Entity.INSTANCE, CallbackType.World.INSTANCE), RENDER_EVENT_RETURN_TYPE);
 
     // ----- Input Events -----
 
@@ -75,7 +70,7 @@ public final class Event<Args extends CallbackItem, ReturnType extends CallbackI
     public static final Event<CallbackItem.Tuple4<
             CallbackItem.I32, CallbackItem.I32, CallbackItem.I32,
             CallbackView<CallbackItem.Unit, CallbackItem.Unit>
-    >, CallbackItem.Unit> MOUSE_PRESS = new Event<>("mouse_press", new CallbackType.Tuple4<>(
+    >, CallbackItem.Unit> MOUSE_PRESS = new Event<>("MOUSE_PRESS", new CallbackType.Tuple4<>(
             CallbackType.I32.INSTANCE, CallbackType.I32.INSTANCE, CallbackType.I32.INSTANCE,
             new CallbackType.Func<>(CallbackType.Unit.INSTANCE, CallbackType.Unit.INSTANCE)
     ), CallbackType.Unit.INSTANCE);
@@ -85,7 +80,7 @@ public final class Event<Args extends CallbackItem, ReturnType extends CallbackI
     public static final Event<CallbackItem.Tuple3<
             CallbackItem.F64, CallbackItem.F64,
             CallbackView<CallbackItem.Unit, CallbackItem.Unit>
-    >, CallbackItem.Unit> MOUSE_MOVE = new Event<>("mouse_move", new CallbackType.Tuple3<>(
+    >, CallbackItem.Unit> MOUSE_MOVE = new Event<>("MOUSE_MOVE", new CallbackType.Tuple3<>(
             CallbackType.F64.INSTANCE, CallbackType.F64.INSTANCE,
             new CallbackType.Func<>(CallbackType.Unit.INSTANCE, CallbackType.Unit.INSTANCE)
     ), CallbackType.Unit.INSTANCE);
@@ -95,7 +90,7 @@ public final class Event<Args extends CallbackItem, ReturnType extends CallbackI
     public static final Event<CallbackItem.Tuple2<
             CallbackItem.Bool,
             CallbackView<CallbackItem.Unit, CallbackItem.Unit>
-    >, CallbackItem.Unit> MOUSE_SCROLL = new Event<>("mouse_scroll", new CallbackType.Tuple2<>(
+    >, CallbackItem.Unit> MOUSE_SCROLL = new Event<>("MOUSE_SCROLL", new CallbackType.Tuple2<>(
             CallbackType.Bool.INSTANCE,
             new CallbackType.Func<>(CallbackType.Unit.INSTANCE, CallbackType.Unit.INSTANCE)
     ), CallbackType.Unit.INSTANCE);
@@ -105,7 +100,7 @@ public final class Event<Args extends CallbackItem, ReturnType extends CallbackI
     public static final Event<CallbackItem.Tuple4<
             CallbackItem.I32, CallbackItem.I32, CallbackItem.I32,
             CallbackView<CallbackItem.Unit, CallbackItem.Unit>
-    >, CallbackItem.Unit> KEY_PRESS = new Event<>("key_press", new CallbackType.Tuple4<>(
+    >, CallbackItem.Unit> KEY_PRESS = new Event<>("KEY_PRESS", new CallbackType.Tuple4<>(
             CallbackType.I32.INSTANCE, CallbackType.I32.INSTANCE, CallbackType.I32.INSTANCE,
             new CallbackType.Func<>(CallbackType.Unit.INSTANCE, CallbackType.Unit.INSTANCE)
     ), CallbackType.Unit.INSTANCE);
@@ -115,7 +110,7 @@ public final class Event<Args extends CallbackItem, ReturnType extends CallbackI
     public static final Event<CallbackItem.Tuple2<
             StringView,
             CallbackView<CallbackItem.Unit, CallbackItem.Unit>
-    >, CallbackItem.Unit> CHAR_TYPED = new Event<>("char_typed", new CallbackType.Tuple2<>(
+    >, CallbackItem.Unit> CHAR_TYPED = new Event<>("CHAR_TYPED", new CallbackType.Tuple2<>(
             CallbackType.Str.INSTANCE,
             new CallbackType.Func<>(CallbackType.Unit.INSTANCE, CallbackType.Unit.INSTANCE)
     ), CallbackType.Unit.INSTANCE);

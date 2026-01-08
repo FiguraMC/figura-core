@@ -16,7 +16,7 @@ import java.util.List;
 
 public class EntityRoot implements AvatarComponent<EntityRoot> {
 
-    public static final Type<EntityRoot> TYPE = new Type<>(EntityRoot::new, Textures.TYPE, Materials.TYPE, Molang.TYPE, VanillaRendering.TYPE);
+    public static final Type<EntityRoot> TYPE = new Type<>("ENTITY_ROOT", EntityRoot::new, Textures.TYPE, Materials.TYPE, Molang.TYPE, VanillaRendering.TYPE);
     public Type<EntityRoot> getType() { return TYPE; }
 
     public final RenderingRoot<FiguraModelPart> root;

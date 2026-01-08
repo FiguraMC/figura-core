@@ -16,7 +16,7 @@ import java.util.Map;
 
 /**
  * The "events" table contains the built-in EventListener instances.
- * It also has special helper syntax for registration via "function events.eventName() ...code... end".
+ * It also has special helper syntax for registration via "function events.event_name() ...code... end".
  */
 public class EventsTable {
 
@@ -38,7 +38,7 @@ public class EventsTable {
 
         // Fill in the backing table with the built-in listeners provided
         for (var entry : eventListeners.entrySet()) {
-            byName.rawset(entry.getKey().name, EventListenerAPI.wrap(entry.getValue(), state));
+            byName.rawset(entry.getKey().name.toLowerCase(), EventListenerAPI.wrap(entry.getValue(), state));
         }
         return events;
     }

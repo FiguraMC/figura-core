@@ -26,7 +26,8 @@ public interface AvatarComponent<Self extends AvatarComponent<Self>> {
     final class Type<X extends AvatarComponent<X>> extends EnumLike {
         public final BiThrowingBiFunction<Avatar<?>, AvatarModules, X, AvatarInitError, AvatarOutOfMemoryError> factory;
         // By passing the possible dependencies as arguments, we ensure they're initialized first, and therefore have smaller IDs.
-        public Type(BiThrowingBiFunction<Avatar<?>, AvatarModules, X, AvatarInitError, AvatarOutOfMemoryError> factory, Type<?>... possibleDependencies) {
+        public Type(String name, BiThrowingBiFunction<Avatar<?>, AvatarModules, X, AvatarInitError, AvatarOutOfMemoryError> factory, Type<?>... possibleDependencies) {
+            super(name);
             this.factory = factory;
             // If a value here is null, then you have a dependency cycle.
             if (!Arrays.stream(possibleDependencies).allMatch(dep -> dep != null && dep.id < this.id))

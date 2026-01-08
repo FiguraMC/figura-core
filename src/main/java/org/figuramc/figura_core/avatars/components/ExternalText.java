@@ -16,7 +16,7 @@ public class ExternalText implements AvatarComponent<ExternalText> {
     protected final Avatar<?> self;
     public final Map<UUID, FormattedText> texts = new HashMap<>();
 
-    public static Type<ExternalText> TYPE = new Type<>(ExternalText::new);
+    public static Type<ExternalText> TYPE = new Type<>("EXTERNAL_TEXT", ExternalText::new);
 
     public Type<ExternalText> getType() {
         return TYPE;

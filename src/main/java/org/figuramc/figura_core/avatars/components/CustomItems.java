@@ -2,11 +2,9 @@ package org.figuramc.figura_core.avatars.components;
 
 import org.figuramc.figura_core.avatars.Avatar;
 import org.figuramc.figura_core.avatars.AvatarComponent;
-import org.figuramc.figura_core.avatars.errors.AvatarError;
 import org.figuramc.figura_core.avatars.AvatarModules;
 import org.figuramc.figura_core.avatars.errors.AvatarInitError;
 import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
-import org.figuramc.figura_core.minecraft_interop.FiguraConnectionPoint;
 import org.figuramc.figura_core.minecraft_interop.ItemRenderContext;
 import org.figuramc.figura_core.minecraft_interop.game_data.MinecraftIdentifier;
 import org.figuramc.figura_core.minecraft_interop.game_data.item.MinecraftItemStack;
@@ -26,7 +24,7 @@ import java.util.List;
  */
 public class CustomItems implements AvatarComponent<CustomItems> {
 
-    public static final Type<CustomItems> TYPE = new Type<>(CustomItems::new, Textures.TYPE, Materials.TYPE, Molang.TYPE, VanillaRendering.TYPE);
+    public static final Type<CustomItems> TYPE = new Type<>("CUSTOM_ITEMS", CustomItems::new, Textures.TYPE, Materials.TYPE, Molang.TYPE, VanillaRendering.TYPE);
     public Type<CustomItems> getType() { return TYPE; }
 
     /**
@@ -133,7 +131,7 @@ public class CustomItems implements AvatarComponent<CustomItems> {
         record ExactMatcher(MinecraftIdentifier ident) implements Matcher {
             @Override
             public boolean matches(MinecraftItemStack itemStack) {
-                return this.ident.equals(itemStack.getIdentifier());
+                return this.ident.equals(itemStack.getId());
             }
 
             @Override
@@ -147,7 +145,7 @@ public class CustomItems implements AvatarComponent<CustomItems> {
         record EndsWithMatcher(String ending) implements Matcher {
             @Override
             public boolean matches(MinecraftItemStack itemStack) {
-                return itemStack.getIdentifier().name().endsWith(ending);
+                return itemStack.getId().name().endsWith(ending);
             }
             @Override
             public int compareTo(@NotNull CustomItems.Matcher o) {

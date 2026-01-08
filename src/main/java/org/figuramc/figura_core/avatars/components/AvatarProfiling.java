@@ -14,7 +14,7 @@ import java.util.Map;
  */
 public class AvatarProfiling implements AvatarComponent<AvatarProfiling> {
 
-    public static final Type<AvatarProfiling> TYPE = new Type<>(AvatarProfiling::new);
+    public static final Type<AvatarProfiling> TYPE = new Type<>("AVATAR_PROFILING", AvatarProfiling::new);
 
     public final Map<ProfilingCategory, Measurer> measurers = new HashMap<>();
 

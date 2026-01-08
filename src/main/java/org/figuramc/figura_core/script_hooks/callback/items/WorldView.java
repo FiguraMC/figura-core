@@ -1,8 +1,7 @@
 package org.figuramc.figura_core.script_hooks.callback.items;
 
-import org.figuramc.figura_core.minecraft_interop.game_data.MinecraftWorld;
+import org.figuramc.figura_core.minecraft_interop.game_data.world.MinecraftWorld;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * A view into a Minecraft World

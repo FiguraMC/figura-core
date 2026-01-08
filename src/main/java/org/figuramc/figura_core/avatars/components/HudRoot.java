@@ -16,7 +16,7 @@ import java.util.List;
 
 public class HudRoot implements AvatarComponent<HudRoot> {
 
-    public static final Type<HudRoot> TYPE = new Type<>(HudRoot::new, Textures.TYPE, Materials.TYPE, Molang.TYPE, VanillaRendering.TYPE);
+    public static final Type<HudRoot> TYPE = new Type<>("HUD_ROOT", HudRoot::new, Textures.TYPE, Materials.TYPE, Molang.TYPE, VanillaRendering.TYPE);
     public Type<HudRoot> getType() { return TYPE; }
 
     public final RenderingRoot<FiguraModelPart> root;

@@ -23,7 +23,7 @@ import java.util.Map;
  */
 public class VanillaRendering implements AvatarComponent<VanillaRendering> {
 
-    public static final Type<VanillaRendering> TYPE = new Type<>(VanillaRendering::new);
+    public static final Type<VanillaRendering> TYPE = new Type<>("VANILLA_RENDERING", VanillaRendering::new);
     public Type<VanillaRendering> getType() { return TYPE; }
 
     private final AllocationTracker<AvatarOutOfMemoryError> allocationTracker;
