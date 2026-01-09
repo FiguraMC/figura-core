@@ -15,6 +15,7 @@
 
   // Importing errors
   "figura_core.error.importing.invalid_figmodel": "Failed to parse model \"%s.figmodel\". Likely a bug in the exporter or importer, please report!",
+  "figura_core.error.importing.invalid_vanilla_texture": "Invalid identifier \"%s\" in texture \"%s\" in \"%s.figmodel\".",
   "figura_core.error.importing.no_language_set": "To use scripts, you must set the \"language\" field in avatar.json. For example, \"language\": \"lua\"",
   "figura_core.error.importing.no_avatar_json": "Module folder does not have an \"avatar.json\" file.",
   "figura_core.error.importing.dependency_format": "The \"dependencies\" field in metadata json must be an object mapping strings to strings.",
@@ -26,9 +27,11 @@
   "figura_core.error.loading.animation.invalid_return_count": "Molang expression in model %s, in animation %s, for part %s, at time %s should return 1 output, but it returns %s.",
   "figura_core.error.loading.animation.invalid_molang": "Molang expression in model %s, in animation %s, for part %s, at time %s failed to compile:\n%s",
   "figura_core.error.loading.texture.invalid_png": "Failed to parse texture \"%s\" - are you sure it's a valid PNG file?",
+  "figura_core.error.loading.texture.resource_not_found": "Resource \"%s\" could not be found!",
 
   // Rendering errors
   "figura_core.error.rendering.stack_overflow": "Stack overflow during model part rendering. Part tree is too deep, or recursive!",
+  "figura_core.error.rendering.too_many_groups": "Too many groups in model part tree - maximum is around 65,000!",
 
   // Script errors
   "figura_core.error.script.unknown_language": "Unknown script language \"%s\". Currently, the only supported language is \"lua\".",

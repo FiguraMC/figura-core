@@ -211,6 +211,7 @@ public class ModuleImporter {
                         // If we already have a texture for this pattern, error out!
                         if (pair.b != -1) throw new ModuleImportingException(CONFLICTING_CUSTOM_ITEM_TEXTURES, new TranslatableItems.Items1<>(pattern));
                         // Figure out what int to give. If the tex already exists, reuse it, otherwise read a new one
+                        // TODO: Does this even work ever? Was I on crack making this? How would it ever be the same file as something in the textures folder, if this is a png in the items folder??
                         String location = IOUtils.stringRelativeTo(file, root);
                         int alreadyExists = ListUtils.findIndex(textures, tex -> tex instanceof ModuleMaterials.TextureMaterials.OwnedTexture owned && location.equals(owned.location()));
                         if (alreadyExists != -1) {

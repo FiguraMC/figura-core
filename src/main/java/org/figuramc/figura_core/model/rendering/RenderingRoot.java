@@ -171,9 +171,7 @@ public class RenderingRoot<T extends FiguraModelPart> {
                                     .push(part.vertices.riggingWeights[i*4+2])
                                     .push(part.vertices.riggingWeights[i*4+3]);
                             case 2 -> {
-                                if (0 > id || id > 0xff00) {
-                                    throw new AvatarError(TOO_MANY_GROUPS, id);
-                                }
+                                if (id > 0xFF00) throw new AvatarError(TOO_MANY_GROUPS, TranslatableItems.Items0.INSTANCE);
                                 buffer
                                     .pushUnsignedShort(part.vertices.riggingOffsets[i*4] == -1 ? Character.MAX_VALUE : (char) (id + part.vertices.riggingOffsets[i*4]))
                                     .pushUnsignedShort(part.vertices.riggingOffsets[i*4+1] == -1 ? Character.MAX_VALUE : (char) (id + part.vertices.riggingOffsets[i*4+1]))
@@ -252,6 +250,5 @@ public class RenderingRoot<T extends FiguraModelPart> {
         void handle(RenderTask<?> task, FiguraTransformStack stack) throws E1, E2;
     }
 
-
-    private static final Translatable<TranslatableItems.Items1<Integer>> TOO_MANY_GROUPS = Translatable.create("figura_core.error.too_many_groups", Integer.class);
+    private static final Translatable<TranslatableItems.Items0> TOO_MANY_GROUPS = Translatable.create("figura_core.error.rendering.too_many_groups");
 }

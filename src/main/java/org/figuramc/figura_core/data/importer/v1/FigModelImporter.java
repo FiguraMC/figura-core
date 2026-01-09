@@ -31,13 +31,14 @@ import java.util.*;
 public class FigModelImporter {
 
     // Failed to parse model "%s.figmodel". Likely a bug in the exporter or importer, please report!
-    private static final Translatable<TranslatableItems.Items1<String>> INVALID_FIGMODEL
-            = Translatable.create("figura_core.error.importing.invalid_figmodel", String.class);
+    private static final Translatable<TranslatableItems.Items1<String>> INVALID_FIGMODEL = Translatable.create("figura_core.error.importing.invalid_figmodel", String.class);
+    // Invalid identifier "%s" in texture "%s" in "%s.figmodel".
+    private static final Translatable<TranslatableItems.Items3<String, String, String>> INVALID_VANILLA_TEXTURE = Translatable.create("figura_core.error.importing.invalid_vanilla_texture", String.class, String.class, String.class);
 
     public static ModuleMaterials.FigmodelMaterials parseFigModel(File rootFile, File modelFile, String fileName, String prefix, JsonObject figmodel, ArrayList<ModuleMaterials.TextureMaterials> textures, ArrayList<ModuleMaterials.MaterialMaterials> materials) throws ModuleImportingException {
         try {
             // Process textures and generate a model-local mapping
-            ModelLocalTexture[] textureMapping = processTextures(rootFile, modelFile, JsonUtils.getObjectOrEmpty(figmodel, "textures", () -> new RuntimeException("textures must be object")), textures);
+            ModelLocalTexture[] textureMapping = processTextures(rootFile, modelFile, prefix + "/" + fileName, JsonUtils.getObjectOrEmpty(figmodel, "textures", () -> new RuntimeException("textures must be object")), textures);
             // TODO: custom shaders/materials included in the figmodel
             // Process animations
             LinkedHashMap<String, ModuleMaterials.AnimationMaterials> anims = processAnimations(JsonUtils.getObjectOrEmpty(figmodel, "animations", () -> new RuntimeException("animations must be object")));
@@ -82,7 +83,7 @@ public class FigModelImporter {
     }
 
     // Return info about textures specific to this model
-    private static ModelLocalTexture[] processTextures(File rootFile, File modelFile, JsonObject modelTextures, List<ModuleMaterials.TextureMaterials> allTextures) {
+    private static ModelLocalTexture[] processTextures(File rootFile, File modelFile, String fileName, JsonObject modelTextures, List<ModuleMaterials.TextureMaterials> allTextures) throws ModuleImportingException {
         ModelLocalTexture[] mapping = new ModelLocalTexture[modelTextures.size()];
         int i = -1;
         for (Map.Entry<String, JsonElement> entry : modelTextures.entrySet()) {
@@ -99,20 +100,9 @@ public class FigModelImporter {
 
             JsonObject texture = entry.getValue().getAsJsonObject();
             // Fetch the UV size.
-            Vector2f uvSize = JsonUtils.parseVec2f(texture.getAsJsonArray("uv_size"), () -> {throw new RuntimeException("uv_size must be specified");} );
+            Vector2f uvSize = JsonUtils.parseVec2f(texture.getAsJsonArray("uv_size"), () -> { throw new RuntimeException("uv_size must be specified"); });
 
-            // First, check if it's a vanilla texture:
-            @Nullable String vanillaTextureOverride = JsonUtils.getStringOrDefault(texture, "vanilla_texture_override", null);
-            if (vanillaTextureOverride != null && !vanillaTextureOverride.isBlank()) {
-                // Parse into a MinecraftIdentifier.
-                var identifier = MinecraftIdentifier.parse(vanillaTextureOverride);
-                // TODO: check for invalid identifiers if (identifier == null)
-                allTextures.add(new ModuleMaterials.TextureMaterials.VanillaTexture(identifier));
-                mapping[i] = new ModelLocalTexture(name, allTextures.size() - 1, uvSize, emissiveFriendIndex, normalFriendIndex, specularFriendIndex, new Mutable<>());
-                continue;
-            }
-
-            // Second, check if it's a linked texture:
+            // Check if it's a linked texture:
             @Nullable String texPath = JsonUtils.getStringOrDefault(texture, "path", null);
             if (texPath != null && !texPath.isBlank()) {
                 Path someKindOfPath = Path.of(texPath); // Path might be relative to the figmodel file's parent folder, or might be absolute
@@ -173,7 +163,7 @@ public class FigModelImporter {
                 if (textureMapping[textureIndex].specularFriendLocalIndex != -1)
                     textureBindings.add(Either.ofB(textureMapping[textureMapping[textureIndex].specularFriendLocalIndex].globalTextureIndex));
 
-                ModuleMaterials.MaterialMaterials newMaterial = new ModuleMaterials.MaterialMaterials(null, Either.ofA(ModuleMaterials.BuiltinShader.BASIC), textureBindings);
+                ModuleMaterials.MaterialMaterials newMaterial = new ModuleMaterials.MaterialMaterials(null, Either.ofA(ModuleMaterials.BuiltinShaderName.BASIC), textureBindings);
                 allMaterials.add(newMaterial);
                 materialIndex = textureMapping[textureIndex].generatedMaterialIndex().value = allMaterials.size() - 1;
             }

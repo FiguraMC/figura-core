@@ -1,63 +1,62 @@
 package org.figuramc.figura_core.model.texture;
 
-import org.figuramc.figura_core.avatars.errors.AvatarError;
-import org.figuramc.figura_core.avatars.errors.AvatarInitError;
-import org.figuramc.figura_core.data.materials.ModuleMaterials;
-import org.figuramc.figura_core.minecraft_interop.FiguraConnectionPoint;
-import org.figuramc.figura_core.minecraft_interop.texture.OwnedMinecraftTexture;
-import org.figuramc.figura_translations.TranslatableItems;
-import org.joml.Vector4f;
+// TODO: Make it possible to create these by fetching from Minecraft, through a script API (not part of avatar loading)
+public class VanillaAvatarTexture /*extends AvatarTexture*/ {
 
-import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
-
-public class VanillaAvatarTexture extends AvatarTexture {
-
-    private OwnedMinecraftTexture backing;
-
-    protected VanillaAvatarTexture(ModuleMaterials.TextureMaterials.VanillaTexture vanilla) throws AvatarInitError {
-        try {
-            backing = FiguraConnectionPoint.TEXTURE_PROVIDER.getVanillaTexture(vanilla);
-        } catch (IOException e) {
-            throw new AvatarInitError(AvatarTexture.RESOURCE_NOT_FOUND, new TranslatableItems.Items1<>(vanilla.resourceLocation().toString()));
-        }
-    }
-
-    @Override
-    public CompletableFuture<Void> commit() {
-        return backing.commit();
-    }
-
-    @Override
-    public void destroy() {
-        if (backing != null) {
-            backing.destroy();
-            backing = null;
-        }
-    }
-
-    @Override
-    public OwnedMinecraftTexture getHandle() {
-        return backing;
-    }
-
-    @Override
-    public Vector4f getUvValues() {
-        return new Vector4f(0, 0, 1, 1);
-    }
-
-    @Override
-    public int getWidth() {
-        return backing.width();
-    }
-
-    @Override
-    public int getHeight() {
-        return backing.height();
-    }
-
-    @Override
-    public int getPixel(int x, int y) {
-        return backing.getPixel(x, y);
-    }
+//    // Resource "%s" could not be found!
+//    public static final Translatable<TranslatableItems.Items1<String>> RESOURCE_NOT_FOUND
+//            = Translatable.create("figura_core.error.loading.texture.resource_not_found", String.class);
+//
+//    private MinecraftTexture backing;
+//    private Vector4f uvValues;
+//
+//    protected VanillaAvatarTexture(ModuleMaterials.TextureMaterials.VanillaTexture vanilla) throws AvatarInitError {
+//        var pair = FiguraConnectionPoint.TEXTURE_PROVIDER.getVanillaTexture(vanilla.resourceLocation());
+//        if (pair == null) throw new CompletionException(new AvatarInitError(RESOURCE_NOT_FOUND, new TranslatableItems.Items1<>(vanilla.resourceLocation().toString())));
+//        this.backing = pair.a();
+//        this.uvValues = pair.b();
+//    }
+//
+//    @Override
+//    public CompletableFuture<Void> ready() {
+//        // Ready when the backing texture is ready
+//        return backing.readyToUse();
+//    }
+//
+//    @Override
+//    public CompletableFuture<Void> commit() {
+//        // Not mutable, so no commit work needs to happen
+//        return CompletableFuture.completedFuture(null);
+//    }
+//
+//    @Override
+//    public void destroy() {
+//        backing = null;
+//        uvValues = null;
+//    }
+//
+//    @Override
+//    public MinecraftTexture getHandle() {
+//        return backing;
+//    }
+//
+//    @Override
+//    public Vector4f getUvValues() {
+//        return uvValues;
+//    }
+//
+//    @Override
+//    public int getWidth() {
+//        return backing.width();
+//    }
+//
+//    @Override
+//    public int getHeight() {
+//        return backing.height();
+//    }
+//
+//    @Override
+//    public int getPixel(int x, int y) {
+//        throw new UnsupportedOperationException("TODO: MinecraftTexture not necessarily readable");
+//    }
 }

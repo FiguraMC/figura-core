@@ -39,6 +39,11 @@ public class StandaloneAvatarTexture extends AvatarTexture {
     }
 
     // AbstractAvatarTexture:
+
+    @Override public CompletableFuture<Void> ready() {
+        // Wait for the backing texture to be ready; this will also commit the texture for the first time
+        return backing.readyToUse();
+    }
     @Override public CompletableFuture<Void> commit() {
         return backing.commit();
     }

@@ -1,5 +1,6 @@
 package org.figuramc.figura_core.model.rendering.shader;
 
+import org.figuramc.figura_core.data.materials.ModuleMaterials;
 import org.figuramc.figura_core.model.rendering.vertex.FiguraVertexElem;
 import org.figuramc.figura_core.model.rendering.vertex.FiguraVertexFormat;
 import org.figuramc.figura_core.util.ListUtils;
@@ -21,10 +22,11 @@ public final class ExtensionShader implements FiguraShader {
     public final BuiltinShader base; // The base shader which this is extending and modifying
     public final FiguraVertexFormat vertexFormat; // Vertex format, including extra vertex elements
     public final List<String> textureBindingPoints; // All texture binding points, including base ones
+    public final List<ModuleMaterials.BuiltinTextureBinding> defaultBindings; // All default bindings, including base ones
     public final IdMap<ShaderHookPoint, @Nullable String> hookImplementations; // Implementations of shader hooks
 
     // Throws an IllegalArgumentException if something is incorrect in configuring the shader
-    public ExtensionShader(BuiltinShader base, List<Pair<String, FiguraVertexElem>> extraVertexElems, List<String> extraTextureBindingPoints, IdMap<ShaderHookPoint, String> hookImplementations) throws IllegalArgumentException {
+    public ExtensionShader(BuiltinShader base, List<Pair<String, FiguraVertexElem>> extraVertexElems, List<String> extraTextureBindingPoints, List<ModuleMaterials.BuiltinTextureBinding> extraDefaultBindings, IdMap<ShaderHookPoint, String> hookImplementations) throws IllegalArgumentException {
         this.base = base;
         // Will error if there are any duplicate vertex elements
         this.vertexFormat = FiguraVertexFormat.extend(base.vertexFormat(), extraVertexElems);
@@ -32,6 +34,7 @@ public final class ExtensionShader implements FiguraShader {
         if (!Collections.disjoint(base.textureBindingPoints(), extraTextureBindingPoints))
             throw new IllegalArgumentException("Duplicate texture names: " + SetUtils.intersection(new HashSet<>(base.textureBindingPoints), new HashSet<>(extraTextureBindingPoints)));
         this.textureBindingPoints = ListUtils.concat(base.textureBindingPoints(), extraTextureBindingPoints);
+        this.defaultBindings = ListUtils.concat(base.defaultBindings(), extraDefaultBindings);
         // Set up hooks
         // TODO: Verify these in some sense; some kind of sandboxing pass parsing it to ensure no giant/infinite loops would be good!
         this.hookImplementations = hookImplementations;
@@ -39,5 +42,6 @@ public final class ExtensionShader implements FiguraShader {
 
     @Override public FiguraVertexFormat vertexFormat() { return vertexFormat; }
     @Override public List<String> textureBindingPoints() { return textureBindingPoints; }
+    @Override public List<ModuleMaterials.BuiltinTextureBinding> defaultBindings() { return defaultBindings; }
 
 }

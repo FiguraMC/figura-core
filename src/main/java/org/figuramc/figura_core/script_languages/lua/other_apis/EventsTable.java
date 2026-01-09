@@ -29,7 +29,8 @@ public class EventsTable {
             LuaValue event = byName.rawget(name);
             if (event.isNil()) { throw new LuaError("Event named \"" + name + "\" does not exist", s.allocationTracker); }
             EventListener<?, ?> eventListener = event.checkUserdata(s, EventListener.class);
-            return LuaInteger.valueOf(EventListenerAPI.registerImpl((LuaRuntime) s, eventListener, func));
+            EventListenerAPI.registerImpl((LuaRuntime) s, eventListener, func);
+            return Constants.NIL;
         }));
 
         // Fill in the backing table with the built-in listeners provided

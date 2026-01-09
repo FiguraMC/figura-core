@@ -64,24 +64,23 @@ public record ModuleMaterials(
 
     // TEXTURES
     public sealed interface TextureMaterials {
-        @Nullable String name(); // Only use if this is a standalone texture!
+        @Nullable String name(); // Only non-null if this texture is from outside a figmodel.
         record OwnedTexture(@Nullable String name, @Nullable @NoSerialize String location, byte[] data, boolean noAtlas) implements TextureMaterials {}
-        record VanillaTexture(MinecraftIdentifier resourceLocation) implements TextureMaterials { @Override public String name() { return null; }}
     }
 
     // MATERIALS
 
     // Order matters, used in encoding
-    public enum BuiltinShader {
+    public enum BuiltinShaderName {
         BASIC, END_PORTAL, END_GATEWAY
     }
     public enum BuiltinTextureBinding {
-        NONE, LIGHTMAP, OVERLAY
+        NONE, LIGHTMAP
     }
 
     public record MaterialMaterials(
         @Nullable String name, // Only use if this is a standalone material (Not implemented yet)
-        Either<BuiltinShader, Integer> shader, // Shader for this material; either a builtin or index of a custom
+        Either<BuiltinShaderName, Integer> shader, // Shader for this material; either a builtin name or index of a custom
         // Texture bindings:
         // - Null/list too short = default for the shader
         // - Builtin = builtin texture

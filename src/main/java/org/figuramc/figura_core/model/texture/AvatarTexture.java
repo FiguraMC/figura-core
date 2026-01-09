@@ -24,8 +24,6 @@ public abstract class AvatarTexture {
     public static final Translatable<TranslatableItems.Items1<String>> INVALID_PNG
             = Translatable.create("figura_core.error.loading.texture.invalid_png", String.class);
 
-    public static final Translatable<TranslatableItems.Items1<String>> RESOURCE_NOT_FOUND
-            = Translatable.create("figura_core.error.loading.texture.resource_not_found", String.class);
 
     // Create a texture and upload it.
     public static AvatarTexture from(ModuleMaterials.TextureMaterials materials, @Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker, Textures textureComponent, FiguraTextureAtlas.Builder atlasBuilder) throws AvatarInitError, AvatarOutOfMemoryError {
@@ -37,12 +35,12 @@ public abstract class AvatarTexture {
                     return new AtlasedAvatarTexture(textureComponent, owned, atlasBuilder);
                 }
             }
-            case ModuleMaterials.TextureMaterials.VanillaTexture vanilla -> {
-                return new VanillaAvatarTexture(vanilla);
-            }
         }
     }
 
+    // Called once after construction, to know when the texture is ready for usage.
+    // No other methods should be used before this future is completed!
+    public abstract CompletableFuture<Void> ready();
     // Schedule a commit the texture, causing changes to become visible eventually.
     // The changes will be visible when the future is completed.
     public abstract CompletableFuture<Void> commit();

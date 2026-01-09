@@ -27,6 +27,12 @@ public class AtlasedAvatarTexture extends AvatarTexture {
         this.locationInAtlas = atlasBuilder.insert(materials.name(), materials.data());
     }
 
+    @Override
+    public CompletableFuture<Void> ready() {
+        // This will be ready when the atlas is ready. Since this exists, the atlas also exists,
+        // so the atlas's readiness check will suffice for this one to be ready as well.
+        return CompletableFuture.completedFuture(null);
+    }
     @Override public CompletableFuture<Void> commit() {
         assert texturesComponent.atlas != null;
         return texturesComponent.atlas.getHandle().commitRegion(locationInAtlas.getX(), locationInAtlas.getY(), locationInAtlas.getWidth(), locationInAtlas.getHeight());

@@ -16,6 +16,7 @@ import org.figuramc.figura_core.script_languages.lua.LuaRuntime;
 import org.figuramc.figura_core.script_languages.lua.callback_types.LuaCallback;
 import org.figuramc.figura_core.script_languages.lua.errors.LuaAvatarError;
 import org.figuramc.figura_core.util.functional.BiThrowingFunction;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -31,19 +32,15 @@ public class EventListenerAPI {
         return new LuaUserdata(eventListener, state.figuraMetatables.eventListener);
     }
 
-    private static boolean isOwningAvatar(LuaRuntime s, EventListener<?, ?> listener) {
+    public static boolean isOwningAvatar(LuaRuntime s, EventListener<?, ?> listener) {
         return s.avatar == listener.owningAvatar;
     }
 
     // -------- LUA API -------- //
 
     @LuaExpose @LuaPassState
-    public static long register(LuaRuntime s, EventListener<?, ?> self, LuaValue arg) {
+    public static EventListener.@Nullable CallbackHandle register(LuaRuntime s, EventListener<?, ?> self, LuaValue arg) {
         return registerImpl(s, self, arg);
-    }
-    @LuaExpose @LuaPassState
-    public static void remove(LuaRuntime s, EventListener<?, ?> self, long callbackId) {
-        removeImpl(s, self, callbackId);
     }
 
     // General call. Will use invoke() if owner, or queue() if non-owner. Generally what you want.
@@ -135,14 +132,9 @@ public class EventListenerAPI {
     // -------- HELPER METHODS FOR GENERIC SAFETY -------- //
 
 
-    public static <T extends CallbackItem, R extends CallbackItem> long registerImpl(LuaRuntime s, EventListener<T, R> listener, LuaValue func) {
-        if (!isOwningAvatar(s, listener)) return -1;
+    public static <T extends CallbackItem, R extends CallbackItem> EventListener.@Nullable CallbackHandle registerImpl(LuaRuntime s, EventListener<T, R> listener, LuaValue func) {
+        if (!isOwningAvatar(s, listener)) return null;
         return listener.registerCallback(new LuaCallback<>(listener.funcType, s, func));
-    }
-
-    public static <T extends CallbackItem, R extends CallbackItem> void removeImpl(LuaRuntime s, EventListener<T, R> listener, long callbackId) {
-        if (!isOwningAvatar(s, listener)) return;
-        listener.removeCallback(callbackId);
     }
 
     // Convert from Lua Varargs into I
