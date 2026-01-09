@@ -1,6 +1,7 @@
 package org.figuramc.figura_core.model.rendering.shader;
 
 
+import org.figuramc.figura_core.data.materials.ModuleMaterials;
 import org.figuramc.figura_core.model.rendering.vertex.FiguraVertexFormat;
 
 import java.util.List;
@@ -9,7 +10,7 @@ public sealed interface FiguraShader permits BuiltinShader, ExtensionShader {
 
     FiguraVertexFormat vertexFormat();
     List<String> textureBindingPoints();
-
+    List<ModuleMaterials.BuiltinTextureBinding> defaultBindings();
 
     // Extra types
 

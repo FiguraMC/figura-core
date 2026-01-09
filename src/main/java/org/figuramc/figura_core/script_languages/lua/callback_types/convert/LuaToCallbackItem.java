@@ -43,7 +43,7 @@ public class LuaToCallbackItem implements CallbackType.ToItemVisitor<LuaValue, L
             case LuaTable table -> new LuaMapView<>(state, table, CallbackType.Any.INSTANCE, CallbackType.Any.INSTANCE); // Table is Any -> Any map
             case LuaUserdata userdata -> switch (userdata.userdata()) {
                 case CallbackItem anyItem -> anyItem;
-                default -> new CallbackItem.Opaque(userdata); // Default to opaque object wrapping LuaValue
+                default -> new CallbackItem.Opaque(value); // Default to opaque object wrapping LuaValue
             };
             default -> new CallbackItem.Opaque(value); // Default to opaque object wrapping LuaValue
         };

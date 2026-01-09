@@ -178,7 +178,6 @@ public class PartTransform {
         if (positionDirty()) {
             totalPosition.set(position);
             if (mimicPart != null) totalPosition.add(mimicPart.storedVanillaPosition);
-            // TODO Apply animations
             removeFlags(POSITION_DIRTY);
         }
         return totalPosition;

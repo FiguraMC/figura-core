@@ -5,6 +5,7 @@ import org.figuramc.figura_core.avatars.components.Textures;
 import org.figuramc.figura_core.avatars.errors.AvatarInitError;
 import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_core.data.materials.ModuleMaterials;
+import org.figuramc.figura_core.minecraft_interop.FiguraConnectionPoint;
 import org.figuramc.figura_core.minecraft_interop.texture.MinecraftTexture;
 import org.figuramc.figura_translations.Translatable;
 import org.figuramc.figura_translations.TranslatableItems;
@@ -23,6 +24,7 @@ public abstract class AvatarTexture {
     public static final Translatable<TranslatableItems.Items1<String>> INVALID_PNG
             = Translatable.create("figura_core.error.loading.texture.invalid_png", String.class);
 
+
     // Create a texture and upload it.
     public static AvatarTexture from(ModuleMaterials.TextureMaterials materials, @Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker, Textures textureComponent, FiguraTextureAtlas.Builder atlasBuilder) throws AvatarInitError, AvatarOutOfMemoryError {
         switch (materials) {
@@ -33,12 +35,12 @@ public abstract class AvatarTexture {
                     return new AtlasedAvatarTexture(textureComponent, owned, atlasBuilder);
                 }
             }
-            case ModuleMaterials.TextureMaterials.VanillaTexture vanilla -> {
-                throw new UnsupportedOperationException("TODO");
-            }
         }
     }
 
+    // Called once after construction, to know when the texture is ready for usage.
+    // No other methods should be used before this future is completed!
+    public abstract CompletableFuture<Void> ready();
     // Schedule a commit the texture, causing changes to become visible eventually.
     // The changes will be visible when the future is completed.
     public abstract CompletableFuture<Void> commit();

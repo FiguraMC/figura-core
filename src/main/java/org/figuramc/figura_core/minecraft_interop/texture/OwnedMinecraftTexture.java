@@ -5,6 +5,13 @@ import java.util.concurrent.CompletableFuture;
 public interface OwnedMinecraftTexture extends ReadableMinecraftTexture {
 
     /**
+     * An owned texture is ready to use after it's been committed once.
+     */
+    @Override default CompletableFuture<Void> readyToUse() {
+        return this.commit();
+    }
+
+    /**
      * Schedule a commit for changes made to this texture to the GPU.
      * Return a future which will be fulfilled when the commit is complete.
      */

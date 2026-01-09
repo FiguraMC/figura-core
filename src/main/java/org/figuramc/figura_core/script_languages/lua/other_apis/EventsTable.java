@@ -2,10 +2,7 @@ package org.figuramc.figura_core.script_languages.lua.other_apis;
 
 import org.figuramc.figura_cobalt.LuaOOM;
 import org.figuramc.figura_cobalt.LuaUncatchableError;
-import org.figuramc.figura_cobalt.org.squiddev.cobalt.Constants;
-import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaError;
-import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaTable;
-import org.figuramc.figura_cobalt.org.squiddev.cobalt.LuaValue;
+import org.figuramc.figura_cobalt.org.squiddev.cobalt.*;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.LibFunction;
 import org.figuramc.figura_core.script_hooks.Event;
 import org.figuramc.figura_core.script_hooks.EventListener;

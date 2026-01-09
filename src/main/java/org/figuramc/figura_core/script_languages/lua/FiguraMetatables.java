@@ -25,6 +25,7 @@ public class FiguraMetatables {
 
     // General
     public final LuaTable eventListener; // EventListener
+    public final LuaTable eventListenerCallbackHandle; // EventListener.CallbackHandle
 
     // Callbacks and callback items
     public final LuaTable callbackType; // CallbackType
@@ -70,6 +71,7 @@ public class FiguraMetatables {
     public FiguraMetatables(LuaRuntime state) throws LuaError, LuaOOM {
         // General
         eventListener = API__EventListener.createMetatable(state);
+        eventListenerCallbackHandle = API__EventListenerCallbackHandle.createMetatable(state);
 
         // Callbacks
         callbackType = API__CallbackType.createMetatable(state);

@@ -14,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 
 /**
  * A component which holds all the textures for an Avatar.
@@ -41,9 +42,14 @@ public class Textures implements AvatarComponent<Textures> {
         }
         atlas = atlasBuilder.build(avatar.allocationTracker);
 
-        // Set ready to true once all textures are uploaded
-        CompletableFuture<?>[] futures = textures.stream().flatMap(List::stream).map(AvatarTexture::commit).toArray(CompletableFuture[]::new);
-        CompletableFuture.allOf(futures).thenApply(__ -> this.ready = true);
+        // Set our ready value to true once all textures are ready
+        CompletableFuture.allOf(
+                Stream.concat(
+                    textures.stream().flatMap(List::stream),
+                    Stream.ofNullable(atlas)
+                ).map(AvatarTexture::ready)
+                .toArray(CompletableFuture[]::new)
+        ).thenRun(() -> this.ready = true);
     }
 
     public List<AvatarTexture> getTextures(int moduleIndex) {

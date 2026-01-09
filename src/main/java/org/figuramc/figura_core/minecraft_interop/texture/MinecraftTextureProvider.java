@@ -1,6 +1,13 @@
 package org.figuramc.figura_core.minecraft_interop.texture;
 
+import org.figuramc.figura_core.data.materials.ModuleMaterials;
+import org.figuramc.figura_core.minecraft_interop.game_data.MinecraftIdentifier;
+import org.figuramc.figura_core.util.data_structures.Pair;
+import org.jetbrains.annotations.Nullable;
+import org.joml.Vector4f;
+
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Provide the ability to create textures, and also ability to fetch existing textures.
@@ -20,4 +27,20 @@ public interface MinecraftTextureProvider {
      */
     OwnedMinecraftTexture createTextureFromPng(byte[] pngBytes) throws IOException;
 
+    // TODO: Set this up with some kind of script api, and make separate functions for fetching atlased textures
+    //       versus standalone textures. Don't have any kind of "vanilla texture override" for models.
+//    /**
+//     * Get a vanilla texture with the given identifier.
+//     * There are no guarantees around how this really operates, so it could be dangerous to rely on...
+//     * What if Minecraft renames a texture internally?
+//     * Note that this method might not be called from the render thread!
+//     */
+//    @Nullable Pair<MinecraftTexture, Vector4f> getVanillaTexture(MinecraftIdentifier location);
+
+    /**
+     * Returns a reference to one of the renderer's builtin textures. Used in shaders.
+     * Should not be fallible; this is core.
+     * Note that this method might not be called from the render thread!
+     */
+    Pair<MinecraftTexture, Vector4f> getBuiltinTexture(ModuleMaterials.BuiltinTextureBinding builtin);
 }
