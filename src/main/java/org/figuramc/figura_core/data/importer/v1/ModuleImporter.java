@@ -77,7 +77,7 @@ public class ModuleImporter {
         // Textures
         File texturesRoot = new File(root, "textures");
         ArrayList<ModuleMaterials.TextureMaterials> textures = new ArrayList<>();
-        IOUtils.recursiveProcessToDataTree(texturesRoot, f -> readTexture(f, texturesRoot), "png", false, false, shouldIgnore).stream().map(Pair::b).forEach(textures::add);
+        IOUtils.recursiveProcessToDataTree(texturesRoot, f -> readTexture(root, texturesRoot, f), "png", false, false, shouldIgnore).stream().map(Pair::b).forEach(textures::add);
 
         // Materials (custom are TODO)
         ArrayList<ModuleMaterials.MaterialMaterials> materials = new ArrayList<>();
@@ -181,9 +181,11 @@ public class ModuleImporter {
         return new ModuleMaterials.MetadataMaterials(language, dependencies, autoRequireDependencies, api);
     }
 
-    private static ModuleMaterials.TextureMaterials readTexture(File textureFile, File texturesRoot) throws IOException {
-        String location = IOUtils.stringRelativeTo(textureFile, texturesRoot);
-        String name = IOUtils.stripExtension(location, "png");
+    // "name" field is slash-separated string relative to nameRoot, with extensions stripped
+    // For example, for textures/thing.png, if nameRoot is "textures/", then the name will be "thing"
+    private static ModuleMaterials.TextureMaterials readTexture(File root, File nameRoot, File textureFile) throws IOException {
+        String location = IOUtils.stringRelativeTo(textureFile, root); // Location relative to root
+        String name = IOUtils.stripExtension(IOUtils.stringRelativeTo(textureFile, nameRoot), "png");
         boolean noAtlas = name.endsWith(".noatlas");
         if (noAtlas) name = name.substring(0, name.length() - ".noatlas".length());
         byte[] data = Files.readAllBytes(textureFile.toPath());
@@ -210,16 +212,10 @@ public class ModuleImporter {
                         var pair = pairs.computeIfAbsent(pattern, x -> new MutablePair<>(null, -1));
                         // If we already have a texture for this pattern, error out!
                         if (pair.b != -1) throw new ModuleImportingException(CONFLICTING_CUSTOM_ITEM_TEXTURES, new TranslatableItems.Items1<>(pattern));
-                        // Figure out what int to give. If the tex already exists, reuse it, otherwise read a new one
-                        // TODO: Does this even work ever? Was I on crack making this? How would it ever be the same file as something in the textures folder, if this is a png in the items folder??
-                        String location = IOUtils.stringRelativeTo(file, root);
-                        int alreadyExists = ListUtils.findIndex(textures, tex -> tex instanceof ModuleMaterials.TextureMaterials.OwnedTexture owned && location.equals(owned.location()));
-                        if (alreadyExists != -1) {
-                            pair.b = alreadyExists;
-                        } else {
-                            textures.add(readTexture(file, root));
-                            pair.b = textures.size() - 1;
-                        }
+                        // Parse the new texture and keep it
+                        // Its name will be prefixed with "items/" since we're making names relative to the root
+                        textures.add(readTexture(root, root, file));
+                        pair.b = textures.size() - 1;
                     } else if (file.getName().endsWith(".figmodel")) {
                         // Get pattern and pair
                         String pattern = file.getName().substring(0, file.getName().length() - ".figmodel".length());

@@ -2,6 +2,7 @@ package org.figuramc.figura_core.minecraft_interop.texture;
 
 import org.figuramc.figura_core.data.materials.ModuleMaterials;
 import org.figuramc.figura_core.minecraft_interop.game_data.MinecraftIdentifier;
+import org.figuramc.figura_core.model.rendering.FiguraRenderType;
 import org.figuramc.figura_core.util.data_structures.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector4f;
@@ -42,5 +43,5 @@ public interface MinecraftTextureProvider {
      * Should not be fallible; this is core.
      * Note that this method might not be called from the render thread!
      */
-    Pair<MinecraftTexture, Vector4f> getBuiltinTexture(ModuleMaterials.BuiltinTextureBinding builtin);
+    FiguraRenderType.TextureBinding getBuiltinTexture(ModuleMaterials.BuiltinTextureBinding builtin);
 }

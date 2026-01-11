@@ -34,7 +34,7 @@ public class Materials implements AvatarComponent<Materials> {
             // Create materials
             ArrayList<FiguraRenderType> moduleMaterials = new ArrayList<>();
             for (ModuleMaterials.MaterialMaterials mats : module.materials.materials())
-                moduleMaterials.add(FiguraRenderType.from(mats, textures, avatar.allocationTracker));
+                moduleMaterials.add(new FiguraRenderType(mats, textures, avatar.allocationTracker));
             materials.add(moduleMaterials);
         }
     }

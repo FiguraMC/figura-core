@@ -1,7 +1,9 @@
 package org.figuramc.figura_core.util;
 
+import org.figuramc.figura_core.util.data_structures.Pair;
 import org.figuramc.figura_core.util.functional.BiThrowingFunction;
 import org.figuramc.figura_core.util.functional.ThrowingBiConsumer;
+import org.figuramc.figura_core.util.functional.ThrowingConsumer;
 import org.figuramc.figura_core.util.functional.ThrowingFunction;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -244,6 +246,17 @@ public class ListUtils {
             res.computeIfAbsent(keyFunc.apply(elem), k -> new ArrayList<>()).add(elem);
         }
         return res;
+    }
+
+    public static <T, E extends Throwable> void forEachPair(Iterable<T> list, ThrowingConsumer<Pair<T, T>, E> func) throws E {
+        var iterator = list.iterator();
+        if (!iterator.hasNext()) return;
+        T prev = iterator.next();
+        while (iterator.hasNext()) {
+            T next = iterator.next();
+            func.accept(new Pair<>(prev, next));
+            prev = next;
+        }
     }
 
 

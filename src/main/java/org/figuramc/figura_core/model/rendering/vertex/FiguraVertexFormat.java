@@ -6,8 +6,11 @@ import java.util.*;
 
 public class FiguraVertexFormat {
 
-    public static final FiguraVertexFormat DEFAULT = create(true, true, true, List.of());
-    public static final FiguraVertexFormat POSITION = create(false, false, false, List.of());
+    public static final FiguraVertexFormat ALBEDO = create(1, true, false, List.of());
+    public static final FiguraVertexFormat ALBEDO_NORMAL = create(2, true, true, List.of());
+    public static final FiguraVertexFormat ALBEDO_SPECULAR = create(2, true, true, List.of());
+    public static final FiguraVertexFormat ALBEDO_NORMAL_SPECULAR = create(3, true, true, List.of());
+    public static final FiguraVertexFormat POSITION = create(0, false, false, List.of());
 
     public final String[] names;
     public final FiguraVertexElem[] elements;
@@ -15,12 +18,15 @@ public class FiguraVertexFormat {
     public final int vertexSize;
 
     // Safer creation. Always includes position, can optionally include uv/normal/custom elements.
-    public static FiguraVertexFormat create(boolean uv, boolean normal, boolean tangent, List<Pair<String, FiguraVertexElem>> customElements) {
+    public static FiguraVertexFormat create(int uvCount, boolean normal, boolean tangent, List<Pair<String, FiguraVertexElem>> customElements) {
         List<Pair<String, FiguraVertexElem>> elements = new ArrayList<>();
         elements.add(Pair.of("Position", FiguraVertexElem.POSITION));
         elements.add(Pair.of("RiggingWeights", FiguraVertexElem.RIGGING_WEIGHTS));
         elements.add(Pair.of("RiggingIndices", FiguraVertexElem.RIGGING_INDICES));
-        if (uv) elements.add(Pair.of("UV", FiguraVertexElem.UV));
+        if (uvCount > 0) elements.add(Pair.of("UV0", FiguraVertexElem.UV0));
+        if (uvCount > 1) elements.add(Pair.of("UV1", FiguraVertexElem.UV1));
+        if (uvCount > 2) elements.add(Pair.of("UV2", FiguraVertexElem.UV2));
+        if (uvCount > 3) elements.add(Pair.of("UV3", FiguraVertexElem.UV3));
         if (normal) elements.add(Pair.of("Normal", FiguraVertexElem.NORMAL));
         if (tangent) elements.add(Pair.of("Tangent", FiguraVertexElem.TANGENT));
         elements.addAll(customElements);

@@ -72,7 +72,12 @@ public record ModuleMaterials(
 
     // Order matters, used in encoding
     public enum BuiltinShaderName {
-        BASIC, END_PORTAL, END_GATEWAY
+        ALBEDO,
+        ALBEDO_NORMAL,
+        ALBEDO_SPECULAR,
+        ALBEDO_NORMAL_SPECULAR,
+        END_PORTAL,
+        END_GATEWAY
     }
     public enum BuiltinTextureBinding {
         NONE, LIGHTMAP

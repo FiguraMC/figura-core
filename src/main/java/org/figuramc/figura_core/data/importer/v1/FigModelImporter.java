@@ -149,7 +149,7 @@ public class FigModelImporter {
         // Rendering
         // TODO: Plan is to make material_index be prioritized, and fallback to texture_index if not specified.
         //       However, material_index will require a lot of work to implement so we can save it for later.
-        //       Only support texture_index in figmodel for now and auto-generate the corresponding material
+        //       Only support texture_index in figmodel for now and auto-generate the corresponding material!
 
         Integer textureIndex = JsonUtils.getIntOrDefault(group, "texture_index", null);
         Integer materialIndex = null;
@@ -157,13 +157,24 @@ public class FigModelImporter {
             materialIndex = textureMapping[textureIndex].generatedMaterialIndex().value;
             if (materialIndex == null) {
                 List<Either<ModuleMaterials.BuiltinTextureBinding, Integer>> textureBindings = new ArrayList<>();
+                // Albedo always
                 textureBindings.add(Either.ofB(textureMapping[textureIndex].globalTextureIndex));
-                if (textureMapping[textureIndex].normalFriendLocalIndex != -1)
+                ModuleMaterials.BuiltinShaderName shader = ModuleMaterials.BuiltinShaderName.ALBEDO;
+                // Optionally add normal
+                if (textureMapping[textureIndex].normalFriendLocalIndex != -1) {
                     textureBindings.add(Either.ofB(textureMapping[textureMapping[textureIndex].normalFriendLocalIndex].globalTextureIndex));
-                if (textureMapping[textureIndex].specularFriendLocalIndex != -1)
+                    shader = ModuleMaterials.BuiltinShaderName.ALBEDO_NORMAL;
+                }
+                // Optionally add specular
+                if (textureMapping[textureIndex].specularFriendLocalIndex != -1) {
                     textureBindings.add(Either.ofB(textureMapping[textureMapping[textureIndex].specularFriendLocalIndex].globalTextureIndex));
-
-                ModuleMaterials.MaterialMaterials newMaterial = new ModuleMaterials.MaterialMaterials(null, Either.ofA(ModuleMaterials.BuiltinShaderName.BASIC), textureBindings);
+                    if (shader == ModuleMaterials.BuiltinShaderName.ALBEDO_NORMAL)
+                        shader = ModuleMaterials.BuiltinShaderName.ALBEDO_NORMAL_SPECULAR;
+                    else
+                        shader = ModuleMaterials.BuiltinShaderName.ALBEDO_SPECULAR;
+                }
+                // Create the material and cache it
+                ModuleMaterials.MaterialMaterials newMaterial = new ModuleMaterials.MaterialMaterials(null, Either.ofA(shader), textureBindings);
                 allMaterials.add(newMaterial);
                 materialIndex = textureMapping[textureIndex].generatedMaterialIndex().value = allMaterials.size() - 1;
             }

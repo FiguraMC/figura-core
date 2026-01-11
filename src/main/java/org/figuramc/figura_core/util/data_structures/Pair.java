@@ -3,7 +3,11 @@ package org.figuramc.figura_core.util.data_structures;
 import org.figuramc.figura_core.util.functional.BiThrowingBiFunction;
 import org.figuramc.figura_core.util.functional.BiThrowingFunction;
 
+import java.util.Map;
+
 public record Pair<A, B>(A a, B b) {
+
+    public Pair(Map.Entry<A, B> entry) { this(entry.getKey(), entry.getValue()); }
 
     public static <A, B> Pair<A, B> of(A a, B b) { return new Pair<>(a, b); }
 

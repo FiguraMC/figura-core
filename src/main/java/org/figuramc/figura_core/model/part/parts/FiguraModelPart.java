@@ -190,11 +190,11 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
         } else allocState = null;
     }
 
-    // Construct by extruding a texture
+    // Construct by extruding a texture (TODO: normal/specular buddies?)
     public FiguraModelPart(String name, AvatarTexture texture, @Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker) throws AvatarOutOfMemoryError {
         this.name = name;
         this.transform = new PartTransform(allocationTracker);
-        this.renderType = FiguraRenderType.basic(0, texture, null, null, null);
+        this.renderType = FiguraRenderType.albedo(0, texture);
         this.children = new ArrayList<>(0);
         this.renderTasks = new ArrayList<>(0);
         PartVertexData.Builder builder = PartVertexData.builder();
