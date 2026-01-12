@@ -32,7 +32,7 @@ public class QueuedSetters {
     }
 
     // Queue a task
-    public static void register(Runnable task) {
+    private static void register(Runnable task) {
         synchronized (LOCK) {
             TASKS.add(task);
         }

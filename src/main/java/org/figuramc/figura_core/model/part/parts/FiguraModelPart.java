@@ -48,7 +48,6 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
 
     // Rendering
     public final @Nullable PartVertexData vertices; // Vertex data making up cubes/meshes of this part
-//    public final byte[] vertices; // The vertices making up the cubes and meshes of the model part
     public @Nullable FiguraRenderType renderType; // The rendering policy of this part. Null to inherit unconditionally.
     public int renderTypePriority; // If the render type priority is >= than the parent's, renderType can replace the current set of render types.
 

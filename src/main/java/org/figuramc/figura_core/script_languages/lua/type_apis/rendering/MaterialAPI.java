@@ -4,16 +4,20 @@ import org.figuramc.figura_cobalt.LuaOOM;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.*;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaExpose;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaPassState;
+import org.figuramc.figura_core.comptime.lua.annotations.LuaReturnSelf;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaTypeAPI;
 import org.figuramc.figura_core.minecraft_interop.FiguraConnectionPoint;
-import org.figuramc.figura_core.minecraft_interop.game_data.GameDataProvider;
 import org.figuramc.figura_core.model.rendering.FiguraRenderType;
 import org.figuramc.figura_core.model.rendering.shader.BuiltinShader;
 import org.figuramc.figura_core.model.rendering.shader.FiguraShader;
 import org.figuramc.figura_core.model.texture.AvatarTexture;
+import org.figuramc.figura_core.script_hooks.flags.QueuedSetters;
 import org.figuramc.figura_core.script_languages.lua.LuaRuntime;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.joml.Vector2d;
+import org.joml.Vector2f;
+import org.joml.Vector4d;
+import org.joml.Vector4i;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,8 +83,24 @@ public class MaterialAPI {
             default -> throw new LuaError("Expected \"textures\" in Material.new options to be a table or nil, instead found " + options.rawget("textures").typeName(), s.allocationTracker);
         };
 
+        // Scissor state
+        FiguraRenderType.ScissorState scissorState = new FiguraRenderType.ScissorState();
+        switch (options.rawget("scissorState")) {
+            // Vec4 = set value
+            case LuaUserdata userdata when userdata.userdata() instanceof Vector4d vec -> scissorState.set((int) vec.x, (int) vec.y, (int) vec.z, (int) vec.w);
+            // Nil = default, do nothing (don't error)
+            case LuaNil nil -> {}
+            default -> throw new LuaError("Expected \"scissorState\" in Material.new options to be a vec4 or nil, instead found " + options.rawget("scissorState").typeName(), s.allocationTracker);
+        }
+
         // Finally return
-        return new FiguraRenderType(priority, shader, textureBindings);
+        return new FiguraRenderType(priority, shader, textureBindings, scissorState);
     }
+
+    // Enable/disable for scissor state
+    @LuaExpose @LuaReturnSelf public static void enableScissors(FiguraRenderType renderType, Vector4d vec) { enableScissors(renderType, (int) vec.x, (int) vec.y, (int) vec.z, (int) vec.w); }
+    @LuaExpose @LuaReturnSelf public static void enableScissors(FiguraRenderType renderType, Vector2d pos, Vector2d size) { enableScissors(renderType, (int) pos.x, (int) pos.y, (int) size.x, (int) size.y); }
+    @LuaExpose @LuaReturnSelf public static void enableScissors(FiguraRenderType renderType, int x, int y, int w, int h) { QueuedSetters.handle(() -> renderType.scissorState.set(x, y, w, h)); }
+    @LuaExpose @LuaReturnSelf public static void disableScissors(FiguraRenderType renderType) { QueuedSetters.handle(() -> renderType.scissorState.set(-1, -1, -1, -1)); }
 
 }
