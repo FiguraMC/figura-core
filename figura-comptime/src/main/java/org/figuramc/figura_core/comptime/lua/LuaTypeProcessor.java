@@ -137,6 +137,7 @@ public class LuaTypeProcessor extends AbstractProcessor {
                     }
 
                     boolean hasCustomIndex = false;
+                    boolean hasCustomPreIndex = false;
                     boolean hasDynamicFields = false;
 
                     // Code for dynamic fields indexer looks like
@@ -154,14 +155,16 @@ public class LuaTypeProcessor extends AbstractProcessor {
                         String methodName = entry.getKey();
                         // Save __index for later
                         if (methodName.equals("__index")) {
-                            if (hasDynamicFields) throw new RuntimeException("Class cannot have both @LuaDynamicField and a custom __index impl!");
                             hasCustomIndex = true;
+                            continue;
+                        }
+                        if (methodName.equals("__preindex")) {
+                            hasCustomPreIndex = true;
                             continue;
                         }
 
                         // Check if this is a dynamic field
                         if (entry.getValue().getFirst().getAnnotation(LuaDynamicField.class) != null) {
-                            if (hasCustomIndex) throw new RuntimeException("Class cannot have both @LuaDynamicField and a custom __index impl!");
                             hasDynamicFields = true;
                             // Ensure it's not an overload
                             if (entry.getValue().size() > 1) throw new RuntimeException("Methods annotated with @LuaDynamicField cannot be overloads!");
@@ -229,53 +232,103 @@ public class LuaTypeProcessor extends AbstractProcessor {
 
                     // Set up indexing
                     if (luaTypeAPI.hasSuperclass()) {
-                        if (hasCustomIndex) {
-                            output.append("        FiguraMetatables.setupIndexingWithSuperclassAndCustomIndexer(state, metatable, superclassMetatable, ");
+                        if (hasDynamicFields) {
+                            String setupMethodName = hasCustomPreIndex ? "FiguraMetatables.setupIndexingWithSuperclassAndCustomIndexerAndPreIndexer" : "FiguraMetatables.setupIndexingWithSuperclassAndCustomIndexer";
+
+                            output.append("        " + setupMethodName + "(state, metatable, superclassMetatable, LibFunction.create((state2, object, key) -> {\n");
+                            output.append("            LuaRuntime s = (LuaRuntime) state2;\n");
+                            String qualifiedName = ((TypeElement) ((DeclaredType) userdataClass.asType()).asElement()).getQualifiedName().toString();
+                            output.append("            " + qualifiedName + " self = object.checkUserdata(s, " + qualifiedName + ".class);\n");
+                            output.append("            return switch (key.optString(s, null)) {\n");
+                            for (var entry : dynamicFieldsIndexCases.entrySet()) {
+                                output.append("                case \"" + entry.getKey() + "\" -> " + entry.getValue() + "\n");
+                            }
+                            // If we have custom indexer, run that, otherwise error with an unknown field
+                            if (hasCustomIndex) {
+                                output.append("                case null, default -> ");
+                                ExecutableElement customIndexerMethod = methodsByName.get("__index").getFirst();
+                                String implExpr = clazz.getQualifiedName() + "." + customIndexerMethod.getSimpleName() + "(" + (customIndexerMethod.getAnnotation(LuaPassState.class) != null ? "s, " : "") + "self, key)";
+                                output.append(convertDynamicFieldToLua(customIndexerMethod.getReturnType(), implExpr, "<custom indexer>", generatedClassName, typeUtils, elementUtils));
+                                output.append("\n");
+                            } else {
+                                output.append("                case null -> { throw new LuaError(\"Expected string key, got \" + key.typeName(), s.allocationTracker); }\n");
+                                output.append("                default -> { throw new LuaError(\"Unknown field: \\\"\" + key.checkString(s) + \"\\\"\", s.allocationTracker); }\n");
+                            }
+                            output.append("            };\n");
+                            output.append("        })");
+                            if (hasCustomPreIndex) {
+                                output.append(", ");
+                                writeLuaLambda(output, "            ", "__index", methodsByName.get("__preindex"), clazz, typeName, true, generatedClassName, typeUtils, elementUtils);
+                            }
+                            output.append(");\n");
+                        } else if (hasCustomIndex) {
+                            // No dynamic fields, but has a custom indexer
+                            String setupMethodName = hasCustomPreIndex ? "FiguraMetatables.setupIndexingWithSuperclassAndCustomIndexerAndPreIndexer" : "FiguraMetatables.setupIndexingWithSuperclassAndCustomIndexer";
+
+                            output.append("        " + setupMethodName + "(state, metatable, superclassMetatable, ");
                             writeLuaLambda(
                                     output, "            ",
                                     "__index", methodsByName.get("__index"),
                                     clazz, typeName, true, generatedClassName,
                                     typeUtils, elementUtils
                             );
-                            output.append(");\n");
-                        } else if (hasDynamicFields) {
-                            output.append("        FiguraMetatables.setupIndexingWithSuperclassAndCustomIndexer(state, metatable, superclassMetatable, LibFunction.create((state2, object, key) -> {\n");
-                            output.append("            LuaRuntime s = (LuaRuntime) state2;\n");
-                            String qualifiedName = ((TypeElement) ((DeclaredType) userdataClass.asType()).asElement()).getQualifiedName().toString();
-                            output.append("            " + qualifiedName + " self = object.checkUserdata(s, " + qualifiedName + ".class);\n");
-                            output.append("            return switch (key.checkString(s)) {\n");
-                            for (var entry : dynamicFieldsIndexCases.entrySet()) {
-                                output.append("                case \"" + entry.getKey() + "\" -> " + entry.getValue() + "\n");
+                            if (hasCustomPreIndex) {
+                                output.append(", ");
+                                writeLuaLambda(output, "            ", "__index", methodsByName.get("__preindex"), clazz, typeName, true, generatedClassName, typeUtils, elementUtils);
                             }
-                            output.append("                default -> { throw new LuaError(\"Unknown field: \\\" + key.checkString(s) + \\\"\", s.allocationTracker); }\n");
-                            output.append("            };\n");
-                            output.append("        }));\n");
+                            output.append(");\n");
                         } else {
+                            // No dynamic fields or custom indexer
                             output.append("        FiguraMetatables.setupIndexingWithSuperclass(state, metatable, superclassMetatable);\n");
                         }
                     } else {
-                        if (hasCustomIndex) {
-                            output.append("        FiguraMetatables.setupIndexingWithCustomIndexer(state, metatable, ");
+                        if (hasDynamicFields) {
+                            String setupMethodName = hasCustomPreIndex ? "FiguraMetatables.setupIndexingWithCustomIndexerAndPreIndexer" : "FiguraMetatables.setupIndexingWithCustomIndexer";
+
+                            output.append("        " + setupMethodName + "(state, metatable, LibFunction.create((state2, object, key) -> {\n");
+                            output.append("            LuaRuntime s = (LuaRuntime) state2;\n");
+                            String qualifiedName = ((TypeElement) ((DeclaredType) userdataClass.asType()).asElement()).getQualifiedName().toString();
+                            output.append("            " + qualifiedName + " self = object.checkUserdata(s, " + qualifiedName + ".class);\n");
+                            output.append("            return switch (key.optString(s, null)) {\n");
+                            for (var entry : dynamicFieldsIndexCases.entrySet()) {
+                                output.append("                case \"" + entry.getKey() + "\" -> " + entry.getValue() + "\n");
+                            }
+                            // If we have custom indexer, run that, otherwise error with an unknown field
+                            if (hasCustomIndex) {
+                                output.append("                case null, default -> ");
+                                ExecutableElement customIndexerMethod = methodsByName.get("__index").getFirst();
+                                String implExpr = clazz.getQualifiedName() + "." + customIndexerMethod.getSimpleName() + "(" + (customIndexerMethod.getAnnotation(LuaPassState.class) != null ? "s, " : "") + "self, key)";
+                                output.append(convertDynamicFieldToLua(customIndexerMethod.getReturnType(), implExpr, "<custom indexer>", generatedClassName, typeUtils, elementUtils));
+                                output.append("\n");
+                            } else {
+                                output.append("                case null -> { throw new LuaError(\"Expected string key, got \" + key.typeName(), s.allocationTracker); }\n");
+                                output.append("                default -> { throw new LuaError(\"Unknown field: \\\"\" + key.checkString(s) + \"\\\"\", s.allocationTracker); }\n");
+                            }
+                            output.append("            };\n");
+                            output.append("        })");
+                            if (hasCustomPreIndex) {
+                                output.append(", ");
+                                writeLuaLambda(output, "            ", "__index", methodsByName.get("__preindex"), clazz, typeName, true, generatedClassName, typeUtils, elementUtils);
+                            }
+                            output.append(");\n");
+                        } else if (hasCustomIndex) {
+                            // No dynamic fields, but has a custom indexer
+                            String setupMethodName = hasCustomPreIndex ? "FiguraMetatables.setupIndexingWithCustomIndexerAndPreIndexer" : "FiguraMetatables.setupIndexingWithCustomIndexer";
+
+                            output.append("        " + setupMethodName + "(state, metatable, ");
                             writeLuaLambda(
                                     output, "            ",
                                     "__index", methodsByName.get("__index"),
                                     clazz, typeName, true, generatedClassName,
                                     typeUtils, elementUtils
                             );
-                            output.append(");\n");
-                        } else if (hasDynamicFields) {
-                            output.append("        FiguraMetatables.setupIndexingWithCustomIndexer(state, metatable, LibFunction.create((state2, object, key) -> {\n");
-                            output.append("            LuaRuntime s = (LuaRuntime) state2;\n");
-                            String qualifiedName = ((TypeElement) ((DeclaredType) userdataClass.asType()).asElement()).getQualifiedName().toString();
-                            output.append("            " + qualifiedName + " self = object.checkUserdata(s, " + qualifiedName + ".class);\n");
-                            output.append("            return switch (key.checkString(s)) {\n");
-                            for (var entry : dynamicFieldsIndexCases.entrySet()) {
-                                output.append("                case \"" + entry.getKey() + "\" -> " + entry.getValue() + "\n");
+                            if (hasCustomPreIndex) {
+                                output.append(", ");
+                                writeLuaLambda(output, "            ", "__index", methodsByName.get("__preindex"), clazz, typeName, true, generatedClassName, typeUtils, elementUtils);
                             }
-                            output.append("                default -> { throw new LuaError(\"Unknown field: \\\" + key.checkString(s) + \\\"\", s.allocationTracker); }\n");
-                            output.append("            };\n");
-                            output.append("        }));\n");
+                            output.append(");\n");
                         } else {
+                            // No dynamic fields or custom indexer
                             output.append("        FiguraMetatables.setupIndexing(state, metatable);\n");
                         }
                     }

@@ -1,13 +1,10 @@
 package org.figuramc.figura_core.text;
 
-import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2f;
 import org.joml.Vector4f;
 
 /**
  * Provider that takes in certain inputs (accessible while rendering text) and outputs T.
- * If a style makes use of molang, make sure to update the relevant fields of the Avatar's
- * Molang component before fetching the value from this!
  */
 public abstract class StyleElementProvider<T> {
 
@@ -16,7 +13,7 @@ public abstract class StyleElementProvider<T> {
         this.isDynamic = isDynamic;
     }
 
-    // Get the value, given relevant parameters
+    // Get the value, given relevant parameters.
     // Parameters are defined in the Molang class!
     public abstract T value(float char_index);
 
@@ -38,11 +35,10 @@ public abstract class StyleElementProvider<T> {
         @Override public T value(float char_index) { return value; }
     }
 
-    public static class Dynamic<T> extends StyleElementProvider<T> {
-        private final DynamicImpl<T> impl;
+    public static class Evaluated<T> extends StyleElementProvider<T> {
+        private final EvaluatedProviderImpl<T> impl;
 
-        public Dynamic(DynamicImpl<T> impl) { this(impl, true); }
-        public Dynamic(DynamicImpl<T> impl, boolean isDynamic) {
+        public Evaluated(EvaluatedProviderImpl<T> impl, boolean isDynamic) {
             super(isDynamic);
             this.impl = impl;
         }
@@ -52,7 +48,8 @@ public abstract class StyleElementProvider<T> {
             return impl.value(char_index);
         }
 
-        @FunctionalInterface public interface DynamicImpl<T> {
+        @FunctionalInterface
+        public interface EvaluatedProviderImpl<T> {
             T value(float char_index);
         }
     }

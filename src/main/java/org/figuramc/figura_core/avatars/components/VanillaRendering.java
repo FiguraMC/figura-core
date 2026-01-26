@@ -73,12 +73,18 @@ public class VanillaRendering implements AvatarComponent<VanillaRendering> {
         // Script-provided booleans saying whether to cancel each vanilla transform phase:
         public boolean cancelVanillaOrigin, cancelVanillaRotation, cancelVanillaScale;
 
-        // Stored transform values from when the part last rendered:
+        // Stored transform values from when the part last rendered.
+        // Regular "stored" values only include MC's transforms.
+        // The "full" stored values include MC's transforms AND Figura's transforms.
         public final Vector3f
-                storedVanillaOrigin = new Vector3f(),
-                storedVanillaRotation = new Vector3f(), // Radians
-                storedVanillaScale = new Vector3f(1f),
-                storedVanillaPosition = new Vector3f();
+                storedOrigin = new Vector3f(),
+                fullStoredOrigin = new Vector3f(),
+                storedRotation = new Vector3f(), // Radians
+                fullStoredRotation = new Vector3f(), // Radians
+                storedScale = new Vector3f(1f),
+                fullStoredScale = new Vector3f(1f),
+                storedPosition = new Vector3f(), // Here for completion, but it's never modified by MC. Just always 0.
+                fullStoredPosition = new Vector3f();
 
         // Callbacks which run when the minecraft part is rendered
         public final ArrayList<ScriptCallback<CallbackItem.Unit, CallbackItem.Unit>> vanillaRenderCallbacks = new ArrayList<>(0);

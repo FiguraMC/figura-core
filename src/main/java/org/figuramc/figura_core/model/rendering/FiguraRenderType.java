@@ -74,12 +74,12 @@ public class FiguraRenderType {
     }
 
     // Helpers to construct certain render types
-    public static FiguraRenderType albedo(int priority, AvatarTexture albedo) {
+    public static FiguraRenderType albedo(int priority, TextureBinding albedo) {
         return new FiguraRenderType(
                 priority,
                 BuiltinShader.ALBEDO,
                 List.of(
-                        new TextureBinding(albedo.getHandle(), albedo.getUvValues()),
+                        albedo,
                         FiguraConnectionPoint.TEXTURE_PROVIDER.getBuiltinTexture(ModuleMaterials.BuiltinTextureBinding.LIGHTMAP)
                 ),
                 new ScissorState()

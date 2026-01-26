@@ -26,6 +26,8 @@ public class FormattedText {
     public final TextStyle style;
     // Children of this text, which come after it
     public final List<FormattedText> children;
+    // Total length including children
+    public final int totalLength;
 
     /**
      * Construct a basic piece of text from a string with no formatting.
@@ -34,15 +36,17 @@ public class FormattedText {
         codepoints = text.codePoints().toArray();
         style = TextStyle.NO_STYLE;
         children = List.of();
+        totalLength = codepoints.length;
     }
 
     /**
      * Verbose constructor with all fields
      */
-    public FormattedText(int[] codepoints, TextStyle style, List<FormattedText> children) {
+    public FormattedText(int[] codepoints, TextStyle style, List<FormattedText> children, int totalLength) {
         this.codepoints = codepoints;
         this.style = style;
         this.children = children;
+        this.totalLength = totalLength;
     }
 
     /**
@@ -56,16 +60,18 @@ public class FormattedText {
                 curCharIndex[0] += codepoints.length;
                 style = parentStyle;
                 children = List.of();
+                totalLength = codepoints.length;
             }
             case JsonArray array -> {
                 codepoints = new int[0];
                 style = parentStyle;
                 children = ListUtils.<JsonElement, FormattedText, AvatarOutOfMemoryError, MolangCompileException>mapBiThrowing(array, child -> new FormattedText(child, style, molang, curCharIndex));
+                totalLength = children.stream().mapToInt(c -> c.totalLength).sum();
             }
             case JsonObject object -> {
                 codepoints = JsonUtils.getStringOrDefault(object, "text", "").codePoints().toArray();
-                int charCount = calculateCharCount(object);
-                style = TextStyle.parseJson(parentStyle, object, molang, curCharIndex[0], charCount);
+                totalLength = calculateCharCount(object);
+                style = TextStyle.parseJson(parentStyle, object, molang, curCharIndex[0], totalLength);
                 curCharIndex[0] += codepoints.length;
                 if (object.has("extra")) {
                     children = new ArrayList<>();

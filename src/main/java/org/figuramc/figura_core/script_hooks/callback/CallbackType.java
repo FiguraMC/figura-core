@@ -7,11 +7,13 @@ import org.figuramc.memory_tracker.AllocationTracker;
 // Correlated through the generic to the corresponding CallbackItem.
 public sealed interface CallbackType<T extends CallbackItem> {
 
+    // Visitors
     <Outside, E1 extends Throwable, E2 extends Throwable> T toItem(ToItemVisitor<Outside, E1, E2> visitor, Outside outside) throws E1, E2;
     <Outside, E1 extends Throwable, E2 extends Throwable> Outside fromItem(FromItemVisitor<Outside, E1, E2> visitor, T item) throws E1, E2;
 
     default String stringify() { return fromItem(StringifyVisitor.INSTANCE, null); }
     default int getSize() { return fromItem(SizeVisitor.INSTANCE, null); }
+    default boolean isSendable() { return fromItem(IsSendableVisitor.INSTANCE, null); }
 
     // Max supported tuple size
     int MAX_TUPLE_SIZE = 8;
@@ -235,7 +237,7 @@ public sealed interface CallbackType<T extends CallbackItem> {
     }
 
     // Visitor for stringifying a type.
-    // Just pass null as the item!
+    // Should use the default helper method .stringify() instead!
     class StringifyVisitor implements FromItemVisitor<String, RuntimeException, RuntimeException> {
 
         public static final StringifyVisitor INSTANCE = new StringifyVisitor();
@@ -268,7 +270,7 @@ public sealed interface CallbackType<T extends CallbackItem> {
     }
 
     // Visitor for calculating the size of a type.
-    // Just pass null as the item!
+    // Should use the default helper method .getSize() instead!
     class SizeVisitor implements FromItemVisitor<Integer, RuntimeException, RuntimeException> {
         public static final SizeVisitor INSTANCE = new SizeVisitor();
         private SizeVisitor() {}
@@ -309,4 +311,48 @@ public sealed interface CallbackType<T extends CallbackItem> {
             return size;
         }
     }
+
+    // Visitor for checking if a type can be sent across avatars.
+    // Should use default helper method .isSendable() instead!
+    class IsSendableVisitor implements FromItemVisitor<Boolean, RuntimeException, RuntimeException> {
+        public static final IsSendableVisitor INSTANCE = new IsSendableVisitor();
+        private IsSendableVisitor() {}
+
+        // Primitives can be sent
+        @Override public Boolean visit(Unit __, CallbackItem.Unit ___) { return true; }
+        @Override public Boolean visit(Bool __, CallbackItem.Bool ___) { return true; }
+        @Override public Boolean visit(I32 __, CallbackItem.I32 ___) { return true; }
+        @Override public Boolean visit(F32 __, CallbackItem.F32 ___) { return true; }
+        @Override public Boolean visit(F64 __, CallbackItem.F64 ___) { return true; }
+        @Override public Boolean visit(Str __, StringView ___) { return true; }
+        // Opaque and Any are unsafe, they could contain unknown things
+        @Override public Boolean visit(Opaque __, CallbackItem.Opaque ___) { return false; }
+        @Override public Boolean visit(Any __, CallbackItem ___) { return false; }
+        // Views of immutable world state are safe
+        @Override public Boolean visit(Entity __, EntityView<?> ___) { return true; }
+        @Override public Boolean visit(BlockState __, BlockStateView<?> ___) { return true; }
+        @Override public Boolean visit(World __, WorldView<?> ___) { return true; }
+        @Override public Boolean visit(ItemStack __, ItemStackView<?> ___) { return true; }
+        // Functions are always a no
+        @Override public <I extends CallbackItem, O extends CallbackItem> Boolean visit(Func<I, O> type, CallbackView<I, O> ___) { return false; }
+        // Collections are safe as long as their contents are
+        @Override public <T extends CallbackItem> Boolean visit(List<T> type, ListView<T> ___) { return type.element.isSendable(); }
+        @Override public <K extends CallbackItem, V extends CallbackItem> Boolean visit(Map<K, V> type, MapView<K, V> ___) { return type.key.isSendable() && type.value.isSendable(); }
+        @Override public <T extends CallbackItem> Boolean visit(Optional<T> type, CallbackItem.Optional<T> ___) { return type.inner.isSendable(); }
+        // Tuples are safe as long as each element is. We use short-circuiting here for more performance.
+        // The implementation is exactly what you expect. You don't need to scroll to the end of these lines.
+        @Override public <A extends CallbackItem, B extends CallbackItem> Boolean visit(Tuple2<A, B> type, CallbackItem.Tuple2<A, B> ___) throws RuntimeException { return type.a.isSendable() && type.b.isSendable(); }
+        @Override public <A extends CallbackItem, B extends CallbackItem, C extends CallbackItem> Boolean visit(Tuple3<A, B, C> type, CallbackItem.Tuple3<A, B, C> ___) throws RuntimeException { return type.a.isSendable() && type.b.isSendable() && type.c.isSendable(); }
+        @Override public <A extends CallbackItem, B extends CallbackItem, C extends CallbackItem, D extends CallbackItem> Boolean visit(Tuple4<A, B, C, D> type, CallbackItem.Tuple4<A, B, C, D> ___) throws RuntimeException { return type.a.isSendable() && type.b.isSendable() && type.c.isSendable() && type.d.isSendable(); }
+        @Override public <A extends CallbackItem, B extends CallbackItem, C extends CallbackItem, D extends CallbackItem, E extends CallbackItem> Boolean visit(Tuple5<A, B, C, D, E> type, CallbackItem.Tuple5<A, B, C, D, E> ___) throws RuntimeException { return type.a.isSendable() && type.b.isSendable() && type.c.isSendable() && type.d.isSendable() && type.e.isSendable(); }
+        @Override public <A extends CallbackItem, B extends CallbackItem, C extends CallbackItem, D extends CallbackItem, E extends CallbackItem, F extends CallbackItem> Boolean visit(Tuple6<A, B, C, D, E, F> type, CallbackItem.Tuple6<A, B, C, D, E, F> ___) throws RuntimeException { return type.a.isSendable() && type.b.isSendable() && type.c.isSendable() && type.d.isSendable() && type.e.isSendable() && type.f.isSendable(); }
+        @Override public <A extends CallbackItem, B extends CallbackItem, C extends CallbackItem, D extends CallbackItem, E extends CallbackItem, F extends CallbackItem, G extends CallbackItem> Boolean visit(Tuple7<A, B, C, D, E, F, G> type, CallbackItem.Tuple7<A, B, C, D, E, F, G> ___) throws RuntimeException { return type.a.isSendable() && type.b.isSendable() && type.c.isSendable() && type.d.isSendable() && type.e.isSendable() && type.f.isSendable() && type.g.isSendable(); }
+        @Override public <A extends CallbackItem, B extends CallbackItem, C extends CallbackItem, D extends CallbackItem, E extends CallbackItem, F extends CallbackItem, G extends CallbackItem, H extends CallbackItem> Boolean visit(Tuple8<A, B, C, D, E, F, G, H> type, CallbackItem.Tuple8<A, B, C, D, E, F, G, H> ___) throws RuntimeException { return type.a.isSendable() && type.b.isSendable() && type.c.isSendable() && type.d.isSendable() && type.e.isSendable() && type.f.isSendable() && type.g.isSendable() && type.h.isSendable(); }
+
+        @Override
+        public <TupleItem extends CallbackItem.Tuple> Boolean visitTuple(Tuple<TupleItem> type, TupleItem ___) throws RuntimeException {
+            return type.isSendable();
+        }
+    }
+
 }

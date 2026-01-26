@@ -54,9 +54,6 @@ public class FiguraMetatables {
     public final LuaTable texture;
     public final LuaTable material;
 
-    // Tasks
-    public final LuaTable textTask;
-
     // Vanilla rendering
     public final LuaTable vanillaPart;
 //    public final LuaTable vanillaRenderLayer;
@@ -100,9 +97,6 @@ public class FiguraMetatables {
         texture = API__Texture.createMetatable(state);
         material = API__Material.createMetatable(state);
 
-        // Tasks
-        textTask = API__TextTask.createMetatable(state, transformable);
-
         // Vanilla rendering
         vanillaPart = API__VanillaPart.createMetatable(state, transformable);
 
@@ -142,28 +136,36 @@ public class FiguraMetatables {
 
     // Helpers to ensure safe use
     public static void setupIndexing(LuaState state, LuaTable metatable) throws LuaError, LuaOOM {
-        setupIndexingImpl(state, metatable, null, null);
+        setupIndexingImpl(state, metatable, null, null, null);
     }
 
     public static void setupIndexingWithSuperclass(LuaState state, LuaTable metatable, @NotNull LuaTable superclassMetatable) throws LuaError, LuaOOM {
-        setupIndexingImpl(state, metatable, Objects.requireNonNull(superclassMetatable), null);
+        setupIndexingImpl(state, metatable, Objects.requireNonNull(superclassMetatable), null, null);
     }
 
     public static void setupIndexingWithCustomIndexer(LuaState state, LuaTable metatable, @NotNull LuaFunction customIndexer) throws LuaError, LuaOOM {
-        setupIndexingImpl(state, metatable, null, Objects.requireNonNull(customIndexer));
+        setupIndexingImpl(state, metatable, null, Objects.requireNonNull(customIndexer), null);
+    }
+
+    public static void setupIndexingWithPreIndexer(LuaState state, LuaTable metatable, @NotNull LuaTable superclassMetatable, @NotNull LuaFunction customPreIndexer) throws LuaError, LuaOOM {
+        setupIndexingImpl(state, metatable, Objects.requireNonNull(superclassMetatable), null, Objects.requireNonNull(customPreIndexer));
     }
 
     public static void setupIndexingWithSuperclassAndCustomIndexer(LuaState state, LuaTable metatable, @NotNull LuaTable superclassMetatable, @NotNull LuaFunction customIndexer) throws LuaError, LuaOOM {
-        setupIndexingImpl(state, metatable, Objects.requireNonNull(superclassMetatable), Objects.requireNonNull(customIndexer));
+        setupIndexingImpl(state, metatable, Objects.requireNonNull(superclassMetatable), Objects.requireNonNull(customIndexer), null);
+    }
+
+    public static void setupIndexingWithSuperclassAndCustomIndexerAndPreIndexer(LuaState state, LuaTable metatable, @NotNull LuaTable superclassMetatable, @NotNull LuaFunction customIndexer, @NotNull LuaFunction customPreIndexer) throws LuaError, LuaOOM {
+        setupIndexingImpl(state, metatable, Objects.requireNonNull(superclassMetatable), Objects.requireNonNull(customIndexer), Objects.requireNonNull(customPreIndexer));
     }
 
     // Helper method to set up inheritance relationship between subclass and superclass metatables,
     // and also deals with any custom __index implementations.
     // Make sure to call this on EVERY created metatable, even ones without superclasses, so that indexing works as it should.
     // This should also be the last thing called in the class, I think. (Maybe it doesn't matter...?)
-    private static void setupIndexingImpl(LuaState state, LuaTable thisMetatable, @Nullable LuaTable superclassMetatable, @Nullable LuaFunction customIndexer) throws LuaError, LuaOOM {
+    private static void setupIndexingImpl(LuaState state, LuaTable thisMetatable, @Nullable LuaTable superclassMetatable, @Nullable LuaFunction customIndexer, @Nullable LuaFunction customPreIndexer) throws LuaError, LuaOOM {
         // If there's no superclass metatable, and no custom indexer, just make it simple.
-        if (superclassMetatable == null && customIndexer == null) {
+        if (superclassMetatable == null && customIndexer == null && customPreIndexer == null) {
             thisMetatable.rawset(INDEX, thisMetatable); // Set __index to itself, and we're done
             return;
         }
@@ -184,20 +186,30 @@ public class FiguraMetatables {
             // If the superclass has __index as a function:
             if (superclassIndex instanceof LuaFunction superIndexFunc) {
                 // If we also have a custom __index, we need to weave them together:
-                if (customIndexer != null) {
+                if (customIndexer != null || customPreIndexer != null) {
                     thisMetatable.rawset(INDEX, LibFunction.createS((s, di, args) -> {
-                        // First, try to fetch a method:
+                        // First, if we have a pre-indexer, try to run it, and return if we found one.
+                        if (customPreIndexer != null) {
+                            LuaValue preIndexerResult = SuspendedAction.run(di, () -> Dispatch.invoke(s, customPreIndexer, args)).first();
+                            if (!preIndexerResult.isNil()) return preIndexerResult;
+                        }
+                        // Second, try to fetch a method:
                         LuaValue k = args.arg(2);
                         LuaValue method = SuspendedAction.run(di, () -> OperationHelper.getTable(s, thisMetatable, k)).first();
                         if (!method.isNil()) return method;
-                        // If no method was found, try our indexer:
-                        LuaValue subclassIndexerResult = SuspendedAction.run(di, () -> Dispatch.invoke(s, customIndexer, args)).first();
-                        if (!subclassIndexerResult.isNil()) return subclassIndexerResult;
-                        // Finally, defer to superclass indexer.
-                        return SuspendedAction.run(di, () -> Dispatch.invoke(s, superIndexFunc, args));
+                        // Defer to superclass indexer:
+                        LuaValue superclassResult = SuspendedAction.run(di, () -> Dispatch.invoke(s, superIndexFunc, args)).first();
+                        if (!superclassResult.isNil()) return superclassResult;
+                        // If superclass indexer found nothing, try our custom indexer (if we have one):
+                        if (customIndexer != null) {
+                            LuaValue subclassIndexerResult = SuspendedAction.run(di, () -> Dispatch.invoke(s, customIndexer, args)).first();
+                            if (!subclassIndexerResult.isNil()) return subclassIndexerResult;
+                        }
+                        // Default to nil.
+                        return Constants.NIL;
                     }));
                 } else {
-                    // We don't have a custom indexer, so just defer to the superclass's.
+                    // We don't have a custom indexer or preindexer, so just defer to the superclass's.
                     thisMetatable.rawset(INDEX, LibFunction.createS((s, di, args) -> {
                         // First, try to fetch a method:
                         LuaValue k = args.arg(2);
@@ -216,14 +228,24 @@ public class FiguraMetatables {
             }
         }
         // If we have a custom index function, wire it up:
-        if (customIndexer != null) {
+        if (customIndexer != null || customPreIndexer != null) {
             thisMetatable.rawset(INDEX, LibFunction.createS((s, di, args) -> {
-                // First, try to fetch a method:
+                // First, if we have a pre-indexer, try to run it, and return if we found one.
+                if (customPreIndexer != null) {
+                    LuaValue preIndexerResult = SuspendedAction.run(di, () -> Dispatch.invoke(s, customPreIndexer, args)).first();
+                    if (!preIndexerResult.isNil()) return preIndexerResult;
+                }
+                // Second, try to fetch a method:
                 LuaValue k = args.arg(2);
                 LuaValue method = SuspendedAction.run(di, () -> OperationHelper.getTable(s, thisMetatable, k)).first();
                 if (!method.isNil()) return method;
-                // If no method was found, fall back to the custom indexer.
-                return SuspendedAction.run(di, () -> Dispatch.invoke(s, customIndexer, args));
+                // If no method was found, try our indexer (if we have one):
+                if (customIndexer != null) {
+                    LuaValue subclassIndexerResult = SuspendedAction.run(di, () -> Dispatch.invoke(s, customIndexer, args)).first();
+                    if (!subclassIndexerResult.isNil()) return subclassIndexerResult;
+                }
+                // Return nil by default.
+                return Constants.NIL;
             }));
         } else {
             thisMetatable.rawset(INDEX, thisMetatable);

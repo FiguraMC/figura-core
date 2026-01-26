@@ -31,13 +31,13 @@ public class AllMolangQueries {
         AVATAR_QUERIES.putAll(DefaultQueries.getDefaultQueries());
 
         // General
-        AVATAR_QUERIES.put("time", QueryFactory.fromStaticMethod("time", Molang.class, "time", 0, 1));
+        AVATAR_QUERIES.put("time", QueryFactory.fromStaticMethod("time", Molang.class, "time", 0, 1, true));
 
         // Animations
-        AVATAR_QUERIES.put("anim_time", QueryFactory.fromContextVariable("anim_time", "anim_time"));
+        AVATAR_QUERIES.put("anim_time", QueryFactory.fromContextVariable("anim_time", "anim_time", true));
 
         // Text
-        AVATAR_QUERIES.put("char_index", QueryFactory.fromContextVariable("char_index", "char_index"));
+        AVATAR_QUERIES.put("char_index", QueryFactory.fromContextVariable("char_index", "char_index", false));
         AVATAR_QUERIES.put("char_count", QueryFactory.fromConstant("char_count", "char_count", 1));
         AVATAR_QUERIES.put("start_char_index", QueryFactory.fromConstant("start_char_index", "start_char_index", 1));
         // char_progress is short for (char_index - start_char_index) / char_count

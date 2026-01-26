@@ -26,4 +26,8 @@ public class FiguraException extends Exception {
         super(translatable.translate(Language.EN_US, new TranslatableItems.Items1<>(item)), cause); // TODO make lang configurable
     }
 
+    public FiguraException(String alreadyTranslatedMessage) {
+        super(alreadyTranslatedMessage);
+    }
+
 }

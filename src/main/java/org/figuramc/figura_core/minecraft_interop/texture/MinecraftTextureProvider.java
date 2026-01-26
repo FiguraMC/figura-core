@@ -28,16 +28,6 @@ public interface MinecraftTextureProvider {
      */
     OwnedMinecraftTexture createTextureFromPng(byte[] pngBytes) throws IOException;
 
-    // TODO: Set this up with some kind of script api, and make separate functions for fetching atlased textures
-    //       versus standalone textures. Don't have any kind of "vanilla texture override" for models.
-//    /**
-//     * Get a vanilla texture with the given identifier.
-//     * There are no guarantees around how this really operates, so it could be dangerous to rely on...
-//     * What if Minecraft renames a texture internally?
-//     * Note that this method might not be called from the render thread!
-//     */
-//    @Nullable Pair<MinecraftTexture, Vector4f> getVanillaTexture(MinecraftIdentifier location);
-
     /**
      * Returns a reference to one of the renderer's builtin textures. Used in shaders.
      * Should not be fallible; this is core.

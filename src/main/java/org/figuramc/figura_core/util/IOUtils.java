@@ -115,9 +115,13 @@ public class IOUtils {
                 // Try processing this folder
                 V applied = process.apply(child);
                 if (applied != null) {
+                    // If we successfully processed the folder, add it as a leaf
                     output.addLeaf(name, applied);
-                    continue;
+                } else {
+                    // Processing the folder failed, so recurse instead
+                    output.addNode(name, recursiveProcessToDataTree(child, process, extension, stripExtension, tryProcessingFolders, shouldIgnore));
                 }
+                continue;
             }
 
             // If the extension is wrong, skip the file

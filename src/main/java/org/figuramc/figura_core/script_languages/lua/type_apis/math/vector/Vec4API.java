@@ -140,54 +140,103 @@ public class Vec4API {
     @LuaExpose public static double minElem(Vector4d self) { return Math.min(Math.min(self.x, self.y), Math.min(self.z, self.w)); }
 
     // Binary operator overloading.
-    // Needs extra logic since we want to allow Vector + Vector and Vector + number.
-    @LuaExpose @LuaPassState public static Vector4d __add(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaOOM {
-        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector4d other)
-            return new Vector4d(self).add(other);
-        double num = unknown.checkDouble(s);
-        return new Vector4d(self).add(num, num, num, num);
+    // Needs extra logic since we want to allow Vector + Vector, Vector + number, and number + Vector.
+    @LuaExpose @LuaPassState public static Vector4d __add(LuaRuntime s, LuaValue arg1, LuaValue arg2) throws LuaError, LuaOOM {
+        if (arg1 instanceof LuaUserdata userdata1 && userdata1.userdata() instanceof Vector4d vec1) {
+            // Vector + ?
+            if (arg2 instanceof LuaUserdata userdata2 && userdata2.userdata() instanceof Vector4d vec2)
+                // Vector + Vector
+                return new Vector4d(vec1).add(vec2);
+            // Vector + Number
+            double num = arg2.checkDouble(s);
+            return new Vector4d(vec1).add(num, num, num, num);
+        } else {
+            // Number + Vector
+            double num = arg1.checkDouble(s);
+            return new Vector4d(num).add(arg2.checkUserdata(s, Vector4d.class));
+        }
     }
-    @LuaExpose @LuaPassState public static Vector4d __sub(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaOOM {
-        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector4d other)
-            return new Vector4d(self).sub(other);
-        double num = unknown.checkDouble(s);
-        return new Vector4d(self).sub(num, num, num, num);
+    @LuaExpose @LuaPassState public static Vector4d __sub(LuaRuntime s, LuaValue arg1, LuaValue arg2) throws LuaError, LuaOOM {
+        if (arg1 instanceof LuaUserdata userdata1 && userdata1.userdata() instanceof Vector4d vec1) {
+            if (arg2 instanceof LuaUserdata userdata2 && userdata2.userdata() instanceof Vector4d vec2)
+                return new Vector4d(vec1).sub(vec2);
+            double num = arg2.checkDouble(s);
+            return new Vector4d(vec1).sub(num, num, num, num);
+        } else {
+            double num = arg1.checkDouble(s);
+            return new Vector4d(num).sub(arg2.checkUserdata(s, Vector4d.class));
+        }
     }
-    @LuaExpose @LuaPassState public static Vector4d __mul(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaOOM {
-        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector4d other)
-            return new Vector4d(self).mul(other);
-        double num = unknown.checkDouble(s);
-        return new Vector4d(self).mul(num);
+    @LuaExpose @LuaPassState public static Vector4d __mul(LuaRuntime s, LuaValue arg1, LuaValue arg2) throws LuaError, LuaOOM {
+        if (arg1 instanceof LuaUserdata userdata1 && userdata1.userdata() instanceof Vector4d vec1) {
+            if (arg2 instanceof LuaUserdata userdata2 && userdata2.userdata() instanceof Vector4d vec2)
+                return new Vector4d(vec1).mul(vec2);
+            double num = arg2.checkDouble(s);
+            return new Vector4d(vec1).mul(num);
+        } else {
+            double num = arg1.checkDouble(s);
+            return new Vector4d(arg2.checkUserdata(s, Vector4d.class)).mul(num);
+        }
     }
-    @LuaExpose @LuaPassState public static Vector4d __div(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaOOM {
-        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector4d other)
-            return new Vector4d(OperationHelper.div(self.x, other.x), OperationHelper.div(self.y, other.y), OperationHelper.div(self.z, other.z), OperationHelper.div(self.w, other.w));
-        double num = unknown.checkDouble(s);
-        return new Vector4d(OperationHelper.div(self.x, num), OperationHelper.div(self.y, num), OperationHelper.div(self.z, num), OperationHelper.div(self.w, num));
+    @LuaExpose @LuaPassState public static Vector4d __div(LuaRuntime s, LuaValue arg1, LuaValue arg2) throws LuaError, LuaOOM {
+        if (arg1 instanceof LuaUserdata userdata1 && userdata1.userdata() instanceof Vector4d vec1) {
+            if (arg2 instanceof LuaUserdata userdata2 && userdata2.userdata() instanceof Vector4d vec2)
+                return new Vector4d(OperationHelper.div(vec1.x, vec2.x), OperationHelper.div(vec1.y, vec2.y), OperationHelper.div(vec1.z, vec2.z), OperationHelper.div(vec1.w, vec2.w));
+            double num = arg2.checkDouble(s);
+            return new Vector4d(OperationHelper.div(vec1.x, num), OperationHelper.div(vec1.y, num), OperationHelper.div(vec1.z, num), OperationHelper.div(vec1.w, num));
+        } else {
+            double num = arg1.checkDouble(s);
+            Vector4d vec2 = arg2.checkUserdata(s, Vector4d.class);
+            return new Vector4d(OperationHelper.div(num, vec2.x), OperationHelper.div(num, vec2.y), OperationHelper.div(num, vec2.z), OperationHelper.div(num, vec2.w));
+        }
     }
-    @LuaExpose @LuaPassState public static Vector4d __mod(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaOOM {
-        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector4d other)
-            return new Vector4d(OperationHelper.mod(self.x, other.x), OperationHelper.mod(self.y, other.y), OperationHelper.mod(self.z, other.z), OperationHelper.mod(self.w, other.w));
-        double num = unknown.checkDouble(s);
-        return new Vector4d(OperationHelper.mod(self.x, num), OperationHelper.mod(self.y, num), OperationHelper.mod(self.z, num), OperationHelper.mod(self.w, num));
+    @LuaExpose @LuaPassState public static Vector4d __mod(LuaRuntime s, LuaValue arg1, LuaValue arg2) throws LuaError, LuaOOM {
+        if (arg1 instanceof LuaUserdata userdata1 && userdata1.userdata() instanceof Vector4d vec1) {
+            if (arg2 instanceof LuaUserdata userdata2 && userdata2.userdata() instanceof Vector4d vec2)
+                return new Vector4d(OperationHelper.mod(vec1.x, vec2.x), OperationHelper.mod(vec1.y, vec2.y), OperationHelper.mod(vec1.z, vec2.z), OperationHelper.mod(vec1.w, vec2.w));
+            double num = arg2.checkDouble(s);
+            return new Vector4d(OperationHelper.mod(vec1.x, num), OperationHelper.mod(vec1.y, num), OperationHelper.mod(vec1.z, num), OperationHelper.mod(vec1.w, num));
+        } else {
+            double num = arg1.checkDouble(s);
+            Vector4d vec2 = arg2.checkUserdata(s, Vector4d.class);
+            return new Vector4d(OperationHelper.mod(num, vec2.x), OperationHelper.mod(num, vec2.y), OperationHelper.mod(num, vec2.z), OperationHelper.mod(num, vec2.w));
+        }
     }
-    @LuaExpose @LuaPassState public static boolean __eq(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaOOM {
-        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector4d other)
-            return self.equals(other);
-        double num = unknown.checkDouble(s);
-        return self.equals(num, num, num, num);
+    @LuaExpose @LuaPassState public static boolean __eq(LuaRuntime s, LuaValue arg1, LuaValue arg2) throws LuaError, LuaOOM {
+        if (arg1 instanceof LuaUserdata userdata1 && userdata1.userdata() instanceof Vector4d vec1) {
+            if (arg2 instanceof LuaUserdata userdata2 && userdata2.userdata() instanceof Vector4d vec2)
+                return vec1.equals(vec2);
+            double num = arg2.checkDouble(s);
+            return vec1.equals(num, num, num, num);
+        } else {
+            double num = arg1.checkDouble(s);
+            Vector4d vec2 = arg2.checkUserdata(s, Vector4d.class);
+            return vec2.equals(num, num, num, num);
+        }
     }
-    @LuaExpose @LuaPassState public static boolean __lt(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaOOM {
-        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector4d other)
-            return self.x < other.x && self.y < other.y && self.z < other.z && self.w < other.w;
-        double num = unknown.checkDouble(s);
-        return self.x < num && self.y < num && self.z < num && self.w < num;
+    @LuaExpose @LuaPassState public static boolean __lt(LuaRuntime s, LuaValue arg1, LuaValue arg2) throws LuaError, LuaOOM {
+        if (arg1 instanceof LuaUserdata userdata1 && userdata1.userdata() instanceof Vector4d vec1) {
+            if (arg2 instanceof LuaUserdata userdata2 && userdata2.userdata() instanceof Vector4d vec2)
+                return vec1.x < vec2.x && vec1.y < vec2.y && vec1.z < vec2.z && vec1.w < vec2.w;
+            double num = arg2.checkDouble(s);
+            return vec1.x < num && vec1.y < num && vec1.z < num && vec1.w < num;
+        } else {
+            double num = arg1.checkDouble(s);
+            Vector4d vec2 = arg2.checkUserdata(s, Vector4d.class);
+            return num < vec2.x && num < vec2.y && num < vec2.z && num < vec2.w;
+        }
     }
-    @LuaExpose @LuaPassState public static boolean __le(LuaRuntime s, Vector4d self, LuaValue unknown) throws LuaError, LuaOOM {
-        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector4d other)
-            return self.x <= other.x && self.y <= other.y && self.z <= other.z && self.w <= other.w;
-        double num = unknown.checkDouble(s);
-        return self.x <= num && self.y <= num && self.z <= num && self.w <= num;
+    @LuaExpose @LuaPassState public static boolean __le(LuaRuntime s, LuaValue arg1, LuaValue arg2) throws LuaError, LuaOOM {
+        if (arg1 instanceof LuaUserdata userdata1 && userdata1.userdata() instanceof Vector4d vec1) {
+            if (arg2 instanceof LuaUserdata userdata2 && userdata2.userdata() instanceof Vector4d vec2)
+                return vec1.x <= vec2.x && vec1.y <= vec2.y && vec1.z <= vec2.z && vec1.w <= vec2.w;
+            double num = arg2.checkDouble(s);
+            return vec1.x <= num && vec1.y <= num && vec1.z <= num && vec1.w <= num;
+        } else {
+            double num = arg1.checkDouble(s);
+            Vector4d vec2 = arg2.checkUserdata(s, Vector4d.class);
+            return num <= vec2.x && num <= vec2.y && num <= vec2.z && num <= vec2.w;
+        }
     }
 
     // Unary ops

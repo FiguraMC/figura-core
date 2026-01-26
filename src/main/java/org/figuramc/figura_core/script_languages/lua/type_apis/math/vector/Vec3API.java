@@ -10,6 +10,7 @@ import org.figuramc.figura_core.script_languages.lua.LuaRuntime;
 import org.figuramc.memory_tracker.AllocationTracker;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
+import org.joml.Vector3d;
 import org.joml.Vector4d;
 
 import static org.figuramc.figura_cobalt.org.squiddev.cobalt.Constants.NIL;
@@ -134,54 +135,103 @@ public class Vec3API {
 
 
     // Binary operator overloading.
-    // Needs extra logic since we want to allow Vector + Vector and Vector + number.
-    @LuaExpose @LuaPassState public static Vector3d __add(LuaRuntime s, Vector3d self, LuaValue unknown) throws LuaError, LuaOOM {
-        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector3d other)
-            return new Vector3d(self).add(other);
-        double num = unknown.checkDouble(s);
-        return new Vector3d(self).add(num, num, num);
+    // Needs extra logic since we want to allow Vector + Vector, Vector + number, and number + Vector.
+    @LuaExpose @LuaPassState public static Vector3d __add(LuaRuntime s, LuaValue arg1, LuaValue arg2) throws LuaError, LuaOOM {
+        if (arg1 instanceof LuaUserdata userdata1 && userdata1.userdata() instanceof Vector3d vec1) {
+            // Vector + ?
+            if (arg2 instanceof LuaUserdata userdata2 && userdata2.userdata() instanceof Vector3d vec2)
+                // Vector + Vector
+                return new Vector3d(vec1).add(vec2);
+            // Vector + Number
+            double num = arg2.checkDouble(s);
+            return new Vector3d(vec1).add(num, num, num);
+        } else {
+            // Number + Vector
+            double num = arg1.checkDouble(s);
+            return new Vector3d(num).add(arg2.checkUserdata(s, Vector3d.class));
+        }
     }
-    @LuaExpose @LuaPassState public static Vector3d __sub(LuaRuntime s, Vector3d self, LuaValue unknown) throws LuaError, LuaOOM {
-        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector3d other)
-            return new Vector3d(self).sub(other);
-        double num = unknown.checkDouble(s);
-        return new Vector3d(self).sub(num, num, num);
+    @LuaExpose @LuaPassState public static Vector3d __sub(LuaRuntime s, LuaValue arg1, LuaValue arg2) throws LuaError, LuaOOM {
+        if (arg1 instanceof LuaUserdata userdata1 && userdata1.userdata() instanceof Vector3d vec1) {
+            if (arg2 instanceof LuaUserdata userdata2 && userdata2.userdata() instanceof Vector3d vec2)
+                return new Vector3d(vec1).sub(vec2);
+            double num = arg2.checkDouble(s);
+            return new Vector3d(vec1).sub(num, num, num);
+        } else {
+            double num = arg1.checkDouble(s);
+            return new Vector3d(num).sub(arg2.checkUserdata(s, Vector3d.class));
+        }
     }
-    @LuaExpose @LuaPassState public static Vector3d __mul(LuaRuntime s, Vector3d self, LuaValue unknown) throws LuaError, LuaOOM {
-        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector3d other)
-            return new Vector3d(self).mul(other);
-        double num = unknown.checkDouble(s);
-        return new Vector3d(self).mul(num);
+    @LuaExpose @LuaPassState public static Vector3d __mul(LuaRuntime s, LuaValue arg1, LuaValue arg2) throws LuaError, LuaOOM {
+        if (arg1 instanceof LuaUserdata userdata1 && userdata1.userdata() instanceof Vector3d vec1) {
+            if (arg2 instanceof LuaUserdata userdata2 && userdata2.userdata() instanceof Vector3d vec2)
+                return new Vector3d(vec1).mul(vec2);
+            double num = arg2.checkDouble(s);
+            return new Vector3d(vec1).mul(num);
+        } else {
+            double num = arg1.checkDouble(s);
+            return new Vector3d(arg2.checkUserdata(s, Vector3d.class)).mul(num);
+        }
     }
-    @LuaExpose @LuaPassState public static Vector3d __div(LuaRuntime s, Vector3d self, LuaValue unknown) throws LuaError, LuaOOM {
-        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector3d other)
-            return new Vector3d(OperationHelper.div(self.x, other.x), OperationHelper.div(self.y, other.y), OperationHelper.div(self.z, other.z));
-        double num = unknown.checkDouble(s);
-        return new Vector3d(OperationHelper.div(self.x, num), OperationHelper.div(self.y, num), OperationHelper.div(self.z, num));
+    @LuaExpose @LuaPassState public static Vector3d __div(LuaRuntime s, LuaValue arg1, LuaValue arg2) throws LuaError, LuaOOM {
+        if (arg1 instanceof LuaUserdata userdata1 && userdata1.userdata() instanceof Vector3d vec1) {
+            if (arg2 instanceof LuaUserdata userdata2 && userdata2.userdata() instanceof Vector3d vec2)
+                return new Vector3d(OperationHelper.div(vec1.x, vec2.x), OperationHelper.div(vec1.y, vec2.y), OperationHelper.div(vec1.z, vec2.z));
+            double num = arg2.checkDouble(s);
+            return new Vector3d(OperationHelper.div(vec1.x, num), OperationHelper.div(vec1.y, num), OperationHelper.div(vec1.z, num));
+        } else {
+            double num = arg1.checkDouble(s);
+            Vector3d vec2 = arg2.checkUserdata(s, Vector3d.class);
+            return new Vector3d(OperationHelper.div(num, vec2.x), OperationHelper.div(num, vec2.y), OperationHelper.div(num, vec2.z));
+        }
     }
-    @LuaExpose @LuaPassState public static Vector3d __mod(LuaRuntime s, Vector3d self, LuaValue unknown) throws LuaError, LuaOOM {
-        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector3d other)
-            return new Vector3d(OperationHelper.mod(self.x, other.x), OperationHelper.mod(self.y, other.y), OperationHelper.mod(self.z, other.z));
-        double num = unknown.checkDouble(s);
-        return new Vector3d(OperationHelper.mod(self.x, num), OperationHelper.mod(self.y, num), OperationHelper.mod(self.z, num));
+    @LuaExpose @LuaPassState public static Vector3d __mod(LuaRuntime s, LuaValue arg1, LuaValue arg2) throws LuaError, LuaOOM {
+        if (arg1 instanceof LuaUserdata userdata1 && userdata1.userdata() instanceof Vector3d vec1) {
+            if (arg2 instanceof LuaUserdata userdata2 && userdata2.userdata() instanceof Vector3d vec2)
+                return new Vector3d(OperationHelper.mod(vec1.x, vec2.x), OperationHelper.mod(vec1.y, vec2.y), OperationHelper.mod(vec1.z, vec2.z));
+            double num = arg2.checkDouble(s);
+            return new Vector3d(OperationHelper.mod(vec1.x, num), OperationHelper.mod(vec1.y, num), OperationHelper.mod(vec1.z, num));
+        } else {
+            double num = arg1.checkDouble(s);
+            Vector3d vec2 = arg2.checkUserdata(s, Vector3d.class);
+            return new Vector3d(OperationHelper.mod(num, vec2.x), OperationHelper.mod(num, vec2.y), OperationHelper.mod(num, vec2.z));
+        }
     }
-    @LuaExpose @LuaPassState public static boolean __eq(LuaRuntime s, Vector3d self, LuaValue unknown) throws LuaError, LuaOOM {
-        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector3d other)
-            return self.equals(other);
-        double num = unknown.checkDouble(s);
-        return self.equals(num, num, num);
+    @LuaExpose @LuaPassState public static boolean __eq(LuaRuntime s, LuaValue arg1, LuaValue arg2) throws LuaError, LuaOOM {
+        if (arg1 instanceof LuaUserdata userdata1 && userdata1.userdata() instanceof Vector3d vec1) {
+            if (arg2 instanceof LuaUserdata userdata2 && userdata2.userdata() instanceof Vector3d vec2)
+                return vec1.equals(vec2);
+            double num = arg2.checkDouble(s);
+            return vec1.equals(num, num, num);
+        } else {
+            double num = arg1.checkDouble(s);
+            Vector3d vec2 = arg2.checkUserdata(s, Vector3d.class);
+            return vec2.equals(num, num, num);
+        }
     }
-    @LuaExpose @LuaPassState public static boolean __lt(LuaRuntime s, Vector3d self, LuaValue unknown) throws LuaError, LuaOOM {
-        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector3d other)
-            return self.x < other.x && self.y < other.y && self.z < other.z;
-        double num = unknown.checkDouble(s);
-        return self.x < num && self.y < num && self.z < num;
+    @LuaExpose @LuaPassState public static boolean __lt(LuaRuntime s, LuaValue arg1, LuaValue arg2) throws LuaError, LuaOOM {
+        if (arg1 instanceof LuaUserdata userdata1 && userdata1.userdata() instanceof Vector3d vec1) {
+            if (arg2 instanceof LuaUserdata userdata2 && userdata2.userdata() instanceof Vector3d vec2)
+                return vec1.x < vec2.x && vec1.y < vec2.y && vec1.z < vec2.z;
+            double num = arg2.checkDouble(s);
+            return vec1.x < num && vec1.y < num && vec1.z < num;
+        } else {
+            double num = arg1.checkDouble(s);
+            Vector3d vec2 = arg2.checkUserdata(s, Vector3d.class);
+            return num < vec2.x && num < vec2.y && num < vec2.z;
+        }
     }
-    @LuaExpose @LuaPassState public static boolean __le(LuaRuntime s, Vector3d self, LuaValue unknown) throws LuaError, LuaOOM {
-        if (unknown instanceof LuaUserdata userdata && userdata.userdata() instanceof Vector3d other)
-            return self.x <= other.x && self.y <= other.y && self.z <= other.z;
-        double num = unknown.checkDouble(s);
-        return self.x <= num && self.y <= num && self.z <= num;
+    @LuaExpose @LuaPassState public static boolean __le(LuaRuntime s, LuaValue arg1, LuaValue arg2) throws LuaError, LuaOOM {
+        if (arg1 instanceof LuaUserdata userdata1 && userdata1.userdata() instanceof Vector3d vec1) {
+            if (arg2 instanceof LuaUserdata userdata2 && userdata2.userdata() instanceof Vector3d vec2)
+                return vec1.x <= vec2.x && vec1.y <= vec2.y && vec1.z <= vec2.z;
+            double num = arg2.checkDouble(s);
+            return vec1.x <= num && vec1.y <= num && vec1.z <= num;
+        } else {
+            double num = arg1.checkDouble(s);
+            Vector3d vec2 = arg2.checkUserdata(s, Vector3d.class);
+            return num <= vec2.x && num <= vec2.y && num <= vec2.z;
+        }
     }
 
     // Unary ops

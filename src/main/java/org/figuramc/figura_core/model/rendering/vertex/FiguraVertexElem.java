@@ -5,38 +5,44 @@ package org.figuramc.figura_core.model.rendering.vertex;
  */
 public class FiguraVertexElem {
 
-    public static final int POSITION_ID = 0;
-    public static final int RIGGING_WEIGHTS_ID = 1;
-    public static final int RIGGING_INDICES_ID = 2;
-    public static final int UV0_ID = 3;
-    public static final int UV1_ID = 4;
-    public static final int UV2_ID =  5;
-    public static final int UV3_ID =  6;
-    public static final int NORMAL_ID = 7;
-    public static final int TANGENT_ID = 8;
-
     // Default vertex elements. Always present in model part data.
-    public static final FiguraVertexElem POSITION = new FiguraVertexElem(POSITION_ID, VertexElementKind.FLOAT32_3); // 12 bytes
-    public static final FiguraVertexElem RIGGING_WEIGHTS = new FiguraVertexElem(RIGGING_WEIGHTS_ID, VertexElementKind.UFLOAT8_4); // 4 bytes
-    public static final FiguraVertexElem RIGGING_INDICES = new FiguraVertexElem(RIGGING_INDICES_ID, VertexElementKind.UINT16_4); // 8 bytes
-    public static final FiguraVertexElem UV0 = new FiguraVertexElem(UV0_ID, VertexElementKind.FLOAT32_2); // 8 bytes
-    public static final FiguraVertexElem UV1 = new FiguraVertexElem(UV1_ID, VertexElementKind.FLOAT32_2); // 8 bytes
-    public static final FiguraVertexElem UV2 = new FiguraVertexElem(UV2_ID, VertexElementKind.FLOAT32_2); // 8 bytes
-    public static final FiguraVertexElem UV3 = new FiguraVertexElem(UV3_ID, VertexElementKind.FLOAT32_2); // 8 bytes
-    public static final FiguraVertexElem NORMAL = new FiguraVertexElem(NORMAL_ID, VertexElementKind.SFLOAT8_3); // 3 bytes
-    public static final FiguraVertexElem TANGENT = new FiguraVertexElem(TANGENT_ID, VertexElementKind.SFLOAT8_3); // 3 bytes
+    // Any custom vertex elements are optionally added to model part data by scripts.
+    public static final FiguraVertexElem POSITION = new FiguraVertexElem(ID.POSITION, VertexElementType.FLOAT32_3); // 12 bytes
+    public static final FiguraVertexElem RIGGING_WEIGHTS = new FiguraVertexElem(ID.RIGGING_WEIGHTS, VertexElementType.UFLOAT8_4); // 4 bytes
+    public static final FiguraVertexElem RIGGING_INDICES = new FiguraVertexElem(ID.RIGGING_INDICES, VertexElementType.UINT16_4); // 8 bytes
+    public static final FiguraVertexElem UV0 = new FiguraVertexElem(ID.UV0, VertexElementType.FLOAT32_2); // 8 bytes
+    public static final FiguraVertexElem UV1 = new FiguraVertexElem(ID.UV1, VertexElementType.FLOAT32_2); // 8 bytes
+    public static final FiguraVertexElem UV2 = new FiguraVertexElem(ID.UV2, VertexElementType.FLOAT32_2); // 8 bytes
+    public static final FiguraVertexElem UV3 = new FiguraVertexElem(ID.UV3, VertexElementType.FLOAT32_2); // 8 bytes
+    public static final FiguraVertexElem NORMAL = new FiguraVertexElem(ID.NORMAL, VertexElementType.SFLOAT8_3); // 3 bytes
+    public static final FiguraVertexElem TANGENT = new FiguraVertexElem(ID.TANGENT, VertexElementType.SFLOAT8_3); // 3 bytes
+    public static final FiguraVertexElem COLOR = new FiguraVertexElem(ID.COLOR, VertexElementType.UFLOAT8_4); // 4 bytes
 
-    public final VertexElementKind kind;
-    public final int builtinId; // Switch statement go nyoom?
+    public final ID id;
+    public final VertexElementType type;
 
-    private FiguraVertexElem(int builtinId, VertexElementKind kind) {
-        this.builtinId = builtinId;
-        this.kind = kind;
+    private FiguraVertexElem(ID id, VertexElementType type) {
+        this.id = id;
+        this.type = type;
     }
 
-    public FiguraVertexElem(VertexElementKind kind) {
-        // Non-builtins get a default value
-        this(-1, kind);
+    public FiguraVertexElem(VertexElementType type) {
+        this(ID.OTHER, type);
+    }
+
+    // All the different IDs
+    public enum ID {
+        POSITION,
+        RIGGING_WEIGHTS,
+        RIGGING_INDICES,
+        UV0, // UVs must be together in order, since we use "ordinal() - UV0.ordinal()" as index
+        UV1,
+        UV2,
+        UV3,
+        NORMAL,
+        TANGENT,
+        COLOR,
+        OTHER // Other used as a catchall for custom elements
     }
 
     // Default equals/hashcode

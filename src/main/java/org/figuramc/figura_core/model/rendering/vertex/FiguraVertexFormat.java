@@ -6,11 +6,13 @@ import java.util.*;
 
 public class FiguraVertexFormat {
 
-    public static final FiguraVertexFormat ALBEDO = create(1, true, false, List.of());
-    public static final FiguraVertexFormat ALBEDO_NORMAL = create(2, true, true, List.of());
-    public static final FiguraVertexFormat ALBEDO_SPECULAR = create(2, true, true, List.of());
-    public static final FiguraVertexFormat ALBEDO_NORMAL_SPECULAR = create(3, true, true, List.of());
-    public static final FiguraVertexFormat POSITION = create(0, false, false, List.of());
+    public static final FiguraVertexFormat ALBEDO = create(1, true, false, false, List.of());
+    public static final FiguraVertexFormat ALBEDO_NORMAL = create(2, true, true, false, List.of());
+    public static final FiguraVertexFormat ALBEDO_SPECULAR = create(2, true, true, false, List.of());
+    public static final FiguraVertexFormat ALBEDO_NORMAL_SPECULAR = create(3, true, true, false, List.of());
+    public static final FiguraVertexFormat POSITION = create(0, false, false, false, List.of());
+
+    public static final FiguraVertexFormat ALBEDO_COLOR = create(1, false, false, true, List.of());
 
     public final String[] names;
     public final FiguraVertexElem[] elements;
@@ -18,7 +20,8 @@ public class FiguraVertexFormat {
     public final int vertexSize;
 
     // Safer creation. Always includes position, can optionally include uv/normal/custom elements.
-    public static FiguraVertexFormat create(int uvCount, boolean normal, boolean tangent, List<Pair<String, FiguraVertexElem>> customElements) {
+    // Can also optionally include per-vertex color, but this is only used by text parts.
+    public static FiguraVertexFormat create(int uvCount, boolean normal, boolean tangent, boolean color, List<Pair<String, FiguraVertexElem>> customElements) {
         List<Pair<String, FiguraVertexElem>> elements = new ArrayList<>();
         elements.add(Pair.of("Position", FiguraVertexElem.POSITION));
         elements.add(Pair.of("RiggingWeights", FiguraVertexElem.RIGGING_WEIGHTS));
@@ -29,6 +32,7 @@ public class FiguraVertexFormat {
         if (uvCount > 3) elements.add(Pair.of("UV3", FiguraVertexElem.UV3));
         if (normal) elements.add(Pair.of("Normal", FiguraVertexElem.NORMAL));
         if (tangent) elements.add(Pair.of("Tangent", FiguraVertexElem.TANGENT));
+        if (color) elements.add(Pair.of("Color", FiguraVertexElem.COLOR));
         elements.addAll(customElements);
         return new FiguraVertexFormat(elements);
     }
@@ -64,9 +68,9 @@ public class FiguraVertexFormat {
         for (int i = 0; i < elems.size(); i++) {
             names[i] = elems.get(i).a();
             elements[i] = elems.get(i).b();
-            while (size % elements[i].kind.align != 0) size++;
+            while (size % elements[i].type.align != 0) size++;
             offsets[i] = size;
-            size += elements[i].kind.size;
+            size += elements[i].type.size;
         }
         while (size % 4 != 0) size++; // Pad entire struct to 4
         this.vertexSize = size;

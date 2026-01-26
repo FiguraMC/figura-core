@@ -1,7 +1,7 @@
 package org.figuramc.figura_core.model.rendering.vertex;
 
 // Types of vertex elements
-public enum VertexElementKind {
+public enum VertexElementType {
     // Raw 32 bit float and vectors thereof
     FLOAT32(4, 4, 1), FLOAT32_2(8, 8, 2), FLOAT32_3(12, 16, 3), FLOAT32_4(16, 16, 4),
     // Unsigned byte -> 32 bit float in shader. [0, 255] -> [0, 1]
@@ -13,7 +13,7 @@ public enum VertexElementKind {
 
     public final int size, align, count;
 
-    VertexElementKind(int size, int align, int count) {
+    VertexElementType(int size, int align, int count) {
         this.size = size;
         this.align = align;
         this.count = count;

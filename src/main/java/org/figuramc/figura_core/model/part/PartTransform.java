@@ -139,7 +139,7 @@ public class PartTransform {
         if (originDirty()) {
             totalOrigin.set(origin);
             if (mimicPart != null)
-                totalOrigin.add(mimicPart.storedVanillaOrigin);
+                totalOrigin.add(mimicPart.fullStoredOrigin);
             if (animators != null)
                 for (Animator animator : animators)
                     if (animator.hasOrigin())
@@ -152,7 +152,7 @@ public class PartTransform {
         if (rotationDirty()) {
             totalRotation.set(rotation);
             if (mimicPart != null)
-                totalRotation.add(mimicPart.storedVanillaRotation);
+                totalRotation.add(mimicPart.fullStoredRotation);
             if (animators != null)
                 for (Animator animator : animators)
                     if (animator.hasRotation())
@@ -165,7 +165,7 @@ public class PartTransform {
         if (scaleDirty()) {
             totalScale.set(scale);
             if (mimicPart != null)
-                totalScale.mul(mimicPart.storedVanillaScale);
+                totalScale.mul(mimicPart.fullStoredScale);
             if (animators != null)
                 for (Animator animator : animators)
                     if (animator.hasScale())
@@ -177,7 +177,7 @@ public class PartTransform {
     public Vector3fc totalPosition() {
         if (positionDirty()) {
             totalPosition.set(position);
-            if (mimicPart != null) totalPosition.add(mimicPart.storedVanillaPosition);
+            if (mimicPart != null) totalPosition.add(mimicPart.fullStoredPosition);
             removeFlags(POSITION_DIRTY);
         }
         return totalPosition;

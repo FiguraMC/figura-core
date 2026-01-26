@@ -1,5 +1,6 @@
 package org.figuramc.figura_core.model.part.parts;
 
+import org.figuramc.figura_core.avatars.Avatar;
 import org.figuramc.figura_core.avatars.errors.AvatarError;
 import org.figuramc.figura_core.avatars.AvatarModules;
 import org.figuramc.figura_core.avatars.components.Materials;
@@ -32,8 +33,8 @@ public class CustomItemModelPart extends FigmodelModelPart {
             // Map
             + AllocationTracker.OBJECT_SIZE;
 
-    public CustomItemModelPart(String name, AvatarModules.LoadTimeModule module, ModuleMaterials.FigmodelMaterials materials, LinkedHashMap<String, ModuleMaterials.ItemPartTransform> transforms, @Nullable AllocationTracker<AvatarOutOfMemoryError> allocationTracker, Textures texturesComponent, Materials materialsComponent, @Nullable Molang molangState, @Nullable VanillaRendering vanilla) throws AvatarInitError, AvatarOutOfMemoryError {
-        super(name, module, materials, allocationTracker, texturesComponent, materialsComponent, molangState, vanilla);
+    public CustomItemModelPart(Avatar<?> owningAvatar, String name, AvatarModules.LoadTimeModule module, ModuleMaterials.FigmodelMaterials materials, LinkedHashMap<String, ModuleMaterials.ItemPartTransform> transforms) throws AvatarInitError, AvatarOutOfMemoryError {
+        super(owningAvatar, name, module, materials);
         this.itemTransforms = new HashMap<>();
         int[] size = new int[] { SIZE_ESTIMATE };
         ItemRenderContext.CONTEXTS_BY_NAME.forEach((contextName, context) -> {
@@ -55,8 +56,8 @@ public class CustomItemModelPart extends FigmodelModelPart {
             itemTransforms.put(context, matrix);
             size[0] += AllocationTracker.MAT4F_SIZE + AllocationTracker.REFERENCE_SIZE * 3;
         });
-        if (allocationTracker != null)
-            allocationTracker.track(this, size[0]);
+        if (owningAvatar.allocationTracker != null)
+            owningAvatar.allocationTracker.track(this, size[0]);
     }
 
 }

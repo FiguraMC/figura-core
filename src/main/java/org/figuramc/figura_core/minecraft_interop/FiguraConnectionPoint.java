@@ -8,16 +8,19 @@ import org.figuramc.figura_core.minecraft_interop.game_data.entity.EntityPose;
 import org.figuramc.figura_core.minecraft_interop.game_data.item.EquipmentSlot;
 import org.figuramc.figura_core.minecraft_interop.game_data.item.ItemRarity;
 import org.figuramc.figura_core.minecraft_interop.game_data.item.ItemUseAction;
-import org.figuramc.figura_core.minecraft_interop.render.PartRenderer;
+import org.figuramc.figura_core.minecraft_interop.render.ClientPartRenderer;
+import org.figuramc.figura_core.minecraft_interop.text.MinecraftGlyphProvider;
 import org.figuramc.figura_core.minecraft_interop.texture.MinecraftTextureProvider;
-import org.figuramc.figura_core.model.rendering.RenderingRoot;
+import org.figuramc.figura_core.model.rendering.RenderData;
 import org.figuramc.figura_core.model.rendering.shader.ShaderHookPoint;
 import org.figuramc.figura_core.script_hooks.Event;
 import org.figuramc.figura_core.script_languages.lua.LuaRuntime;
 import org.figuramc.figura_core.util.ReflectionUtils;
 import org.figuramc.figura_core.util.enumlike.EnumLike;
-import org.figuramc.figura_core.util.functional.ThrowingFunction;
+import org.figuramc.figura_core.util.functional.ThrowingBiFunction;
 import org.figuramc.figura_translations.FiguraTranslations;
+import org.figuramc.memory_tracker.AllocationTracker;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * This class acts as the center point where other mods (such as figura-client)
@@ -27,7 +30,8 @@ public class FiguraConnectionPoint {
 
     // Global instances of various singleton interfaces should be given implementations.
     public static MinecraftTextureProvider TEXTURE_PROVIDER = null;
-    public static ThrowingFunction<RenderingRoot<?>, PartRenderer, AvatarOutOfMemoryError> PART_RENDERER_FACTORY = null;
+    public static MinecraftGlyphProvider GLYPH_PROVIDER = null;
+    public static ThrowingBiFunction<RenderData, @Nullable AllocationTracker<AvatarOutOfMemoryError>, ClientPartRenderer, AvatarOutOfMemoryError> PART_RENDERER_FACTORY = null;
     public static GameDataProvider GAME_DATA_PROVIDER = null;
     public static ConsoleOutput CONSOLE_OUTPUT = null;
     public static PathProvider PATH_PROVIDER = null;
@@ -44,7 +48,9 @@ public class FiguraConnectionPoint {
                 EntityRoot.class, ExternalText.class,
                 HudRoot.class,
                 ManagerAccess.class, Materials.class, Molang.class,
-                Textures.class, VanillaRendering.class,
+                RenderDataHolder.class,
+                Textures.class,
+                VanillaRendering.class,
 
                 LuaRuntime.class
         );

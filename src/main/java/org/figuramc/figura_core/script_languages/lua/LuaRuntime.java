@@ -154,8 +154,16 @@ public class LuaRuntime extends LuaState implements ScriptRuntimeComponent<LuaRu
             // models:
             LuaTable models = ValueFactory.tableOf(this.allocationTracker);
             _ENV.rawset("models", models);
-            if (entityRoot != null && entityRoot.rootByModule[module.index] != null) models.rawset("entity", FiguraPartAPI.wrap(entityRoot.rootByModule[module.index], this));
-            if (hudRoot != null && hudRoot.rootByModule[module.index] != null) models.rawset("hud", FiguraPartAPI.wrap(hudRoot.rootByModule[module.index], this));
+            if (entityRoot != null) {
+                models.rawset("ENTITY_ROOT", FiguraPartAPI.wrap(entityRoot.root, this));
+                if (entityRoot.rootByModule[module.index] != null)
+                    models.rawset("entity", FiguraPartAPI.wrap(entityRoot.rootByModule[module.index], this));
+            }
+            if (hudRoot != null) {
+                models.rawset("HUD_ROOT", FiguraPartAPI.wrap(hudRoot.root, this));
+                if (hudRoot.rootByModule[module.index] != null)
+                    models.rawset("hud", FiguraPartAPI.wrap(hudRoot.rootByModule[module.index], this));
+            }
 
             // Create require() for this module
             _ENV.rawset("require", FiguraRequire.createRequire(this, _ENV, module));

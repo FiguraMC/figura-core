@@ -4,7 +4,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import org.figuramc.figura_core.avatars.errors.AvatarError;
 import org.figuramc.figura_core.avatars.components.Molang;
 import org.figuramc.figura_core.avatars.errors.AvatarOutOfMemoryError;
 import org.figuramc.figura_molang.compile.MolangCompileException;
@@ -76,8 +75,9 @@ public class TextStyle {
 
     private boolean computeIsDynamic() {
         // this is its own method in order to avoid having to type `this` repeatedly
+        // Note that if the text is ever obfuscated, it's always dynamic!
         return (
-                bold.isDynamic || italic.isDynamic || obfuscated.isDynamic || verticalAlignment.isDynamic
+                bold.isDynamic || italic.isDynamic || (obfuscated != StyleElementProvider.Constant.FALSE) || verticalAlignment.isDynamic
                         || scale.isDynamic || outlineScale.isDynamic || skew.isDynamic || offset.isDynamic
                         || shadowOffset.isDynamic || color.isDynamic || backgroundColor.isDynamic
                         || shadowColor.isDynamic || strikethroughColor.isDynamic || underlineColor.isDynamic
@@ -142,7 +142,7 @@ public class TextStyle {
         if (p.isString()) {
             if (molang != null) {
                 var compiled = molang.compileTextExpr(p.getAsString(), startCharIndex, charCount);
-                return new StyleElementProvider.Dynamic<>(char_index -> compiled.evaluate(char_index).get(0) != 0);
+                return new StyleElementProvider.Evaluated<>(char_index -> compiled.evaluate(char_index).get(0) != 0, compiled.isDynamic);
             }
             throw new IllegalArgumentException("No molang instance");
         }
@@ -157,7 +157,7 @@ public class TextStyle {
         if (p.isString()) {
             if (molang != null) {
                 var compiled = molang.compileTextExpr(p.getAsString(), startCharIndex, charCount);
-                return new StyleElementProvider.Dynamic<>(char_index -> compiled.evaluate(char_index).get(0));
+                return new StyleElementProvider.Evaluated<>(char_index -> compiled.evaluate(char_index).get(0), compiled.isDynamic);
             }
             throw new IllegalArgumentException("No molang instance");
         }
@@ -176,7 +176,7 @@ public class TextStyle {
                 return new StyleElementProvider.Constant<>(new Vector2f(constX.value, constY.value));
             } else {
                 Vector2f vec = new Vector2f();
-                return new StyleElementProvider.Dynamic<>(char_index -> vec.set(x.value(char_index), y.value(char_index)));
+                return new StyleElementProvider.Evaluated<>(char_index -> vec.set(x.value(char_index), y.value(char_index)), x.isDynamic || y.isDynamic);
             }
         }
         if (!(e instanceof JsonPrimitive p)) throw new IllegalArgumentException("Should be primitive or array");
@@ -186,12 +186,12 @@ public class TextStyle {
                 var compiled = molang.compileTextExpr(p.getAsString(), startCharIndex, charCount);
                 Vector2f vec = new Vector2f();
                 if (compiled.returnCount == 1) {
-                    return new StyleElementProvider.Dynamic<>(char_index -> vec.set(compiled.evaluate(char_index).get(0)));
+                    return new StyleElementProvider.Evaluated<>(char_index -> vec.set(compiled.evaluate(char_index).get(0)), compiled.isDynamic);
                 } else if (compiled.returnCount == 2) {
-                    return new StyleElementProvider.Dynamic<>(char_index -> {
+                    return new StyleElementProvider.Evaluated<>(char_index -> {
                         var out = compiled.evaluate(char_index);
                         return vec.set(out.get(0), out.get(1));
-                    });
+                    }, compiled.isDynamic);
                 } else throw new IllegalArgumentException("Molang must compile to 1 or 2 values");
             }
             throw new IllegalArgumentException("No molang instance");
@@ -216,7 +216,7 @@ public class TextStyle {
                 return new StyleElementProvider.Constant<>(new Vector4f(constX.value, constY.value, constZ.value, constW.value));
             } else {
                 Vector4f vec = new Vector4f();
-                return new StyleElementProvider.Dynamic<>(char_index -> vec.set(x.value(char_index), y.value(char_index), z.value(char_index), w.value(char_index)));
+                return new StyleElementProvider.Evaluated<>(char_index -> vec.set(x.value(char_index), y.value(char_index), z.value(char_index), w.value(char_index)), x.isDynamic || y.isDynamic || z.isDynamic || w.isDynamic);
             }
         }
         if (!(e instanceof JsonPrimitive p)) throw new IllegalArgumentException("Should be primitive or array");
@@ -226,12 +226,12 @@ public class TextStyle {
                 var compiled = molang.compileTextExpr(p.getAsString(), startCharIndex, charCount);
                 Vector4f vec = new Vector4f();
                 if (compiled.returnCount == 1) {
-                    return new StyleElementProvider.Dynamic<>(char_index -> vec.set(compiled.evaluate(char_index).get(0)));
+                    return new StyleElementProvider.Evaluated<>(char_index -> vec.set(compiled.evaluate(char_index).get(0)), compiled.isDynamic);
                 } else if (compiled.returnCount == 4) {
-                    return new StyleElementProvider.Dynamic<>(char_index -> {
+                    return new StyleElementProvider.Evaluated<>(char_index -> {
                         var out = compiled.evaluate(char_index);
                         return vec.set(out.get(0), out.get(1), out.get(2), out.get(3));
-                    });
+                    }, compiled.isDynamic);
                 } else throw new IllegalArgumentException("Molang must compile to 1 or 4 values");
             }
             throw new IllegalArgumentException("No molang instance");

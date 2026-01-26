@@ -8,6 +8,7 @@ import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.LuaFunction;
 import org.figuramc.figura_core.avatars.Avatar;
 import org.figuramc.figura_core.minecraft_interop.FiguraConnectionPoint;
 import org.figuramc.figura_core.script_languages.lua.LuaRuntime;
+import org.figuramc.figura_core.text.FormattedText;
 
 import java.util.UUID;
 
@@ -26,6 +27,11 @@ public class FiguraPrint {
         state.globals().rawset("printNative", LibFunction.create((s, arg) -> {
             String message = arg.toJavaString(state.allocationTracker);
             FiguraConnectionPoint.CONSOLE_OUTPUT.logNativeFormatted(message);
+            return Constants.NIL;
+        }));
+        state.globals().rawset("printFormatted", LibFunction.create((s, arg) -> {
+            FormattedText formattedText = arg.checkUserdata(s, FormattedText.class);
+            FiguraConnectionPoint.CONSOLE_OUTPUT.logFormatted(formattedText);
             return Constants.NIL;
         }));
         state.globals().rawset("print", LibFunction.createV((s, args) -> {
