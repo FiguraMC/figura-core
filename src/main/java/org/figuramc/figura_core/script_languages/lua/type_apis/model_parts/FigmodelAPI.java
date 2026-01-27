@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 public class FigmodelAPI {
 
     public static LuaUserdata wrap(FigmodelModelPart modelPart, LuaRuntime state) {
-        return new LuaUserdata(modelPart, state.figuraMetatables.figmodelModelPart);
+        return new LuaUserdata(modelPart, state.figuraMetatables.figmodel);
     }
 
     @LuaExpose

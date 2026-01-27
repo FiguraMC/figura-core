@@ -25,7 +25,7 @@ import org.figuramc.figura_core.script_languages.lua.callback_types.convert.LuaT
 import org.figuramc.figura_core.script_languages.lua.errors.LuaAvatarError;
 import org.figuramc.figura_core.script_languages.lua.errors.LuaEscaper;
 import org.figuramc.figura_core.script_languages.lua.other_apis.*;
-import org.figuramc.figura_core.script_languages.lua.type_apis.model_parts.FiguraPartAPI;
+import org.figuramc.figura_core.script_languages.lua.type_apis.model_parts.ModelPartAPI;
 import org.figuramc.figura_core.script_languages.lua.type_apis.rendering.TextureAPI;
 import org.figuramc.figura_core.util.enumlike.EnumLike;
 import org.figuramc.figura_core.util.exception.FiguraException;
@@ -155,14 +155,14 @@ public class LuaRuntime extends LuaState implements ScriptRuntimeComponent<LuaRu
             LuaTable models = ValueFactory.tableOf(this.allocationTracker);
             _ENV.rawset("models", models);
             if (entityRoot != null) {
-                models.rawset("ENTITY_ROOT", FiguraPartAPI.wrap(entityRoot.root, this));
+                models.rawset("ENTITY_ROOT", ModelPartAPI.wrap(entityRoot.root, this));
                 if (entityRoot.rootByModule[module.index] != null)
-                    models.rawset("entity", FiguraPartAPI.wrap(entityRoot.rootByModule[module.index], this));
+                    models.rawset("entity", ModelPartAPI.wrap(entityRoot.rootByModule[module.index], this));
             }
             if (hudRoot != null) {
-                models.rawset("HUD_ROOT", FiguraPartAPI.wrap(hudRoot.root, this));
+                models.rawset("HUD_ROOT", ModelPartAPI.wrap(hudRoot.root, this));
                 if (hudRoot.rootByModule[module.index] != null)
-                    models.rawset("hud", FiguraPartAPI.wrap(hudRoot.rootByModule[module.index], this));
+                    models.rawset("hud", ModelPartAPI.wrap(hudRoot.rootByModule[module.index], this));
             }
 
             // Create require() for this module

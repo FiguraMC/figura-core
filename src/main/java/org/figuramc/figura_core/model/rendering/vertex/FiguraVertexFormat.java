@@ -12,7 +12,7 @@ public class FiguraVertexFormat {
     public static final FiguraVertexFormat ALBEDO_NORMAL_SPECULAR = create(3, true, true, false, List.of());
     public static final FiguraVertexFormat POSITION = create(0, false, false, false, List.of());
 
-    public static final FiguraVertexFormat ALBEDO_COLOR = create(1, false, false, true, List.of());
+    public static final FiguraVertexFormat TEXT_SHADER = create(1, false, false, true, List.of());
 
     public final String[] names;
     public final FiguraVertexElem[] elements;

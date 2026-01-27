@@ -86,6 +86,21 @@ public class FiguraRenderType {
         );
     }
 
+    // Construct a render type for text
+    // Passes in a scissor state, so multiple render types can share the same scissor state together!
+    public static FiguraRenderType text(int priority, TextureBinding character, ScissorState scissorState) {
+        return new FiguraRenderType(
+                priority,
+                BuiltinShader.TEXT_SHADER,
+                List.of(
+                        character,
+                        FiguraConnectionPoint.TEXTURE_PROVIDER.getBuiltinTexture(ModuleMaterials.BuiltinTextureBinding.LIGHTMAP)
+                ),
+                scissorState
+        );
+    }
+
+
     // Contains only the info needed for draw calls / ordering thereof.
     // - Notably, it strips UV modifier information, since this is only relevant during vertex rebuild
     // Fetch one through the .drawCallInfo() method.
@@ -104,12 +119,19 @@ public class FiguraRenderType {
     // An x value of -1 indicates no scissors should be applied.
     public static final class ScissorState {
         private int x = -1, y = -1, w = -1, h = -1;
-        public void set(int x, int y, int w, int h) {
+        @Contract("_,_,_,_ -> this")
+        public ScissorState set(int x, int y, int w, int h) {
             this.x = x;
             this.y = y;
             this.w = w;
             this.h = h;
+            return this;
         }
+        @Contract("_ -> this")
+        public ScissorState set(ScissorState other) {
+            return this.set(other.x, other.y, other.w, other.h);
+        }
+
         @Contract("_ -> param1")
         public Vector4i get(Vector4i out) {
             return out.set(x, y, w, h);

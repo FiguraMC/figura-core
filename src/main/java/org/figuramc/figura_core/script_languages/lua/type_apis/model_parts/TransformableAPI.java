@@ -19,7 +19,7 @@ public class TransformableAPI {
 
     public static LuaUserdata wrap(Transformable transformable, LuaRuntime state) {
         return switch (transformable) {
-            case FiguraModelPart figuraPart -> FiguraPartAPI.wrap(figuraPart, state);
+            case FiguraModelPart figuraPart -> ModelPartAPI.wrap(figuraPart, state);
             case VanillaRendering.ScriptVanillaPart scriptVanillaPart -> VanillaPartAPI.wrap(scriptVanillaPart, state);
             default -> new LuaUserdata(transformable, state.figuraMetatables.transformable);
         };

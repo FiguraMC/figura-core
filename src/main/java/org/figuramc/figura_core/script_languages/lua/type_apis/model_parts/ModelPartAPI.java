@@ -10,27 +10,30 @@ import org.figuramc.figura_core.comptime.lua.annotations.LuaReturnSelf;
 import org.figuramc.figura_core.comptime.lua.annotations.LuaTypeAPI;
 import org.figuramc.figura_core.model.part.parts.FigmodelModelPart;
 import org.figuramc.figura_core.model.part.parts.FiguraModelPart;
+import org.figuramc.figura_core.model.part.parts.TextModelPart;
 import org.figuramc.figura_core.model.rendering.FiguraRenderType;
 import org.figuramc.figura_core.script_hooks.flags.QueuedSetters;
 import org.figuramc.figura_core.script_languages.lua.LuaRuntime;
 import org.figuramc.figura_core.script_languages.lua.errors.LuaAvatarError;
+import org.figuramc.figura_core.text.FormattedText;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-@LuaTypeAPI(typeName = "FiguraPart", wrappedClass = FiguraModelPart.class, hasSuperclass = true)
-public class FiguraPartAPI {
+@LuaTypeAPI(typeName = "ModelPart", wrappedClass = FiguraModelPart.class, hasSuperclass = true)
+public class ModelPartAPI {
 
     public static LuaUserdata wrap(FiguraModelPart part, LuaRuntime state) {
         return switch (part) {
             case FigmodelModelPart figmodel -> FigmodelAPI.wrap(figmodel, state);
-            default -> new LuaUserdata(part, state.figuraMetatables.figuraPart);
+            case TextModelPart textPart -> TextPartAPI.wrap(textPart, state);
+            default -> new LuaUserdata(part, state.figuraMetatables.modelPart);
         };
     }
 
     // -------- CREATION -------- //
 
-    // Create new FiguraPart, optionally giving it a name
+    // Create new empty FiguraPart, optionally giving it a name
     @LuaExpose(name = "new") @LuaPassState
     public static FiguraModelPart _new(LuaRuntime s) throws LuaOOM {
         try {
@@ -41,6 +44,21 @@ public class FiguraPartAPI {
     public static FiguraModelPart _new(LuaRuntime s, LuaString name) throws LuaOOM {
         try {
             return new FiguraModelPart(s.avatar, name.toJavaString(s.allocationTracker), List.of());
+        } catch (AvatarOutOfMemoryError err) { throw new LuaOOM(err); }
+    }
+
+    // Create a new TextModelPart with the given text and add it as a child of this one. Return the new part
+    @LuaExpose @LuaPassState
+    public static TextModelPart addText(LuaRuntime s, FiguraModelPart self, String basicText) throws LuaOOM {
+        return addFormattedText(s, self, new FormattedText(basicText));
+    }
+
+    @LuaExpose @LuaPassState
+    public static TextModelPart addFormattedText(LuaRuntime s, FiguraModelPart self, FormattedText text) throws LuaOOM {
+        try {
+            TextModelPart part = new TextModelPart(s.avatar, "", text);
+            self.addChild(part);
+            return part;
         } catch (AvatarOutOfMemoryError err) { throw new LuaOOM(err); }
     }
 

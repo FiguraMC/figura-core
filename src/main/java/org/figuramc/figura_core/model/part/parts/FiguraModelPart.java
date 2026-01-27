@@ -148,6 +148,11 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
 
     // Rendering stuff
 
+    // Whether this part functions as a rendering root
+    protected boolean isRenderingRoot() {
+        return this.renderData != null;
+    }
+
     // Trigger a vertex rebuild of this part. Stores resulting data in the associated RenderData.
     public void buildRenderingData() throws AvatarError, AvatarOutOfMemoryError {
         RenderData.Builder builder = RenderData.builder();
@@ -200,10 +205,9 @@ public class FiguraModelPart implements RiggedHierarchy<FiguraModelPart> {
             renderData.partData[partID++].fillFromStack(transformStack, currentlyVisible);
         // Recurse on children
         for (FiguraModelPart child : children) {
-            if (child.renderData != null && currentlyVisible) {
-                // If the child has their own separate render data, and we're visible:
-                // recurse with the *original* render function, drawing a whole new tree!
-                child.render(transformStack, state);
+            if (child.isRenderingRoot()) {
+                // If the child has their own separate render data, and we're visible, recurse with the *original* render function, drawing a whole new tree.
+                if (currentlyVisible) child.render(transformStack, state);
             } else {
                 // Otherwise, continue recursing in this helper, and update the part ID.
                 partID = child.renderHelper(transformStack, currentlyVisible, partID, renderData, state);

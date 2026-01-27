@@ -1,7 +1,6 @@
 package org.figuramc.figura_core.script_languages.lua;
 
 import org.figuramc.figura_cobalt.LuaOOM;
-import org.figuramc.figura_cobalt.LuaUncatchableError;
 import org.figuramc.figura_cobalt.cc.tweaked.cobalt.internal.unwind.SuspendedAction;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.*;
 import org.figuramc.figura_cobalt.org.squiddev.cobalt.function.Dispatch;
@@ -47,8 +46,9 @@ public class FiguraMetatables {
 
     // Model parts
     public final LuaTable transformable;
-    public final LuaTable figuraPart;
-    public final LuaTable figmodelModelPart;
+    public final LuaTable modelPart;
+    public final LuaTable figmodel;
+    public final LuaTable textPart;
 
     // Textures
     public final LuaTable texture;
@@ -90,8 +90,9 @@ public class FiguraMetatables {
 
         // Model part
         transformable = API__Transformable.createMetatable(state);
-        figuraPart = API__FiguraPart.createMetatable(state, transformable);
-        figmodelModelPart = API__Figmodel.createMetatable(state, figuraPart);
+        modelPart = API__ModelPart.createMetatable(state, transformable);
+        figmodel = API__Figmodel.createMetatable(state, modelPart);
+        textPart = API__TextPart.createMetatable(state, modelPart);
 
         // Texture
         texture = API__Texture.createMetatable(state);
@@ -123,8 +124,8 @@ public class FiguraMetatables {
         table.rawset("Vec4", vec4);
 
         table.rawset("Transformable", transformable);
-        table.rawset("FiguraPart", figuraPart);
-        table.rawset("Figmodel", figmodelModelPart);
+        table.rawset("FiguraPart", modelPart);
+        table.rawset("Figmodel", figmodel);
 
         table.rawset("Texture", texture);
         table.rawset("Material", material);

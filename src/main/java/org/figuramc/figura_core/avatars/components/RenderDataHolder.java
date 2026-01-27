@@ -27,6 +27,12 @@ public class RenderDataHolder implements AvatarComponent<RenderDataHolder> {
         this.allRenderData.add(toCloseLater);
     }
 
+    // Deregister some data after it's already been closed
+    public void deregister(RenderData alreadyClosed) {
+        assert alreadyClosed.clientPartRenderer == null;
+        this.allRenderData.remove(alreadyClosed);
+    }
+
     // On destruction, destroy all render data
     @Override
     public void destroy() {

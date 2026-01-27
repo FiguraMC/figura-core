@@ -16,7 +16,7 @@ public enum BuiltinShader implements FiguraShader {
     END_PORTAL(FiguraVertexFormat.POSITION, List.of("Tex1", "Tex2"), List.of(NONE, NONE)),
     END_GATEWAY(FiguraVertexFormat.POSITION, List.of("Tex1", "Tex2"), List.of(NONE, NONE)),
 
-    ALBEDO_COLOR(FiguraVertexFormat.ALBEDO_COLOR, List.of("Albedo", "LightMap"), List.of(NONE, LIGHTMAP)),
+    TEXT_SHADER(FiguraVertexFormat.TEXT_SHADER, List.of("Albedo", "LightMap"), List.of(NONE, LIGHTMAP)),
 
     ;
 
